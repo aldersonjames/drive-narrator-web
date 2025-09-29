@@ -47,6 +47,37 @@ Phase 3.3 (services) in progress—migrations, repositories, and backend servi
 - Git, Docker Desktop (for backend container later)
 - API credentials: Mapbox token, OpenRouteService key, POI provider key, OpenAI API key
 
+#### Optional: Self-host openpoiservice for POIs
+
+If you don’t have a managed POI API key yet, you can run the open-source openpoiservice locally:
+
+1. Install Docker Desktop (already running in this setup).
+2. Clone and start the stack (maps the API to host port `5500` to avoid conflicts):
+   ```bash
+   git clone https://github.com/GIScience/openpoiservice.git ~/AI_Development/Projects/openpoiservice
+   cd ~/AI_Development/Projects/openpoiservice
+   # optional: adjust docker-compose.yml to use "5500:5000" if port 5000 is busy
+   docker compose up init        # imports sample POI data
+   docker compose up -d api      # starts the API at http://localhost:5500
+   ```
+3. Test it (note the bounding box is two coordinate pairs):
+   ```bash
+   curl -X POST http://localhost:5500/pois \
+     -H "Content-Type: application/json" \
+     -d '{
+           "request": "pois",
+           "geometry": { "bbox": [[8.70, 53.05], [8.85, 53.15]] },
+           "limit": 5
+         }'
+   ```
+4. Configure Trip Narrator to use the local instance by adding to `backend/.env`:
+   ```env
+   POI_PROVIDER=ops
+   POI_API_BASE_URL=http://localhost:5500
+   ```
+
+Manage the containers through Docker Desktop (`ops-db` and `ops-api` should both be running).
+
 ### Bootstrap
 
 ```bash
