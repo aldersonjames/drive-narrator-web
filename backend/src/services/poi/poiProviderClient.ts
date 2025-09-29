@@ -1,5 +1,7 @@
 import crypto from 'node:crypto';
 
+import { resolveInterestTokens, resolveOpsCategoryIds } from './interestTaxonomy';
+
 export interface PoiQuery {
   routeId: string;
   interestTags: string[];
@@ -10,7 +12,10 @@ export interface PoiQuery {
 export interface PoiResult {
   poiId: string;
   name: string;
+  /** Primary category token such as `historic.battlefield`. */
   category: string;
+  /** Additional category tokens derived from provider metadata (e.g., `historic`, `battlefield`). */
+  categories: string[];
   relevance: number;
   coordinates: { lat: number; lng: number };
   summary: string;
@@ -34,7 +39,7 @@ export interface PoiProviderOptions {
 }
 
 export class PoiProviderClient {
-  private readonly provider: 'ops' | 'foursquare';
+  private provider: 'ops' | 'foursquare';
   private readonly opsBaseUrl: string;
   private readonly opsApiKey: string | undefined;
   private readonly foursquareBaseUrl: string;
@@ -53,6 +58,11 @@ export class PoiProviderClient {
     this.ttlMs = options.ttlMs ?? Number(process.env.POI_CACHE_TTL_MS ?? 900_000);
     this.fetchImpl = options.fetchImpl ?? fetch;
     this.useMock = !this.opsApiKey && !this.foursquareApiKey;
+
+    if (this.provider === 'foursquare' && !this.foursquareApiKey) {
+      // Foursquare was requested but no credential is available yet; fall back to OPS until a key is provided.
+      this.provider = 'ops';
+    }
   }
 
   async fetchPois(query: PoiQuery): Promise<PoiResult[]> {
@@ -84,16 +94,29 @@ export class PoiProviderClient {
     }
 
     const url = new URL(`${this.opsBaseUrl}/v1/pois`);
-    const body = {
+
+    const categoryTokens = resolveInterestTokens(query.interestTags);
+    const opsCategoryIds = resolveOpsCategoryIds(query.interestTags);
+
+    const filters: Record<string, unknown> = {};
+    if (categoryTokens.length) {
+      filters.categories = categoryTokens;
+    }
+    if (opsCategoryIds.length) {
+      filters.category_ids = opsCategoryIds;
+    }
+
+    const body: Record<string, unknown> = {
       request: 'pois',
       geometry: {
         bbox: query.bbox ?? null,
       },
-      filters: {
-        categories: query.interestTags,
-      },
       limit: query.limit ?? 50,
     };
+
+    if (Object.keys(filters).length) {
+      body.filters = filters;
+    }
 
     const response = await this.fetchImpl(url.toString(), {
       method: 'POST',
@@ -109,12 +132,18 @@ export class PoiProviderClient {
       throw new Error(`openpoiservice error ${response.status}: ${errorText}`);
     }
 
+    interface OpsCategoryEntry {
+      category_name?: string;
+      category_group?: string;
+    }
+
     interface OpsFeature {
       properties: {
         id?: string | number;
         name?: string;
         category?: string;
         categories?: string[];
+        category_ids?: Record<string, OpsCategoryEntry>;
         relevance?: number;
         description?: string;
         datasource?: { raw?: { website?: string } };
@@ -126,22 +155,7 @@ export class PoiProviderClient {
 
     const json = (await response.json()) as { features: OpsFeature[] };
 
-    return json.features.map((feature) => {
-      const { properties, geometry } = feature;
-      return {
-        poiId: properties.id?.toString() ?? crypto.randomUUID(),
-        name: properties.name ?? 'Unknown point of interest',
-        category: properties.category ?? properties.categories?.[0] ?? 'unknown',
-        relevance: properties.relevance ?? 1,
-        coordinates: {
-          lat: geometry.coordinates?.[1] ?? 0,
-          lng: geometry.coordinates?.[0] ?? 0,
-        },
-        summary: properties.description ?? properties.name ?? 'Point of interest',
-        attribution: { provider: 'openpoiservice', sourceUrl: properties.datasource?.raw?.website },
-        raw: feature,
-      } satisfies PoiResult;
-    });
+    return json.features.map((feature) => this.transformOpsFeature(feature));
   }
 
   private async fetchFromFoursquare(query: PoiQuery): Promise<PoiResult[]> {
@@ -191,12 +205,16 @@ export class PoiProviderClient {
 
     return json.results.map((result) => {
       const poiId = result.fsq_id ?? crypto.randomUUID();
-      const category = result.categories?.[0]?.name ?? 'unknown';
+      const categoryName = result.categories?.[0]?.name ?? 'unknown';
+      const canonicalCategories = (result.categories ?? [])
+        .map((entry) => entry.name?.toLowerCase())
+        .filter((entry): entry is string => Boolean(entry));
       const geo = result.geocodes?.main ?? result.location;
       return {
         poiId,
         name: result.name ?? 'Unknown POI',
-        category,
+        category: categoryName.toLowerCase(),
+        categories: canonicalCategories.length ? canonicalCategories : [categoryName.toLowerCase()],
         relevance: result.rating ? result.rating / 10 : 0.5,
         coordinates: {
           lat: geo?.latitude ?? 0,
@@ -210,6 +228,103 @@ export class PoiProviderClient {
         raw: result,
       } satisfies PoiResult;
     });
+  }
+
+  private transformOpsFeature(feature: {
+    properties: {
+      id?: string | number;
+      name?: string;
+      category?: string;
+      categories?: string[];
+      category_ids?: Record<string, { category_name?: string; category_group?: string }>;
+      relevance?: number;
+      description?: string;
+      datasource?: { raw?: { website?: string } };
+    };
+    geometry: { coordinates?: [number, number] };
+  }): PoiResult {
+    const { properties, geometry } = feature;
+
+    const opsCategories = properties.category_ids
+      ? Object.values(properties.category_ids)
+          .map(({ category_group, category_name }) => {
+            const group = category_group?.toLowerCase();
+            const name = category_name?.toLowerCase();
+            if (group && name) {
+              return `${group}.${name}`;
+            }
+            return name ?? group ?? undefined;
+          })
+          .filter((entry): entry is string => Boolean(entry))
+      : [];
+
+    const primaryCategory = (properties.category ?? opsCategories[0] ?? 'unknown').toLowerCase();
+
+    const categoryTokens = new Set<string>();
+    if (primaryCategory && primaryCategory !== 'unknown') {
+      categoryTokens.add(primaryCategory);
+    }
+    opsCategories.forEach((entry) => {
+      categoryTokens.add(entry);
+      entry.split(/[.:/_-]/).forEach((piece) => {
+        const trimmed = piece.trim();
+        if (trimmed) {
+          categoryTokens.add(trimmed);
+        }
+      });
+    });
+    (properties.categories ?? []).forEach((legacy) => {
+      const lower = legacy.toLowerCase();
+      categoryTokens.add(lower);
+      lower.split(/[.:/_-]/).forEach((piece) => {
+        const trimmed = piece.trim();
+        if (trimmed) {
+          categoryTokens.add(trimmed);
+        }
+      });
+    });
+
+    return {
+      poiId: properties.id?.toString() ?? crypto.randomUUID(),
+      name: properties.name ?? 'Unknown point of interest',
+      category: primaryCategory,
+      categories: Array.from(categoryTokens),
+      relevance: properties.relevance ?? 1,
+      coordinates: {
+        lat: geometry.coordinates?.[1] ?? 0,
+        lng: geometry.coordinates?.[0] ?? 0,
+      },
+      summary: properties.description ?? properties.name ?? 'Point of interest',
+      attribution: { provider: 'openpoiservice', sourceUrl: properties.datasource?.raw?.website },
+      raw: feature,
+    } satisfies PoiResult;
+  }
+
+  async fetchOpsCategoryCatalog(): Promise<Record<string, unknown>> {
+    if (!this.opsApiKey) {
+      throw new Error('POI_API_KEY missing for openpoiservice');
+    }
+
+    const url = new URL(`${this.opsBaseUrl}/v1/pois`);
+    const response = await this.fetchImpl(url.toString(), {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: this.opsApiKey,
+      },
+      body: JSON.stringify({ request: 'list' }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`openpoiservice category list error ${response.status}: ${errorText}`);
+    }
+
+    return (await response.json()) as Record<string, unknown>;
+  }
+
+  isFoursquareEnabled(): boolean {
+    return Boolean(this.foursquareApiKey);
   }
 
   private buildCacheKey(query: PoiQuery): string {
@@ -226,6 +341,9 @@ export class PoiProviderClient {
       category: (
         query.interestTags[index % query.interestTags.length] ?? 'historical'
       ).toLowerCase(),
+      categories: [
+        (query.interestTags[index % query.interestTags.length] ?? 'historical').toLowerCase(),
+      ],
       relevance: 0.7 + index * 0.1,
       coordinates: {
         lat: base + index * 0.01,

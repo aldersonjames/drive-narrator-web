@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://trip-narrator.example.com/schemas/tripRequest.schema.json",
+  "title": "TripRequest",
+  "type": "object",
+  "required": ["profileId", "origin", "destination", "interestTags"],
+  "properties": {
+    "profileId": { "type": "string", "minLength": 1 },
+    "origin": { "type": "string", "minLength": 1 },
+    "destination": { "type": "string", "minLength": 1 },
+    "departureTime": { "type": "string", "format": "date-time" },
+    "interestTags": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "minItems": 1
+    }
+  },
+  "additionalProperties": false
+}

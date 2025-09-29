@@ -23,6 +23,8 @@ Create the following files (never commit them):
   ORS_API_KEY=changeme
   POI_PROVIDER=ops
   POI_API_KEY=optional-for-foursquare
+  # Optional: unlock Foursquare Places once your key is approved
+  FOURSQUARE_API_KEY=
   OPENAI_API_KEY=changeme
   DATABASE_URL=sqlite://./data/trip_narrator.db
   CACHE_TTL_SECONDS=900
@@ -78,10 +80,19 @@ npm install
 ## 7. Common commands (once implementations exist)
 
 ```bash
-npm run lint -- --filter=frontend    # lint frontend workspace
-npm run test -- --filter=backend     # run backend test suite via turbo
-npm run format                       # prettify repo
+npm run lint -- --filter=frontend        # lint frontend workspace
+npm run test -- --filter=@trip-narrator/backend  # run backend jest suite via turbo
+npm run format                           # prettify repo
 ```
+
+### API Endpoints (dev harness)
+
+- `POST /api/routes` — generate candidate trips and scored POIs
+- `GET /api/poi/categories` — fetch the full OPS taxonomy (cached)
+- `GET /api/pois?routeId=...` — retrieve filtered POIs for a selected route
+- `GET /api/voices` — list available assistant/narrator voices
+- `GET|PATCH /api/preferences` — traveler preference persistence (requires profile header)
+- `GET|POST|DELETE /api/trips` — create/manage stored trips
 
 ## 8. Manual smoke checklist (baseline)
 

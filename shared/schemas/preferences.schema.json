@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://trip-narrator.example.com/schemas/preferences.schema.json",
+  "title": "PreferencesPayload",
+  "type": "object",
+  "required": [
+    "profileId",
+    "assistantVoiceId",
+    "narrationVoiceId",
+    "interestTags",
+    "transcriptOptIn"
+  ],
+  "properties": {
+    "profileId": { "type": "string", "minLength": 1 },
+    "assistantVoiceId": { "type": "string", "minLength": 1 },
+    "narrationVoiceId": { "type": "string", "minLength": 1 },
+    "interestTags": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "minItems": 1
+    },
+    "transcriptOptIn": { "type": "boolean" },
+    "retentionDays": { "type": "integer", "minimum": 7, "maximum": 365 },
+    "metadata": { "type": ["object", "null"] }
+  },
+  "additionalProperties": false
+}

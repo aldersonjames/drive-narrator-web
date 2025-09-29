@@ -44,13 +44,13 @@
 - [x] T028 Implement narration scheduler in `backend/src/services/narration/narrationScheduler.ts` (ETA offsets + avoidance of immediate POIs).
 - [x] T029 Implement preferences service in `backend/src/services/preferences/preferencesService.ts` (voice selections, deletion flow).
 - [x] T030 Implement Express router for `/api/routes` in `backend/src/api/routes/routesController.ts` wiring clients + scoring.
-- [ ] T031 Implement Express router for `/api/pois` in `backend/src/api/routes/poisController.ts` returning filtered POIs + notices.
-- [ ] T032 Implement Express router for `/api/trips` in `backend/src/api/routes/tripsController.ts` covering create/list/resume/delete.
-- [ ] T033 Implement Express router for `/api/preferences` in `backend/src/api/routes/preferencesController.ts` (GET & PATCH).
-- [ ] T034 Implement Express router for `/api/voices` in `backend/src/api/routes/voicesController.ts` (OpenAI voice catalog proxy).
-- [ ] T035 Wire authentication + consent middleware in `backend/src/api/middleware/privacyMiddleware.ts` (consent checks, deletion triggers).
-- [ ] T036 Implement caching layer (Redis-like fallback via in-memory) in `backend/src/utils/cache.ts` with TTL from config.
-- [ ] T037 Implement shared type definitions in `shared/types/tripNarrator.ts` and JSON schemas in `shared/schemas/*.json`.
+- [x] T031 Implement Express router for `/api/pois` in `backend/src/api/routes/poisController.ts` returning filtered POIs + notices.
+- [x] T032 Implement Express router for `/api/trips` in `backend/src/api/routes/tripsController.ts` covering create/list/resume/delete.
+- [x] T033 Implement Express router for `/api/preferences` in `backend/src/api/routes/preferencesController.ts` (GET & PATCH).
+- [x] T034 Implement Express router for `/api/voices` in `backend/src/api/routes/voicesController.ts` (OpenAI voice catalog proxy).
+- [x] T035 Wire authentication + consent middleware in `backend/src/api/middleware/privacyMiddleware.ts` (consent checks, deletion triggers).
+- [x] T036 Implement caching layer (Redis-like fallback via in-memory) in `backend/src/utils/cache.ts` with TTL from config.
+- [x] T037 Implement shared type definitions in `shared/types/tripNarrator.ts` and JSON schemas in `shared/schemas/*.json`.
 - [ ] T038 Implement React context for trip planner state in `frontend/src/context/TripPlannerContext.tsx` (preferences, routes, POIs).
 - [ ] T039 Implement Web Speech voice input hook in `frontend/src/hooks/useVoiceInput.ts` (mic permission, fallback).
 - [ ] T040 Implement voice output service in `frontend/src/services/voice/voiceOutputService.ts` (OpenAI TTS streaming + captions cache).
@@ -60,6 +60,14 @@
 - [ ] T044 Build trip planner page in `frontend/src/pages/TripPlannerPage.tsx` (origin/destination form, route list, breathing orb wiring).
 - [ ] T045 Build narration timeline overlay component in `frontend/src/components/voice/NarrationTimeline.tsx` (upcoming POIs with captions).
 - [ ] T046 Implement offline queue & caching worker in `frontend/src/services/offline/offlineQueue.ts` plus service worker in `frontend/src/sw.ts`.
+
+## Phase 3.3a: Taxonomy & Provider Enhancements
+
+- [x] T061 Implement shared interest taxonomy module bridging curated presets with OPS category IDs in `backend/src/services/poi/interestTaxonomy.ts`.
+- [x] T062 Update POI provider/filter stack to attach normalized category tokens and gracefully fall back to OPS when Foursquare credentials are absent.
+- [x] T063 Implement OPS category catalog fetcher + caching service and expose `/api/poi/categories` endpoint for full taxonomy browsing.
+- [ ] T064 Add Foursquare provider toggle surfaced via configuration UI once credentials are present, retaining read-only “locked” state when unavailable.
+- [ ] T065 Expand backend test suite for taxonomy/provider gating (filtering, OPS fallback, future Foursquare path) in `backend/tests/unit/services/` & `backend/tests/integration/`.
 
 ## Phase 3.4: Integration & Hardening
 

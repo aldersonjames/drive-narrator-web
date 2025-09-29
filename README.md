@@ -151,8 +151,8 @@ specs/001-product-overview-the/
 
 ## Next Steps
 
-1. Implement database migrations (`T021`, `T022`).
-2. Build repositories/services and Express routers as per tasks T023–T046.
-3. Wire service worker, logging, CI pipelines, and polish tasks (Phases 3.4–3.5).
+1. Finish backend hardening/CI tasks (rate limiting, logging, secrets, containerization — T047–T055).
+2. Implement frontend state/context, voice/map components, and offline worker (T038–T046).
+3. Execute validation passes (accessibility, performance, manual plan) and final regression (T056–T060).
 
 For detailed task sequencing, see `specs/001-product-overview-the/tasks.md`.

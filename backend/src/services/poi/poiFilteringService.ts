@@ -1,17 +1,10 @@
 import type { PoiResult } from './poiProviderClient';
+import { resolveInterestTokens } from './interestTaxonomy';
 
 export interface FilterResult {
   pois: PoiResult[];
   notices: Array<{ code: string; message: string }>;
 }
-
-const INTEREST_TAXONOMY: Record<string, string[]> = {
-  historical: ['historic', 'history', 'monument', 'archaeology'],
-  scenic: ['viewpoint', 'nature', 'landscape', 'park', 'panorama'],
-  entertainment: ['music', 'concert', 'entertainment', 'nightlife'],
-  cultural: ['museum', 'gallery', 'culture', 'heritage'],
-  family: ['zoo', 'aquarium', 'family', 'amusement'],
-};
 
 export class PoiFilteringService {
   filterByInterests(pois: PoiResult[], interestTags: string[]): FilterResult {
@@ -19,15 +12,9 @@ export class PoiFilteringService {
       return { pois: this.sortByRelevance(pois), notices: [] };
     }
 
-    const normalizedTags = interestTags.map((tag) => tag.toLowerCase());
+    const allowedTokens = new Set(resolveInterestTokens(interestTags));
 
-    const allowedCategories = new Set<string>();
-    normalizedTags.forEach((tag) => {
-      const mapped = INTEREST_TAXONOMY[tag] ?? [tag];
-      mapped.forEach((category) => allowedCategories.add(category.toLowerCase()));
-    });
-
-    const filtered = pois.filter((poi) => this.matchesInterest(poi.category, allowedCategories));
+    const filtered = pois.filter((poi) => this.matchesInterest(poi, allowedTokens));
 
     if (!filtered.length) {
       return {
@@ -45,15 +32,35 @@ export class PoiFilteringService {
     return { pois: this.sortByRelevance(filtered), notices: [] };
   }
 
-  private matchesInterest(category: string, allowed: Set<string>): boolean {
-    const lower = category.toLowerCase();
-    if (allowed.has(lower)) {
-      return true;
+  private matchesInterest(poi: PoiResult, allowed: Set<string>): boolean {
+    const categoryTokens = new Set<string>();
+
+    const seedTokens = [poi.category, ...(poi.categories ?? [])];
+    seedTokens.forEach((token) => {
+      if (!token) {
+        return;
+      }
+      const lower = token.toLowerCase();
+      categoryTokens.add(lower);
+      lower.split(/[.:/_-]/).forEach((segment) => {
+        const trimmed = segment.trim();
+        if (trimmed) {
+          categoryTokens.add(trimmed);
+        }
+      });
+    });
+
+    for (const token of categoryTokens) {
+      if (allowed.has(token)) {
+        return true;
+      }
     }
 
-    for (const entry of allowed) {
-      if (lower.includes(entry)) {
-        return true;
+    for (const token of categoryTokens) {
+      for (const allowedToken of allowed) {
+        if (token.includes(allowedToken) || allowedToken.includes(token)) {
+          return true;
+        }
       }
     }
 

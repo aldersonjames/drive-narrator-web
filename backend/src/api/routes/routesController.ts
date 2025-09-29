@@ -31,6 +31,7 @@ const formatRoutes = (routeResponse: RouteResponse, scores: RouteScore[], pois: 
       poiId: poi.poiId,
       name: poi.name,
       category: poi.category,
+      categories: poi.categories,
       relevance: poi.relevance,
       coordinates: poi.coordinates,
       summary: poi.summary,
@@ -86,7 +87,7 @@ export const createRoutesController = (deps: Dependencies) => {
         routeId: `route-${index}`,
         pois: filtered.pois.map((poi) => ({
           poiId: poi.poiId,
-          categories: [poi.category],
+          categories: poi.categories,
           relevance: poi.relevance,
         })),
         durationMinutes: feature.properties.summary.duration / 60,

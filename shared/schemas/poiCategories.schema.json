@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://trip-narrator.example.com/schemas/poiCategories.schema.json",
+  "title": "PoiCategoryCatalog",
+  "type": "object",
+  "required": ["groups"],
+  "properties": {
+    "groups": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["groupId", "groupName", "categories"],
+        "properties": {
+          "groupId": { "type": "integer" },
+          "groupName": { "type": "string" },
+          "categories": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["categoryId", "osmKey", "osmValue", "label"],
+              "properties": {
+                "categoryId": { "type": "integer" },
+                "osmKey": { "type": "string" },
+                "osmValue": { "type": "string" },
+                "label": { "type": "string" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "providers": {
+          "type": "object",
+          "additionalProperties": { "type": "boolean" }
+        },
+        "refreshedAt": { "type": "string", "format": "date-time" }
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": false
+}
