@@ -15,15 +15,26 @@
     "prepare": "husky"
   },
   "devDependencies": {
+    "@playwright/test": "^1.55.1",
+    "@testing-library/jest-dom": "^6.8.0",
+    "@testing-library/react": "^16.3.0",
+    "@testing-library/user-event": "^14.6.1",
+    "@types/jest": "^30.0.0",
+    "@types/supertest": "^6.0.3",
     "@typescript-eslint/eslint-plugin": "^7.16.1",
     "@typescript-eslint/parser": "^7.16.1",
+    "axe-core": "^4.10.3",
     "eslint": "^8.57.0",
     "eslint-plugin-jsx-a11y": "^6.9.0",
     "eslint-plugin-react": "^7.37.2",
     "eslint-plugin-react-hooks": "^4.6.2",
     "husky": "^9.1.6",
+    "jest": "^30.2.0",
+    "jest-axe": "^10.0.0",
     "lint-staged": "^15.2.10",
     "prettier": "^3.3.3",
+    "supertest": "^7.1.4",
+    "ts-jest": "^29.4.4",
     "turbo": "^2.5.6"
   }
 }

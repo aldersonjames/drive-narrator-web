@@ -11,23 +11,23 @@
 
 ## Phase 3.2: Tests First (TDD)
 
-- [ ] T004 [P] Author contract test for `POST /api/routes` in `backend/tests/contract/routes.post.test.ts` validating 201 response, multi-route payload schema, and limited-options notice when <2 routes.
-- [ ] T005 [P] Author contract test for `GET /api/pois?routeId=` in `backend/tests/contract/pois.get.test.ts` covering filtered results, “no matches” advisory, and attribution fields.
-- [ ] T006 [P] Author contract test for `POST /api/trips` in `backend/tests/contract/trips.post.test.ts` asserting consent requirement, persisted IDs, and 201 vs 409 when duplicate pending trip.
-- [ ] T007 [P] Author contract test for `GET /api/preferences` in `backend/tests/contract/preferences.get.test.ts` verifying default voice options and persisted traveler profile response.
-- [ ] T008 [P] Author contract test for `PATCH /api/preferences` in `backend/tests/contract/preferences.patch.test.ts` covering schema validation, interest taxonomy updates, and deletion requests.
-- [ ] T009 [P] Write integration flow test for multi-route ranking in `backend/tests/integration/trip-planning.flow.test.ts` simulating ORS/POI mocks, ensuring scoring + notices.
-- [ ] T010 [P] Write integration flow test for voice persona selection + transcripts in `backend/tests/integration/voice-selection.flow.test.ts` verifying narration scheduling + transcript persistence.
-- [ ] T011 [P] Write integration flow test for trip resume + history deletion in `backend/tests/integration/trip-resume.flow.test.ts` ensuring retention windows & soft-delete audit logs.
-- [ ] T012 [P] Create unit test for route scoring service in `backend/tests/unit/services/routeScoring.test.ts` covering relevance weighting, tie-breakers, and caching hints.
-- [ ] T013 [P] Create unit test for POI filtering/caching in `backend/tests/unit/services/poiFilter.test.ts` ensuring taxonomy mapping, provider attribution, and cache invalidation.
-- [ ] T014 [P] Create unit test for narration scheduler in `backend/tests/unit/services/narrationScheduler.test.ts` validating ETA offsets, near-start suppression, and offline queue behaviour.
-- [ ] T015 [P] Build React Testing Library test for breathing orb state machine in `frontend/tests/unit/components/breathingOrb.test.tsx` covering idle/listening/speaking/error transitions + aria-live updates.
-- [ ] T016 [P] Build component test for map route rendering with color legend in `frontend/tests/unit/components/mapRoutes.test.tsx` asserting polylines, markers, and keyboard focus management.
-- [ ] T017 [P] Build integration test for preferences page voice selection + transcript toggle in `frontend/tests/integration/preferencesPage.test.tsx` ensuring persisted settings and consent prompts.
-- [ ] T018 [P] Build Playwright E2E test for offline voice fallback in `frontend/tests/e2e/offline-voice.spec.ts` (simulate offline, confirm queue + caption display).
-- [ ] T019 [P] Add service worker caching unit test in `frontend/tests/unit/serviceWorkerCaching.test.ts` verifying routes/POIs/audio caching matrix and eviction policy.
-- [ ] T020 [P] Add accessibility regression test with axe for trip planner page in `frontend/tests/accessibility/tripPlanner.a11y.test.tsx` asserting aria landmarks, captions, focus order, contrast.
+- [x] T004 [P] Author contract test for `POST /api/routes` in `backend/tests/contract/routes.post.test.ts` validating 201 response, multi-route payload schema, and limited-options notice when <2 routes.
+- [x] T005 [P] Author contract test for `GET /api/pois?routeId=` in `backend/tests/contract/pois.get.test.ts` covering filtered results, “no matches” advisory, and attribution fields.
+- [x] T006 [P] Author contract test for `POST /api/trips` in `backend/tests/contract/trips.post.test.ts` asserting consent requirement, persisted IDs, and 201 vs 409 when duplicate pending trip.
+- [x] T007 [P] Author contract test for `GET /api/preferences` in `backend/tests/contract/preferences.get.test.ts` verifying default voice options and persisted traveler profile response.
+- [x] T008 [P] Author contract test for `PATCH /api/preferences` in `backend/tests/contract/preferences.patch.test.ts` covering schema validation, interest taxonomy updates, and deletion requests.
+- [x] T009 [P] Write integration flow test for multi-route ranking in `backend/tests/integration/trip-planning.flow.test.ts` simulating ORS/POI mocks, ensuring scoring + notices.
+- [x] T010 [P] Write integration flow test for voice persona selection + transcripts in `backend/tests/integration/voice-selection.flow.test.ts` verifying narration scheduling + transcript persistence.
+- [x] T011 [P] Write integration flow test for trip resume + history deletion in `backend/tests/integration/trip-resume.flow.test.ts` ensuring retention windows & soft-delete audit logs.
+- [x] T012 [P] Create unit test for route scoring service in `backend/tests/unit/services/routeScoring.test.ts` covering relevance weighting, tie-breakers, and caching hints.
+- [x] T013 [P] Create unit test for POI filtering/caching in `backend/tests/unit/services/poiFilter.test.ts` ensuring taxonomy mapping, provider attribution, and cache invalidation.
+- [x] T014 [P] Create unit test for narration scheduler in `backend/tests/unit/services/narrationScheduler.test.ts` validating ETA offsets, near-start suppression, and offline queue behaviour.
+- [x] T015 [P] Build React Testing Library test for breathing orb state machine in `frontend/tests/unit/components/breathingOrb.test.tsx` covering idle/listening/speaking/error transitions + aria-live updates.
+- [x] T016 [P] Build component test for map route rendering with color legend in `frontend/tests/unit/components/mapRoutes.test.tsx` asserting polylines, markers, and keyboard focus management.
+- [x] T017 [P] Build integration test for preferences page voice selection + transcript toggle in `frontend/tests/integration/preferencesPage.test.tsx` ensuring persisted settings and consent prompts.
+- [x] T018 [P] Build Playwright E2E test for offline voice fallback in `frontend/tests/e2e/offline-voice.spec.ts` (simulate offline, confirm queue + caption display).
+- [x] T019 [P] Add service worker caching unit test in `frontend/tests/unit/serviceWorkerCaching.test.ts` verifying routes/POIs/audio caching matrix and eviction policy.
+- [x] T020 [P] Add accessibility regression test with axe for trip planner page in `frontend/tests/accessibility/tripPlanner.a11y.test.tsx` asserting aria landmarks, captions, focus order, contrast.
 
 ## Phase 3.3: Core Implementation (execute after T004–T020 are red)
 
