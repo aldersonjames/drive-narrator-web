@@ -34,8 +34,8 @@
 
 ## Phase 3.3: Core Implementation (execute after T004–T020 are red)
 
-- [ ] T021 Create Knex migrations for `traveler_profiles` and repository in `backend/src/db/migrations/2025092901_create_traveler_profiles.ts` & `backend/src/db/repositories/travelerProfilesRepository.ts`.
-- [ ] T022 Create Knex migrations for `trip_requests`, `route_options`, `points_of_interest`, `narration_sessions` in `backend/src/db/migrations/2025092902_create_trip_domain.ts` with referential keys.
+- [x] T021 Create Knex migrations for `traveler_profiles` and repository in `backend/src/db/migrations/2025092901_create_traveler_profiles.ts` & `backend/src/db/repositories/travelerProfilesRepository.ts`.
+- [x] T022 Create Knex migrations for `trip_requests`, `route_options`, `points_of_interest`, `narration_sessions` in `backend/src/db/migrations/2025092902_create_trip_domain.ts` with referential keys.
 - [ ] T023 Implement repositories for trips, routes, POIs, narration sessions in `backend/src/db/repositories/*Repository.ts` with privacy-aware queries.
 - [ ] T024 Implement OpenRouteService client with retry + caching in `backend/src/services/routing/openRouteServiceClient.ts` (using env vars).
 - [ ] T025 Implement POI provider client abstraction in `backend/src/services/poi/poiProviderClient.ts` with source attribution.

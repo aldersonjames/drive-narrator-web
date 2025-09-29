@@ -8,5 +8,9 @@
     "typecheck": "tsc --project tsconfig.json --noEmit",
     "build": "echo 'TODO: build command pending implementation'",
     "dev": "echo 'TODO: dev server pending implementation'"
+  },
+  "dependencies": {
+    "knex": "^3.1.0",
+    "sqlite3": "^5.1.7"
   }
 }
