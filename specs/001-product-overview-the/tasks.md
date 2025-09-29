@@ -4,9 +4,9 @@
 **Prerequisites**: plan.md (required), research.md, data-model.md, contracts/
 
 ## Phase 3.1: Setup & Research Closeout
-- [ ] T001 Capture completed findings for R1–R7 in `specs/001-product-overview-the/research.md` with Decision/Rationale/Alternatives summaries.
-- [ ] T002 Scaffold workspace packages (`package.json`, `tsconfig.json`, `turbo.json`) and directories `frontend/`, `backend/`, `shared/` per plan.md.
-- [ ] T003 Configure unified linting/formatting/test scripts (`.eslintrc.cjs`, `.prettierrc`, `package.json` scripts, Husky hook) enforcing constitution rules.
+- [x] T001 Capture completed findings for R1–R7 in `specs/001-product-overview-the/research.md` with Decision/Rationale/Alternatives summaries.
+- [x] T002 Scaffold workspace packages (`package.json`, `tsconfig.json`, `turbo.json`) and directories `frontend/`, `backend/`, `shared/` per plan.md.
+- [x] T003 Configure unified linting/formatting/test scripts (`.eslintrc.cjs`, `.prettierrc`, `package.json` scripts, Husky hook) enforcing constitution rules.
 
 ## Phase 3.2: Tests First (TDD)
 - [ ] T004 [P] Author contract test for `POST /api/routes` in `backend/tests/contract/routes.post.test.ts` (mock routing + POI services).
