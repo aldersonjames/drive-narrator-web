@@ -8,9 +8,11 @@ type PoiResponse = {
   category: string;
   relevance: number;
   coordinates: { lat: number; lng: number };
+  geometry: { type: string; coordinates: [number, number] };
   summary: string;
   narrationPreview: string;
   attribution: { provider: string };
+  images: Array<{ url: string }>;
 };
 
 type Notice = { code: string; message: string };
@@ -35,9 +37,14 @@ describe('GET /api/pois contract', () => {
         name: expect.any(String),
         category: expect.any(String),
         coordinates: { lat: expect.any(Number), lng: expect.any(Number) },
+        geometry: expect.objectContaining({
+          type: expect.any(String),
+          coordinates: expect.any(Array),
+        }),
         summary: expect.any(String),
         narrationPreview: expect.any(String),
         attribution: expect.objectContaining({ provider: expect.any(String) }),
+        images: expect.any(Array),
       });
       expect(poi.category.toLowerCase()).toMatch(/historical|scenic/);
     });

@@ -5,17 +5,27 @@ import type { PoiResult } from '../../../src/services/poi/poiProviderClient';
 describe('PoiFilteringService', () => {
   const service = new PoiFilteringService();
 
-  const makePoi = (overrides: Partial<PoiResult>): PoiResult => ({
-    poiId: overrides.poiId ?? 'poi-id',
-    name: overrides.name ?? 'Sample POI',
-    category: overrides.category ?? 'unknown',
-    categories: overrides.categories ?? [overrides.category ?? 'unknown'],
-    relevance: overrides.relevance ?? 0.5,
-    coordinates: overrides.coordinates ?? { lat: 0, lng: 0 },
-    summary: overrides.summary ?? 'summary',
-    attribution: overrides.attribution ?? { provider: 'test' },
-    raw: overrides.raw ?? {},
-  });
+  const makePoi = (overrides: Partial<PoiResult>): PoiResult => {
+    const coordinates = overrides.coordinates ?? { lat: 0, lng: 0 };
+    const summary = overrides.summary ?? 'summary';
+    return {
+      poiId: overrides.poiId ?? 'poi-id',
+      name: overrides.name ?? 'Sample POI',
+      category: overrides.category ?? 'unknown',
+      categories: overrides.categories ?? [overrides.category ?? 'unknown'],
+      relevance: overrides.relevance ?? 0.5,
+      coordinates,
+      geometry: overrides.geometry ?? {
+        type: 'Point',
+        coordinates: [coordinates.lng, coordinates.lat],
+      },
+      summary,
+      narrationPreview: overrides.narrationPreview ?? summary.slice(0, 160),
+      attribution: overrides.attribution ?? { provider: 'test' },
+      images: overrides.images ?? [],
+      raw: overrides.raw ?? {},
+    };
+  };
 
   it('prioritises Civil War history POIs when interest is civil_war_history', () => {
     const pois: PoiResult[] = [

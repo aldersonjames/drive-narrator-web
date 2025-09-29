@@ -8,17 +8,27 @@ import type { PoiResult } from '../../../src/services/poi/poiProviderClient';
 describe('createPoisController', () => {
   const poiFilter = new PoiFilteringService();
 
-  const makePoi = (overrides: Partial<PoiResult>): PoiResult => ({
-    poiId: overrides.poiId ?? 'poi-1',
-    name: overrides.name ?? 'Sample POI',
-    category: overrides.category ?? 'historic.battlefield',
-    categories: overrides.categories ?? ['historic', 'historic.battlefield'],
-    relevance: overrides.relevance ?? 0.8,
-    coordinates: overrides.coordinates ?? { lat: 0, lng: 0 },
-    summary: overrides.summary ?? 'Summary',
-    attribution: overrides.attribution ?? { provider: 'ops' },
-    raw: overrides.raw ?? {},
-  });
+  const makePoi = (overrides: Partial<PoiResult>): PoiResult => {
+    const coordinates = overrides.coordinates ?? { lat: 0, lng: 0 };
+    const summary = overrides.summary ?? 'Summary';
+    return {
+      poiId: overrides.poiId ?? 'poi-1',
+      name: overrides.name ?? 'Sample POI',
+      category: overrides.category ?? 'historic.battlefield',
+      categories: overrides.categories ?? ['historic', 'historic.battlefield'],
+      relevance: overrides.relevance ?? 0.8,
+      coordinates,
+      geometry: overrides.geometry ?? {
+        type: 'Point',
+        coordinates: [coordinates.lng, coordinates.lat],
+      },
+      summary,
+      narrationPreview: overrides.narrationPreview ?? summary.slice(0, 160),
+      attribution: overrides.attribution ?? { provider: 'ops' },
+      images: overrides.images ?? [],
+      raw: overrides.raw ?? {},
+    };
+  };
 
   const createMockRes = () => {
     const json = jest.fn();
@@ -29,20 +39,18 @@ describe('createPoisController', () => {
 
   it('filters POIs based on interests and returns provider metadata', async () => {
     const poiClient = {
-      fetchPois: jest
-        .fn()
-        .mockResolvedValue([
-          makePoi({
-            poiId: 'battlefield',
-            category: 'historic.battlefield',
-            categories: ['historic', 'historic.battlefield'],
-          }),
-          makePoi({
-            poiId: 'brewery',
-            category: 'amenity.brewery',
-            categories: ['amenity', 'amenity.brewery'],
-          }),
-        ]),
+      fetchPois: jest.fn().mockResolvedValue([
+        makePoi({
+          poiId: 'battlefield',
+          category: 'historic.battlefield',
+          categories: ['historic', 'historic.battlefield'],
+        }),
+        makePoi({
+          poiId: 'brewery',
+          category: 'amenity.brewery',
+          categories: ['amenity', 'amenity.brewery'],
+        }),
+      ]),
       isFoursquareEnabled: jest.fn().mockReturnValue(false),
     };
 

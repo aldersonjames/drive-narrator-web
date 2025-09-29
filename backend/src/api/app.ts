@@ -12,6 +12,7 @@ import { createPreferencesController } from './routes/preferencesController';
 import { createVoicesController } from './routes/voicesController';
 import { createPrivacyMiddleware } from './middleware/privacyMiddleware';
 import { createNarrationsController } from './routes/narrationsController';
+import { createConversationController } from './routes/conversationController';
 import {
   InMemoryTravelerProfilesRepository,
   InMemoryTripsRepository,
@@ -25,6 +26,7 @@ import { PoiFilteringService } from '../services/poi/poiFilteringService';
 import { CategoryCatalogService } from '../services/poi/categoryCatalogService';
 import { RouteScoringService } from '../services/scoring/routeScoringService';
 import { PreferencesService } from '../services/preferences/preferencesService';
+import { ConversationService } from '../services/voice/conversationService';
 
 const app = express();
 app.use(bodyParser.json());
@@ -41,6 +43,7 @@ const poiFilter = new PoiFilteringService();
 const categoryCatalog = new CategoryCatalogService(poiClient);
 const routeScoring = new RouteScoringService();
 const preferencesService = new PreferencesService(travelerProfilesRepo);
+const conversationService = new ConversationService();
 
 void travelerProfilesRepo.create({
   profileId: 'traveler-001',
@@ -127,6 +130,12 @@ app.patch('/api/preferences', privacyMiddleware, preferencesController.patch);
 app.get('/api/voices', createVoicesController());
 
 app.post('/api/narrations', privacyMiddleware, createNarrationsController({ preferencesService }));
+
+app.post(
+  '/api/conversation',
+  privacyMiddleware,
+  createConversationController({ conversationService }),
+);
 
 app.use((err: Error, _req: Request, res: Response) => {
   res.status(500).json({ code: 'INTERNAL_ERROR', message: err.message });

@@ -16,23 +16,23 @@ This repository contains the Spec Kit–driven implementation of the Trip Narrat
   - DB Schema Plan: `specs/001-product-overview-the/db-schema.md`
   - Task List: `specs/001-product-overview-the/tasks.md`
 
-Phase 3.3 (services) in progress—migrations, repositories, and backend service layer are complete (T021–T029). Next milestone: Express controllers / API wiring (T030–T034) followed by frontend UI wiring.
+Phase 3.3a shipped core services, MapLibre UI, and the conversational assistant console (T061–T073). Current focus: polish passes (map photostrips, landing tutorial), PWA/validation hardening (T047–T055), and final QA sweep.
 
 ## Architecture Overview
 
 ### Frontend (PWA)
 
 - React 18 + TypeScript, PWA-first.
-- Uses Web Speech API for voice input and OpenAI Realtime TTS for voice output.
-- Map rendering via Mapbox GL JS (Leaflet fallback planned).
-- Accessibility-first UI with ARIA live regions, breathing orb indicator, dark/light themes.
+- Conversational console powered by Web Speech API capture + sequential TTS playback via the shared `VoiceOutputService`.
+- Map rendering via MapLibre GL to display alternate routes, GeoJSON polylines, and POI photostrips.
+- Accessibility-first UI with ARIA live regions, interactive breathing orb indicator, dark/light theming groundwork.
 
 ### Backend
 
 - Node.js 20 + Express 5 (TypeScript).
 - Integrates OpenRouteService for routing, openpoiservice/Foursquare for POIs.
-- SQLite via Knex for persistence (migrations forthcoming).
-- Service modules planned for routing, POI filtering, scoring, and narration scheduling.
+- Conversational service generates assistant replies + follow-up prompts, exposed via `/api/conversation`.
+- SQLite via Knex for persistence (migrations forthcoming) with repositories/services layered for routing, POI filtering, scoring, narration scheduling, and preferences.
 
 ### Shared
 
@@ -107,12 +107,12 @@ Husky pre-commit hook runs `lint-staged` to enforce ESLint + Prettier.
 
 ## Testing Strategy
 
-- **Contract Tests**: backend tests in `backend/tests/contract/` assert API contracts against mocked services.
+- **Contract Tests**: backend tests in `backend/tests/contract/` assert API contracts (routes, POIs, conversation, etc.) against mocked services.
 - **Integration Tests**: `backend/tests/integration/` orchestrate routing + POI flows.
 - **Unit Tests**: services in `backend/tests/unit/`; React components in `frontend/tests/unit/`.
 - **Accessibility**: `frontend/tests/accessibility/` runs axe.
-- **E2E**: Playwright in `frontend/tests/e2e/` covers offline voice fallback.
-  All tests are TDD-first; suites currently fail awaiting implementation.
+- **E2E**: Playwright in `frontend/tests/e2e/` covers offline voice fallback (future run once polish stabilises).
+  TypeScript type-checking and Jest suites are being brought online as part of hardening (see T047–T052).
 
 ## Project Structure
 
@@ -152,8 +152,8 @@ specs/001-product-overview-the/
 
 ## Next Steps
 
-1. Finish backend hardening/CI tasks (rate limiting, logging, secrets, containerization — T047–T055).
-2. Implement frontend state/context, voice/map components, and offline worker (T038–T046).
-3. Execute validation passes (accessibility, performance, manual plan) and final regression (T056–T060).
+1. Polish UI layers to match hero screenshots (map card imagery, dark mode, tutorial carousel — T070/T074).
+2. Harden the platform: PWA rebuild via `vite-plugin-pwa`, runtime validation/logging, rate limiting, Docker/CI scaffolding (T047–T055).
+3. Final QA pass (accessibility, performance, manual scripts) ahead of launch (T056–T060).
 
 For detailed task sequencing, see `specs/001-product-overview-the/tasks.md`.

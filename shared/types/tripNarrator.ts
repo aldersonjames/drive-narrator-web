@@ -1,3 +1,5 @@
+import type { LineString, Point } from 'geojson';
+
 export interface Coordinates {
   lat: number;
   lng: number;
@@ -8,23 +10,36 @@ export interface PoiAttribution {
   sourceUrl?: string;
 }
 
+export interface PoiImage {
+  url: string;
+  altText?: string;
+  provider?: string;
+}
+
 export interface PoiSummary {
   id: string;
+  poiId?: string;
   name: string;
   category: string;
   categories: string[];
   relevance: number;
   coordinates: Coordinates;
+  geometry: Point;
   summary: string;
+  narrationPreview?: string;
   attribution: PoiAttribution;
+  images?: PoiImage[];
 }
 
 export interface RouteSummary {
   routeId: string;
   polyline: string;
+  geometry: LineString;
   durationMinutes: number;
   distanceKm: number;
   score: number;
+  scoreNormalized: number;
+  scoreRank: number;
   scoreBreakdown: {
     poiCount: number;
     interestAlignment: number;
@@ -35,6 +50,37 @@ export interface RouteSummary {
   attribution: {
     source: string;
   };
+}
+
+export type ConversationRole = 'traveler' | 'assistant' | 'narrator';
+
+export interface ConversationTurn {
+  id: string;
+  role: ConversationRole;
+  voiceId?: string;
+  text: string;
+  createdAt: string;
+  synopsis?: string;
+}
+
+export interface ConversationAudioSegment {
+  id: string;
+  voiceId: string;
+  text: string;
+}
+
+export interface ConversationReplyPayload {
+  turn: ConversationTurn;
+  followUps: string[];
+  audioSegments: ConversationAudioSegment[];
+}
+
+export interface ConversationRequestPayload {
+  profileId?: string;
+  message: string;
+  routeId?: string;
+  routeName?: string;
+  interestTags?: string[];
 }
 
 export interface TripRequestPayload {

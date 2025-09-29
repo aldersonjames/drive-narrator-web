@@ -74,10 +74,13 @@ export class OpenRouteServiceClient {
       return this.buildMockResponse(request);
     }
 
+    const originCoord = this.normalizeCoordinate(request.origin);
+    const destinationCoord = this.normalizeCoordinate(request.destination);
+
     const normalized: RouteRequest = {
       ...request,
-      origin: this.normalizeCoordinate(request.origin),
-      destination: this.normalizeCoordinate(request.destination),
+      origin: originCoord,
+      destination: destinationCoord,
     };
 
     if (this.useMock) {
@@ -99,8 +102,8 @@ export class OpenRouteServiceClient {
 
     const body = {
       coordinates: [
-        [normalized.origin.lng, normalized.origin.lat],
-        [normalized.destination.lng, normalized.destination.lat],
+        [originCoord.lng, originCoord.lat],
+        [destinationCoord.lng, destinationCoord.lat],
       ],
       format: 'json',
       elevation: false,

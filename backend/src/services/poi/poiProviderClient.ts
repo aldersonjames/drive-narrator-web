@@ -1,6 +1,13 @@
 import crypto from 'node:crypto';
 
 import { resolveInterestTokens, resolveOpsCategoryIds } from './interestTaxonomy';
+import type { Point } from 'geojson';
+
+export interface PoiImage {
+  url: string;
+  altText?: string;
+  provider?: string;
+}
 
 export interface PoiQuery {
   routeId: string;
@@ -18,8 +25,11 @@ export interface PoiResult {
   categories: string[];
   relevance: number;
   coordinates: { lat: number; lng: number };
+  geometry: Point;
   summary: string;
+  narrationPreview?: string;
   attribution: { provider: string; sourceUrl?: string };
+  images?: PoiImage[];
   raw: unknown;
 }
 
@@ -210,6 +220,12 @@ export class PoiProviderClient {
         .map((entry) => entry.name?.toLowerCase())
         .filter((entry): entry is string => Boolean(entry));
       const geo = result.geocodes?.main ?? result.location;
+      const lat = geo?.latitude ?? 0;
+      const lng = geo?.longitude ?? 0;
+      const geometry: Point = {
+        type: 'Point',
+        coordinates: [lng, lat],
+      };
       return {
         poiId,
         name: result.name ?? 'Unknown POI',
@@ -217,14 +233,17 @@ export class PoiProviderClient {
         categories: canonicalCategories.length ? canonicalCategories : [categoryName.toLowerCase()],
         relevance: result.rating ? result.rating / 10 : 0.5,
         coordinates: {
-          lat: geo?.latitude ?? 0,
-          lng: geo?.longitude ?? 0,
+          lat,
+          lng,
         },
         summary: result.description ?? result.name ?? 'Point of interest',
+        geometry,
+        narrationPreview: (result.description ?? result.name ?? 'Point of interest').slice(0, 160),
         attribution: {
           provider: 'foursquare',
           sourceUrl: result.link ?? result.website,
         },
+        images: undefined,
         raw: result,
       } satisfies PoiResult;
     });
@@ -244,6 +263,11 @@ export class PoiProviderClient {
     geometry: { coordinates?: [number, number] };
   }): PoiResult {
     const { properties, geometry } = feature;
+    const [lng, lat] = geometry.coordinates ?? [0, 0];
+    const pointGeometry: Point = {
+      type: 'Point',
+      coordinates: [lng, lat],
+    };
 
     const opsCategories = properties.category_ids
       ? Object.values(properties.category_ids)
@@ -284,6 +308,17 @@ export class PoiProviderClient {
       });
     });
 
+    const rawDatasource = properties.datasource?.raw as
+      | {
+          image?: string;
+          preview_image?: string;
+          thumbnail?: string;
+          name?: string;
+        }
+      | undefined;
+    const imageUrl =
+      rawDatasource?.image ?? rawDatasource?.preview_image ?? rawDatasource?.thumbnail;
+
     return {
       poiId: properties.id?.toString() ?? crypto.randomUUID(),
       name: properties.name ?? 'Unknown point of interest',
@@ -291,11 +326,25 @@ export class PoiProviderClient {
       categories: Array.from(categoryTokens),
       relevance: properties.relevance ?? 1,
       coordinates: {
-        lat: geometry.coordinates?.[1] ?? 0,
-        lng: geometry.coordinates?.[0] ?? 0,
+        lat,
+        lng,
       },
       summary: properties.description ?? properties.name ?? 'Point of interest',
+      geometry: pointGeometry,
+      narrationPreview: (properties.description ?? properties.name ?? 'Point of interest').slice(
+        0,
+        160,
+      ),
       attribution: { provider: 'openpoiservice', sourceUrl: properties.datasource?.raw?.website },
+      images: imageUrl
+        ? [
+            {
+              url: imageUrl,
+              provider: 'openpoiservice',
+              altText: properties.name ?? rawDatasource?.name,
+            },
+          ]
+        : undefined,
       raw: feature,
     } satisfies PoiResult;
   }
@@ -354,24 +403,41 @@ export class PoiProviderClient {
 
   private buildMockPois(query: PoiQuery): PoiResult[] {
     const base = this.hashToNumber(query.routeId);
-    return ['Civil War Fort', 'Mountain Overlook', 'Historic Museum'].map((name, index) => ({
-      poiId: `${query.routeId}-poi-${index}`,
-      name,
-      category: (
-        query.interestTags[index % query.interestTags.length] ?? 'historical'
-      ).toLowerCase(),
-      categories: [
-        (query.interestTags[index % query.interestTags.length] ?? 'historical').toLowerCase(),
-      ],
-      relevance: 0.7 + index * 0.1,
-      coordinates: {
-        lat: base + index * 0.01,
-        lng: base / 2 + index * 0.02,
-      },
-      summary: `${name} — narrated highlight along the route`,
-      attribution: { provider: 'mock-data' },
-      raw: {},
-    }));
+    return ['Civil War Fort', 'Mountain Overlook', 'Historic Museum'].map((name, index) => {
+      const lat = base + index * 0.01;
+      const lng = base / 2 + index * 0.02;
+      const geometry: Point = {
+        type: 'Point',
+        coordinates: [lng, lat],
+      };
+      return {
+        poiId: `${query.routeId}-poi-${index}`,
+        name,
+        category: (
+          query.interestTags[index % query.interestTags.length] ?? 'historical'
+        ).toLowerCase(),
+        categories: [
+          (query.interestTags[index % query.interestTags.length] ?? 'historical').toLowerCase(),
+        ],
+        relevance: 0.7 + index * 0.1,
+        coordinates: {
+          lat,
+          lng,
+        },
+        geometry,
+        summary: `${name} — narrated highlight along the route`,
+        narrationPreview: `${name} — narrated highlight along the route`.slice(0, 160),
+        attribution: { provider: 'mock-data' },
+        images: [
+          {
+            url: `https://placehold.co/320x180?text=${encodeURIComponent(name)}`,
+            provider: 'mock-data',
+            altText: `${name} illustration`,
+          },
+        ],
+        raw: {},
+      } satisfies PoiResult;
+    });
   }
 
   private hashToNumber(value: string): number {

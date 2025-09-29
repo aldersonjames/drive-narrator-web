@@ -71,8 +71,10 @@ export const createPoisController = (deps: Dependencies) => {
         relevance: poi.relevance,
         coordinates: poi.coordinates,
         summary: poi.summary,
-        narrationPreview: poi.summary.slice(0, 120),
+        geometry: poi.geometry,
+        narrationPreview: poi.narrationPreview ?? poi.summary.slice(0, 160),
         attribution: poi.attribution,
+        images: poi.images ?? [],
       }));
 
       return res.status(200).json({

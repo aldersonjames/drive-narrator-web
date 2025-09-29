@@ -7,17 +7,22 @@ type PoiResponse = {
   name: string;
   category: string;
   coordinates: { lat: number; lng: number };
+  geometry: { type: string; coordinates: [number, number] };
   summary: string;
   narrationPreview: string;
   attribution: { provider: string };
+  images: Array<{ url: string }>;
 };
 
 type RouteResponse = {
   routeId: string;
   polyline: string;
+  geometry: { type: string; coordinates: number[][] };
   durationMinutes: number;
   distanceKm: number;
   score: number;
+  scoreNormalized: number;
+  scoreRank: number;
   scoreBreakdown: { poiCount: number; interestAlignment: number };
   pois: PoiResponse[];
   attribution: { source: string };
@@ -51,9 +56,15 @@ describe('POST /api/routes contract', () => {
       expect(route).toMatchObject({
         routeId: expect.any(String),
         polyline: expect.any(String),
+        geometry: expect.objectContaining({
+          type: expect.any(String),
+          coordinates: expect.any(Array),
+        }),
         durationMinutes: expect.any(Number),
         distanceKm: expect.any(Number),
         score: expect.any(Number),
+        scoreNormalized: expect.any(Number),
+        scoreRank: expect.any(Number),
         scoreBreakdown: expect.objectContaining({
           poiCount: expect.any(Number),
           interestAlignment: expect.any(Number),
@@ -67,9 +78,14 @@ describe('POST /api/routes contract', () => {
           name: expect.any(String),
           category: expect.any(String),
           coordinates: { lat: expect.any(Number), lng: expect.any(Number) },
+          geometry: expect.objectContaining({
+            type: expect.any(String),
+            coordinates: expect.any(Array),
+          }),
           summary: expect.any(String),
           narrationPreview: expect.any(String),
           attribution: expect.objectContaining({ provider: expect.any(String) }),
+          images: expect.any(Array),
         });
       });
     });

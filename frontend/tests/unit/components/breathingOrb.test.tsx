@@ -6,10 +6,10 @@ import userEvent from '@testing-library/user-event';
 import { BreathingOrb } from '../../../src/components/voice/BreathingOrb';
 
 describe('BreathingOrb component', () => {
-  it('announces listening and speaking states via aria-live region', async () => {
+  it('announces state transitions via aria-live region and controls', async () => {
     const user = userEvent.setup();
 
-    render(<BreathingOrb state="idle" />);
+    render(<BreathingOrb />);
 
     expect(screen.getByRole('status')).toHaveTextContent(/ready/i);
 
@@ -18,5 +18,8 @@ describe('BreathingOrb component', () => {
 
     await user.click(screen.getByRole('button', { name: /start speaking/i }));
     expect(screen.getByRole('status')).toHaveTextContent(/speaking/i);
+
+    await user.click(screen.getByRole('button', { name: /stop/i }));
+    expect(screen.getByRole('status')).toHaveTextContent(/ready/i);
   });
 });

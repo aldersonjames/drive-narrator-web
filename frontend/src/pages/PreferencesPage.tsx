@@ -86,7 +86,9 @@ export const PreferencesPage: React.FC = () => {
 
       <div style={{ marginTop: '2rem' }}>
         <h2>Voice feedback</h2>
-        <BreathingOrb status="idle" message="Listening preview" />
+        <BreathingOrb
+          messages={{ idle: 'Tap start listening for a preview', listening: 'Listening…' }}
+        />
       </div>
     </section>
   );

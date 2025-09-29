@@ -1,3 +1,5 @@
+/// <reference lib="webworker" />
+
 const CACHE_NAME = 'trip-narrator-cache-v1';
 const PRECACHE_URLS = ['/'];
 

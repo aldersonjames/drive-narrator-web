@@ -69,11 +69,23 @@
 - [ ] T064 Add Foursquare provider toggle surfaced via configuration UI once credentials are present, retaining read-only “locked” state when unavailable.
 - [ ] T065 Expand backend test suite for taxonomy/provider gating (filtering, OPS fallback, future Foursquare path) in `backend/tests/unit/services/` & `backend/tests/integration/`.
 
+## Phase 3.3b: Review Remediation & UI Foundation
+
+- [x] T066 Realign BreathingOrb component + tests to expose interactive controls, `aria-live` copy, and status telemetry (`frontend/src/components/voice/BreathingOrb.tsx`, `frontend/tests/unit/components/BreathingOrb.test.tsx`).
+- [ ] T067 Harden `useVoiceInput` for permission errors, `webkitSpeechRecognition` fallback, and transcript callbacks; cover with unit tests (`frontend/src/hooks/useVoiceInput.ts`, `frontend/tests/unit/hooks/useVoiceInput.test.ts`).
+- [x] T068 Upgrade planner map to MapLibre GL with route polylines, POI markers, and accessible legend synced to cards (`frontend/src/components/map/MapRoutes.tsx`, shared styles, new map utils).
+- [x] T069 Extend backend route and POI responses with GeoJSON geometries, normalized score data, and optional imagery hooks; update shared schemas/types and controller formatting (`backend/src/api/routes/routesController.ts`, `shared/types/tripNarrator.ts`).
+- [ ] T070 Surface POI imagery/placeholder metadata and photostrip support in frontend route cards plus tests (`frontend/src/components/map/MapRoutes.tsx`, `frontend/tests/unit/components/mapRoutes.test.tsx`).
+- [ ] T071 Align existing component tests with new props/markup (MapRoutes, BreathingOrb, planner integration) to restore green test suite after UI changes.
+- [x] T072 Implement assistant conversation service + `/api/conversation` endpoint for contextual voice replies (`backend/src/services/voice/conversationService.ts`, `backend/src/api/routes/conversationController.ts`).
+- [x] T073 Build voice conversation hook + console UI with TTS streaming and suggestions (`frontend/src/hooks/useVoiceConversation.ts`, `frontend/src/components/voice/ConversationConsole.tsx`).
+- [ ] T074 Style conversation console + map cards to match design glam (dark mode, imagery ribbons, animation polish).
+
 ## Phase 3.4: Integration & Hardening
 
-- [ ] T047 Integrate service worker build + registration in `frontend/src/main.tsx` and Vite config for precaching routes/POIs/audio.
-- [ ] T048 Configure backend env validation + secrets loading in `backend/src/config/env.ts` (zod schema, secure defaults).
-- [ ] T049 Add structured logging + redaction in `backend/src/utils/logger.ts` and apply middleware.
+- [ ] T047 Replace manual service worker with `vite-plugin-pwa`, exclude `/api` caching, add offline fallback page, and auto-update registration (`frontend/vite.config.ts`, `frontend/src/main.tsx`, `frontend/pwa/` assets).
+- [ ] T048 Introduce runtime request/response validation via Ajv or Zod for core controllers (`backend/src/api/routes/*.ts`) and document error payload contract.
+- [ ] T049 Add structured logging + redaction in `backend/src/utils/logger.ts`, apply middleware, and normalize error codes across controllers.
 - [ ] T050 Implement deletion workflow (preferences + trip history) with audit log in `backend/src/services/privacy/deletionService.ts` and controller wiring.
 - [ ] T051 Add rate limiting & CORS configuration in `backend/src/api/middleware/securityMiddleware.ts` aligned with constitution.
 - [ ] T052 Configure CI pipelines (`.github/workflows/ci.yml`) running lint, unit, integration, axe, Playwright suites plus coverage gates.
@@ -97,16 +109,19 @@
 - Backend repositories/services (T021–T029) block controllers (T030–T034) and middleware (T035).
 - Controllers (T030–T034) block integration tasks T047–T055.
 - Frontend context/services (T038–T040) precede components (T041–T045) and offline worker (T046).
+- Taxonomy/provider work (T061–T065) informs UI/provider toggles (T064, T068–T070).
+- Backend geometry/schema updates (T069) must land before MapLibre integration (T068) and photostrip work (T070).
+- Component/test alignment tasks (T066, T071) should complete prior to running CI upgrades in T052.
 - Integration hardening (T047–T055) precedes polish tasks (T056–T060).
 
 ## Parallel Execution Example
 
 ```
-# After T004–T020 are authored, run these in parallel (different files, no overlap):
-- T004: backend/tests/contract/routes.post.test.ts
-- T005: backend/tests/contract/pois.get.test.ts
-- T012: backend/tests/unit/services/routeScoring.test.ts
-- T015: frontend/tests/unit/components/breathingOrb.test.tsx
+# Example parallel slice once backend schemas (T069) are ready:
+- T066: BreathingOrb accessibility updates + tests
+- T068: MapLibre integration scaffolding (separate file tree)
+- T047: Vite PWA wiring (build tooling only)
+- T048: Request/response validation harness in backend controllers
 ```
 
 ## Notes

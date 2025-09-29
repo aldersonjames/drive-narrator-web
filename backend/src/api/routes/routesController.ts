@@ -5,6 +5,7 @@ import type {
   RouteResponse,
   RouteFeature,
 } from '../../services/routing/openRouteServiceClient';
+import type { LineString } from 'geojson';
 import type { PoiProviderClient, PoiResult } from '../../services/poi/poiProviderClient';
 import type { PoiFilteringService } from '../../services/poi/poiFilteringService';
 import type { RouteScoringService, RouteScore } from '../../services/scoring/routeScoringService';
@@ -22,29 +23,44 @@ const formatRoutes = (routeResponse: RouteResponse, scores: RouteScore[], pois: 
     featureMap.set(`route-${index}`, feature);
   });
 
+  const maxScore = scores.length ? Math.max(...scores.map((entry) => entry.score)) : 1;
+  const minScore = scores.length ? Math.min(...scores.map((entry) => entry.score)) : 0;
+  const denominator = maxScore - minScore;
+
   return scores.map((scoreEntry, index) => {
     const feature =
       featureMap.get(scoreEntry.routeId) ??
       routeResponse.features[index] ??
       routeResponse.features[0];
+    const geometry: LineString = {
+      type: 'LineString',
+      coordinates: feature?.geometry.coordinates ?? [],
+    };
+    const normalized = denominator === 0 ? 1 : (scoreEntry.score - minScore) / denominator;
     const poisForRoute = pois.map((poi) => ({
+      id: poi.poiId,
       poiId: poi.poiId,
       name: poi.name,
       category: poi.category,
       categories: poi.categories,
       relevance: poi.relevance,
       coordinates: poi.coordinates,
+      geometry: poi.geometry,
       summary: poi.summary,
-      narrationPreview: poi.summary.slice(0, 120),
+      narrationPreview: poi.narrationPreview ?? poi.summary.slice(0, 160),
       attribution: poi.attribution,
+      images: poi.images ?? [],
     }));
 
     return {
       routeId: scoreEntry?.routeId ?? `route-${index}`,
       polyline: feature ? JSON.stringify(feature.geometry.coordinates) : '[]',
+      geometry,
       durationMinutes: feature ? feature.properties.summary.duration / 60 : 0,
       distanceKm: feature ? feature.properties.summary.distance / 1000 : 0,
       score: scoreEntry?.score ?? 0,
+      scoreNormalized: Number(normalized.toFixed(3)),
+      scoreRank: index + 1,
       scoreBreakdown: scoreEntry?.scoreBreakdown ?? {
         poiCount: 0,
         interestAlignment: 0,

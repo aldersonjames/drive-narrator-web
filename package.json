@@ -24,10 +24,13 @@
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^14.6.1",
     "@types/jest": "^30.0.0",
+    "@types/jest-axe": "^3.5.9",
+    "@types/node": "^24.6.0",
     "@types/supertest": "^6.0.3",
     "@typescript-eslint/eslint-plugin": "^7.16.1",
     "@typescript-eslint/parser": "^7.16.1",
     "axe-core": "^4.10.3",
+    "concurrently": "^9.1.2",
     "eslint": "^8.57.0",
     "eslint-plugin-jsx-a11y": "^6.9.0",
     "eslint-plugin-react": "^7.37.2",
@@ -40,7 +43,6 @@
     "supertest": "^7.1.4",
     "ts-jest": "^29.4.4",
     "turbo": "^2.5.6",
-    "concurrently": "^9.1.2",
     "wait-on": "^7.2.0"
   },
   "packageManager": "npm@10.8.1"

@@ -18,7 +18,7 @@ export const NarrationTimeline: React.FC<NarrationTimelineProps> = ({ route }) =
   return (
     <ol className="narration-timeline">
       {route.pois.map((poi) => (
-        <li key={poi.poiId} className="narration-timeline__item">
+        <li key={poi.id ?? poi.poiId} className="narration-timeline__item">
           <h4>{poi.name}</h4>
           <p>{poi.summary}</p>
           <small>{poi.attribution.provider.toUpperCase()}</small>

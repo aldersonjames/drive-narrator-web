@@ -6,5 +6,8 @@
     "lint": "echo 'TODO: shared lint pending implementation'",
     "test": "echo 'TODO: shared tests pending implementation'",
     "build": "echo 'TODO: shared build pending implementation'"
+  },
+  "devDependencies": {
+    "@types/geojson": "^7946.0.16"
   }
 }
