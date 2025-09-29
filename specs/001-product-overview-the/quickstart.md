@@ -1,53 +1,100 @@
 # Quickstart — Trip Narrator Voice-First MVP
 
-1. **Install prerequisites**
-   - Node.js 20.x, npm 10+, bun 1.2+ (for Spec Kit tooling)
-   - Map provider token, OpenRouteService key, POI provider key, OpenAI API key (stored in env files)
+## 1. Install prerequisites
 
-2. **Bootstrap the workspace**
-   ```bash
-   npm install
-   npm run bootstrap   # if using npm workspaces for frontend/backend packages
-   ```
+- Node.js 20.x (LTS), npm 10+
+- bun 1.2+ (already installed for Spec Kit CLI builds)
+- Git, Docker Desktop (for backend container later)
+- API credentials: Mapbox token, OpenRouteService key, POI provider key (OPS/Foursquare), OpenAI API key
 
-3. **Configure environment variables**
-   - Frontend `.env.local`: `VITE_MAPBOX_TOKEN`, `VITE_OPENAI_ENDPOINT`, feature flags for offline caching and accessibility experiments.
-   - Backend `.env`: `ORS_API_KEY`, `POI_API_KEY`, `OPENAI_API_KEY`, `DATABASE_URL=sqlite://./data/trip_narrator.db`, `CACHE_TTL_SECONDS`.
+## 2. Bootstrap workspace
 
-4. **Run database migrations**
-   ```bash
-   npm run backend:migrate
-   ```
+```bash
+npm install            # installs root dev tooling + sets up husky
+npm run bootstrap      # ensures frontend/, backend/, shared/ deps resolve (workspaces)
+```
 
-5. **Start services**
-   ```bash
-   npm run backend:dev
-   npm run frontend:dev
-   ```
+## 3. Configure environment variables
 
-6. **Execute automated tests**
-   ```bash
-   npm run test:backend
-   npm run test:frontend
-   npm run test:accessibility
-   ```
+Create the following files (never commit them):
 
-7. **Manual verification checklist**
-   - Deny microphone permission to confirm text fallback.
-   - Request a sample trip and verify route/POI cards render with breathing orb feedback.
-   - Toggle dark/light themes and inspect focus states and contrast ratios.
-   - Run data deletion flow and confirm SQLite entries removed plus audit log updated.
+- `backend/.env`
+  ```env
+  ORS_API_KEY=changeme
+  POI_PROVIDER=ops
+  POI_API_KEY=optional-for-foursquare
+  OPENAI_API_KEY=changeme
+  DATABASE_URL=sqlite://./data/trip_narrator.db
+  CACHE_TTL_SECONDS=900
+  RETENTION_DAYS=30
+  ```
+- `frontend/.env.local`
+  ```env
+  VITE_MAPBOX_TOKEN=changeme
+  VITE_OPENAI_ENDPOINT=https://api.openai.com/v1/realtime
+  VITE_FEATURE_OFFLINE_AUDIO=true
+  ```
 
-8. **Build for deployment**
-   ```bash
-   npm run build:frontend
-   npm run build:backend
-   docker build -t trip-narrator-backend ./backend
-   ```
+## 4. Validate tooling
 
-9. **Next steps**
-   - Follow `/tasks` output to drive implementation.
-   - Update this quickstart as new tooling emerges (e.g., CI scripts, additional services).
+```bash
+npm run lint           # currently echoes for each workspace; will execute once implementations land
+npm run test           # placeholder until suites are written (Phase 3.2 tasks)
+npx lint-staged --dry-run
+```
 
----
-*Maintained alongside `plan.md`; revise after Phase 1 artifacts finalize.*
+## 5. Workspace structure (post-bootstrap)
+
+```
+frontend/
+  package.json         # scoped scripts for lint/test/build (placeholders for now)
+  tsconfig.json
+  src/                 # React components, hooks, context
+  tests/               # unit/integration, accessibility, e2e specs
+
+backend/
+  package.json         # Node/Express service scripts
+  tsconfig.json
+  src/                 # api/, services/, db/, utils/
+  tests/               # contract, integration, unit suites
+
+shared/
+  package.json
+  tsconfig.json
+  schemas/             # JSON schema + OpenAPI fragments
+  types/               # shared TypeScript definitions
+```
+
+## 6. Husky hook
+
+Husky is preconfigured to run `lint-staged` on commit. To re-install after a clean checkout:
+
+```bash
+npm install
+```
+
+(Husky’s `prepare` script runs automatically.)
+
+## 7. Common commands (once implementations exist)
+
+```bash
+npm run lint -- --filter=frontend    # lint frontend workspace
+npm run test -- --filter=backend     # run backend test suite via turbo
+npm run format                       # prettify repo
+```
+
+## 8. Manual smoke checklist (baseline)
+
+- Deny microphone permission → text fallback should appear.
+- Trigger sample trip (mock data until APIs wired) → verify breathing orb transitions.
+- Toggle themes → inspect contrast & focus outlines.
+- Simulate deletion flow → confirm records removed and audit log entry written (once implementation complete).
+
+## 9. Deployment prep (later tasks)
+
+```bash
+npm run build        # once scripts implemented, builds frontend + backend
+docker build -t trip-narrator-backend ./backend
+```
+
+Update this document as scripts mature and new services are added.

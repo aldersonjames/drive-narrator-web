@@ -1,0 +1,12 @@
+{
+  "name": "@trip-narrator/backend",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "lint": "echo 'TODO: backend lint pipeline pending implementation'",
+    "test": "echo 'TODO: backend test suite pending implementation'",
+    "typecheck": "tsc --project tsconfig.json --noEmit",
+    "build": "echo 'TODO: build command pending implementation'",
+    "dev": "echo 'TODO: dev server pending implementation'"
+  }
+}

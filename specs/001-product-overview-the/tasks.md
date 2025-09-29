@@ -4,30 +4,33 @@
 **Prerequisites**: plan.md (required), research.md, data-model.md, contracts/
 
 ## Phase 3.1: Setup & Research Closeout
+
 - [x] T001 Capture completed findings for R1–R7 in `specs/001-product-overview-the/research.md` with Decision/Rationale/Alternatives summaries.
 - [x] T002 Scaffold workspace packages (`package.json`, `tsconfig.json`, `turbo.json`) and directories `frontend/`, `backend/`, `shared/` per plan.md.
 - [x] T003 Configure unified linting/formatting/test scripts (`.eslintrc.cjs`, `.prettierrc`, `package.json` scripts, Husky hook) enforcing constitution rules.
 
 ## Phase 3.2: Tests First (TDD)
-- [ ] T004 [P] Author contract test for `POST /api/routes` in `backend/tests/contract/routes.post.test.ts` (mock routing + POI services).
-- [ ] T005 [P] Author contract test for `GET /api/pois?routeId=` in `backend/tests/contract/pois.get.test.ts` (ensures filtering + notices).
-- [ ] T006 [P] Author contract test for `POST /api/trips` in `backend/tests/contract/trips.post.test.ts` (persistence + consent checks).
-- [ ] T007 [P] Author contract test for `GET /api/preferences` in `backend/tests/contract/preferences.get.test.ts` (defaults + stored voices).
-- [ ] T008 [P] Author contract test for `PATCH /api/preferences` in `backend/tests/contract/preferences.patch.test.ts` (voice updates + validation).
-- [ ] T009 [P] Write integration flow test for multi-route ranking in `backend/tests/integration/trip-planning.flow.test.ts` (A/B route coverage notices).
-- [ ] T010 [P] Write integration flow test for voice persona selection + transcripts in `backend/tests/integration/voice-selection.flow.test.ts`.
-- [ ] T011 [P] Write integration flow test for trip resume + history deletion in `backend/tests/integration/trip-resume.flow.test.ts`.
-- [ ] T012 [P] Create unit test for route scoring service in `backend/tests/unit/services/routeScoring.test.ts` (diversity, tie-breakers).
-- [ ] T013 [P] Create unit test for POI filtering/caching in `backend/tests/unit/services/poiFilter.test.ts`.
-- [ ] T014 [P] Create unit test for narration scheduler in `backend/tests/unit/services/narrationScheduler.test.ts` (advance timing logic).
-- [ ] T015 [P] Build React Testing Library test for breathing orb state machine in `frontend/tests/unit/components/breathingOrb.test.tsx`.
-- [ ] T016 [P] Build component test for map route rendering with color legend in `frontend/tests/unit/components/mapRoutes.test.tsx`.
-- [ ] T017 [P] Build integration test for preferences page voice selection + transcript toggle in `frontend/tests/integration/preferencesPage.test.tsx`.
-- [ ] T018 [P] Build Playwright E2E test for offline voice fallback in `frontend/tests/e2e/offline-voice.spec.ts`.
-- [ ] T019 [P] Add service worker caching unit test in `frontend/tests/unit/serviceWorkerCaching.test.ts` (routes/POIs/audio queues).
-- [ ] T020 [P] Add accessibility regression test with axe for trip planner page in `frontend/tests/accessibility/tripPlanner.a11y.test.tsx`.
+
+- [ ] T004 [P] Author contract test for `POST /api/routes` in `backend/tests/contract/routes.post.test.ts` validating 201 response, multi-route payload schema, and limited-options notice when <2 routes.
+- [ ] T005 [P] Author contract test for `GET /api/pois?routeId=` in `backend/tests/contract/pois.get.test.ts` covering filtered results, “no matches” advisory, and attribution fields.
+- [ ] T006 [P] Author contract test for `POST /api/trips` in `backend/tests/contract/trips.post.test.ts` asserting consent requirement, persisted IDs, and 201 vs 409 when duplicate pending trip.
+- [ ] T007 [P] Author contract test for `GET /api/preferences` in `backend/tests/contract/preferences.get.test.ts` verifying default voice options and persisted traveler profile response.
+- [ ] T008 [P] Author contract test for `PATCH /api/preferences` in `backend/tests/contract/preferences.patch.test.ts` covering schema validation, interest taxonomy updates, and deletion requests.
+- [ ] T009 [P] Write integration flow test for multi-route ranking in `backend/tests/integration/trip-planning.flow.test.ts` simulating ORS/POI mocks, ensuring scoring + notices.
+- [ ] T010 [P] Write integration flow test for voice persona selection + transcripts in `backend/tests/integration/voice-selection.flow.test.ts` verifying narration scheduling + transcript persistence.
+- [ ] T011 [P] Write integration flow test for trip resume + history deletion in `backend/tests/integration/trip-resume.flow.test.ts` ensuring retention windows & soft-delete audit logs.
+- [ ] T012 [P] Create unit test for route scoring service in `backend/tests/unit/services/routeScoring.test.ts` covering relevance weighting, tie-breakers, and caching hints.
+- [ ] T013 [P] Create unit test for POI filtering/caching in `backend/tests/unit/services/poiFilter.test.ts` ensuring taxonomy mapping, provider attribution, and cache invalidation.
+- [ ] T014 [P] Create unit test for narration scheduler in `backend/tests/unit/services/narrationScheduler.test.ts` validating ETA offsets, near-start suppression, and offline queue behaviour.
+- [ ] T015 [P] Build React Testing Library test for breathing orb state machine in `frontend/tests/unit/components/breathingOrb.test.tsx` covering idle/listening/speaking/error transitions + aria-live updates.
+- [ ] T016 [P] Build component test for map route rendering with color legend in `frontend/tests/unit/components/mapRoutes.test.tsx` asserting polylines, markers, and keyboard focus management.
+- [ ] T017 [P] Build integration test for preferences page voice selection + transcript toggle in `frontend/tests/integration/preferencesPage.test.tsx` ensuring persisted settings and consent prompts.
+- [ ] T018 [P] Build Playwright E2E test for offline voice fallback in `frontend/tests/e2e/offline-voice.spec.ts` (simulate offline, confirm queue + caption display).
+- [ ] T019 [P] Add service worker caching unit test in `frontend/tests/unit/serviceWorkerCaching.test.ts` verifying routes/POIs/audio caching matrix and eviction policy.
+- [ ] T020 [P] Add accessibility regression test with axe for trip planner page in `frontend/tests/accessibility/tripPlanner.a11y.test.tsx` asserting aria landmarks, captions, focus order, contrast.
 
 ## Phase 3.3: Core Implementation (execute after T004–T020 are red)
+
 - [ ] T021 Create Knex migrations for `traveler_profiles` and repository in `backend/src/db/migrations/2025092901_create_traveler_profiles.ts` & `backend/src/db/repositories/travelerProfilesRepository.ts`.
 - [ ] T022 Create Knex migrations for `trip_requests`, `route_options`, `points_of_interest`, `narration_sessions` in `backend/src/db/migrations/2025092902_create_trip_domain.ts` with referential keys.
 - [ ] T023 Implement repositories for trips, routes, POIs, narration sessions in `backend/src/db/repositories/*Repository.ts` with privacy-aware queries.
@@ -56,6 +59,7 @@
 - [ ] T046 Implement offline queue & caching worker in `frontend/src/services/offline/offlineQueue.ts` plus service worker in `frontend/src/sw.ts`.
 
 ## Phase 3.4: Integration & Hardening
+
 - [ ] T047 Integrate service worker build + registration in `frontend/src/main.tsx` and Vite config for precaching routes/POIs/audio.
 - [ ] T048 Configure backend env validation + secrets loading in `backend/src/config/env.ts` (zod schema, secure defaults).
 - [ ] T049 Add structured logging + redaction in `backend/src/utils/logger.ts` and apply middleware.
@@ -67,6 +71,7 @@
 - [ ] T055 Implement performance budget checks (bundle analyzer + lighthouse) in `frontend/package.json` scripts `test:performance`.
 
 ## Phase 3.5: Polish & Validation
+
 - [ ] T056 Execute accessibility audit playbook; document findings in `docs/accessibility-report.md`.
 - [ ] T057 Execute performance + load smoke tests (k6 or autocannon) for routing endpoints; capture metrics in `docs/performance-report.md`.
 - [ ] T058 Finalize end-to-end manual validation script in `docs/manual-test-plan.md` (voice, offline, deletion).
@@ -74,15 +79,17 @@
 - [ ] T060 Run final regression (all npm scripts) and ensure green CI before requesting review.
 
 ## Dependencies
+
 - T001 → T002 (research informs scaffold scope).
 - T002/T003 must complete before any test or implementation work.
-- T004–T020 must exist and fail before starting T021–T046.
+- T004–T020 must exist and fail before starting T021–T046 (enforce TDD).
 - Backend repositories/services (T021–T029) block controllers (T030–T034) and middleware (T035).
 - Controllers (T030–T034) block integration tasks T047–T055.
 - Frontend context/services (T038–T040) precede components (T041–T045) and offline worker (T046).
 - Integration hardening (T047–T055) precedes polish tasks (T056–T060).
 
 ## Parallel Execution Example
+
 ```
 # After T004–T020 are authored, run these in parallel (different files, no overlap):
 - T004: backend/tests/contract/routes.post.test.ts
@@ -92,6 +99,7 @@
 ```
 
 ## Notes
+
 - Mark tasks complete only when associated tests or artifacts exist in git.
 - Maintain TDD discipline: do not implement code covered by pending tests until the related test task is complete.
 - Use feature branches (`001-...`) and commit per task with conventional prefixes.

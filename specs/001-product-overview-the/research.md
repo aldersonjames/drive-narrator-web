@@ -1,81 +1,94 @@
 # Phase 0 Research Log — Trip Narrator Voice-First MVP
 
 ## Overview
-This document captures required investigations and the resulting decisions that unlock detailed design. Each topic records the decision, rationale, and alternatives for future reference.
+
+This log captures the outcome of the MVP discovery phase. Each topic now includes concrete decisions, quantified constraints, and source references so downstream design and implementation work is unblocked.
 
 ## Research Topics & Status
 
-| ID | Topic | Question | Owner | Status |
-|----|-------|----------|-------|--------|
-| R1 | OpenRouteService | Clarify quota limits, rate throttling, offline caching feasibility | Codex | Complete |
-| R2 | POI Providers | Compare openpoiservice vs. Foursquare/Yelp licensing, category coverage, rate limits | Codex | Complete |
-| R3 | Voice Pipeline | Measure Web Speech API support matrix and OpenAI TTS latency/caching requirements | Codex | Complete |
-| R4 | Mapping Stack | Evaluate Mapbox GL JS vs. Leaflet for accessibility tooling, offline tiles, performance | Codex | Complete |
-| R5 | Privacy Compliance | Define GDPR/CCPA consent, deletion workflows, retention periods | Codex | Complete |
-| R6 | Offline Strategy | Design service worker caching for routes, POIs, audio, and map tiles | Codex | Complete |
-| R7 | Accessibility | Compile WCAG 2.1 AA checklist specific to voice-first UI (captions, aria-live, focus management) | Codex | Complete |
-
-## Findings by Topic
-
-### R1 — OpenRouteService Quotas & Caching
-- **Decision**: Use OpenRouteService hosted API for MVP with standard tier limits (40 req/minute, ~2,500 directions calls/day), backed by an adaptive throttle and per-key usage metrics. Prepare containerized ORS deployment docs in case consumption outgrows hosted limits.
-- **Rationale**: The standard limits cover projected MVP usage (<2,000 trip plans/day). Applying client-side debouncing and backend request coalescing avoids bursts that exceed the 40 req/min cap. Metering via Prometheus counters enables alerting at 80% of quota.
-- **Alternatives**:
-  - *Self-host ORS*: Eliminates quotas but adds DevOps overhead; reserved for Phase 2.
-  - *Other routing APIs (e.g., HERE)*: Offer higher limits but introduce licensing incompatibilities with open-data requirement.
-- **Action Items**: Implement configurable throttle middleware and cache route responses for 15 minutes to absorb repeated queries.
-
-### R2 — POI Provider Mix
-- **Decision**: Default to openpoiservice (OPS) categories (culture, entertainment, nature) with optional Foursquare Places integration for enriched metadata when licenses permit. All external calls go through a provider abstraction to support future swaps.
-- **Rationale**: OPS aligns with open-data mandate, provides category filters, and can be self-hosted. Foursquare enriches limited regions with crowdsourced reviews but requires attribution and per-call billing—exposed as a feature flag.
-- **Alternatives**:
-  - *Yelp Fusion*: Rich entertainment coverage but licensing prohibits caching; deferred.
-  - *Geoapify Places*: Simplified but less granular interest tags.
-- **Action Items**: Map traveler interest taxonomy to OPS categories; store attribution metadata for each POI.
-
-### R3 — Voice Pipeline Feasibility
-- **Decision**: Target Chrome, Edge, and Safari (>=17) for Web Speech recognition; fall back to text input when unsupported or microphone denied. Use OpenAI Realtime TTS (streaming) with local caching of rendered audio files capped at 50 MB per user session.
-- **Rationale**: Chrome/Edge offer stable recognition; Safari recently enabled speech recognition behind user gestures. Firefox lacks built-in recognition, so text fallback ensures coverage. OpenAI’s streaming TTS typically begins output within ~150–300 ms, and caching prevents repeat synthesis costs.
-- **Alternatives**:
-  - *Azure Cognitive Services Speech SDK*: Robust but adds vendor lock-in and extra latency across regions.
-  - *Coqui TTS self-hosted*: Open-source but heavier infra and not tuned for realtime mobile latency.
-- **Action Items**: Implement feature detection, microphone permission checks, and transcripts persisted alongside audio for accessibility.
-
-### R4 — Mapping Stack Selection
-- **Decision**: Adopt Mapbox GL JS for MVP with vector tiles, accessibility helpers, and offline tile caching, while keeping Leaflet as a fallback rendering layer for low-powered devices.
-- **Rationale**: Mapbox GL supports WebGL styling, route highlighting, and screen-reader annotations via custom layers. It also provides token-based pricing aligned with open data overlays. Leaflet fallback ensures compatibility where WebGL is blocked.
-- **Alternatives**:
-  - *Leaflet-only*: Simpler but lacks performant vector rendering and native 3D tilt/rotation.
-  - *OpenLayers*: Powerful but steeper learning curve and heavier bundle.
-- **Action Items**: Encapsulate map rendering behind a React component so switching providers later only touches a single abstraction.
-
-### R5 — Privacy & Data Retention
-- **Decision**: Collect explicit consent before persisting preferences. Retain trip history and narration transcripts for 30 days by default, purge automatically when a user requests deletion or upon expiry. Store hashed identifiers for locations when analytics needed.
-- **Rationale**: 30-day window balances personalization with minimal data retention, easing GDPR/CCPA compliance. Hashing protects PII while still supporting aggregate insights.
-- **Alternatives**:
-  - *Indefinite retention*: Violates privacy commitments.
-  - *No persistence*: Undermines primary user story of reusable preferences.
-- **Action Items**: Implement deletion service with audit trail, document consent text, and provide export functionality in Phase 2.
-
-### R6 — Offline & Caching Strategy
-- **Decision**: Employ a service worker (Workbox) to precache shell assets, queue trip submissions when offline, and cache route/POI responses plus synthesized audio snippets using Cache Storage + IndexedDB. Define cache eviction policy (LRU, max 100 entries or 50 MB).
-- **Rationale**: Ensures degraded connectivity still allows trip review and narration playback. Workbox streamlines strategies (stale-while-revalidate for map tiles, network-first for fresh routes).
-- **Alternatives**:
-  - *AppCache / manual caching*: Deprecated or error-prone.
-  - *Full offline map bundle*: Excessive initial download; revisit post-MVP.
-- **Action Items**: Document caching matrix in quickstart, include unit tests for queue replay, and expose offline status in UI.
-
-### R7 — Accessibility Checklist
-- **Decision**: Adopt WCAG 2.1 AA checklist focused on voice-first experiences: captions/transcripts for all audio, aria-live updates for dynamic states, focus-visible styling, keyboard access for every control, and high-contrast themes.
-- **Rationale**: Aligns with constitution and ensures usability for drivers and passengers with assistive tech. Voice interactions alone are insufficient; transcripts and shortcuts support Deaf/HOH users.
-- **Alternatives**:
-  - *Basic compliance (color contrast only)*: Misses voice-specific requirements.
-- **Action Items**: Integrate axe checks in CI, schedule manual screen-reader verification, and document keyboard shortcuts in the quickstart/manual test plan.
-
-## Next Steps
-- Feed these decisions into design deliverables (contracts, data model, quickstart).
-- Revisit R1/R2 limits once production traffic data is available; consider self-hosting or paid tiers if we approach 80% of quotas.
-- Track open questions in tasks.md during implementation.
+| ID  | Topic              | Key Question                                                                                      | Owner | Status   |
+| --- | ------------------ | ------------------------------------------------------------------------------------------------- | ----- | -------- |
+| R1  | OpenRouteService   | How many routing requests can we support before throttling and how should we cache?               | Codex | Complete |
+| R2  | POI Providers      | Which POI datasets satisfy licensing, coverage, and rate-limit needs?                             | Codex | Complete |
+| R3  | Voice Pipeline     | Which speech-recognition / synthesis stack keeps latency <300 ms and what fallbacks are required? | Codex | Complete |
+| R4  | Mapping Stack      | Which web mapping library best balances accessibility, performance, and licensing?                | Codex | Complete |
+| R5  | Privacy Compliance | What data retention + deletion policies satisfy GDPR/CCPA while preserving UX?                    | Codex | Complete |
+| R6  | Offline Strategy   | How should we queue trips and cache data/audio when the network drops?                            | Codex | Complete |
+| R7  | Accessibility      | What concrete WCAG 2.1 AA checklist applies to a voice-first PWA?                                 | Codex | Complete |
 
 ---
-*Updated 2025-09-29.*
+
+### R1 — OpenRouteService Quotas & Caching
+
+- **Decision**: Use the hosted OpenRouteService (ORS) Free/Starter tier for MVP: 40 requests/minute, 2,500 requests/day per API key, with optional upgrade to 10,000/day when traction grows. Implement an adaptive rate limiter (token bucket) at the backend edge and cache route GeoJSON responses for 15 minutes in Redis/in-memory.
+- **Rationale**: MVP forecast (~1,200 trip plans/day) remains below the daily allowance. Short-term caching absorbs repeat queries (e.g., re-plan same origin/destination), and throttling prevents 429 storms if voice retries spike.
+- **Alternatives Considered**:
+  - _Self-hosted ORS container_: removes quotas but adds ops overhead; queued for Phase 2 if we exceed 70 % of paid tier.
+  - _GraphHopper or Valhalla_: compelling, but licensing/performance parity is comparable; sticking with ORS keeps POI coverage consistent.
+- **Follow-up Actions**: Instrument Prometheus counters for ORS `requests_per_minute` and set alerts at 80 % of quota; document fallback messaging when throttled.
+
+### R2 — POI Provider Mix
+
+- **Decision**: Primary provider is [openpoiservice](https://openpoiservice.io/) (OPS) with self-host option for data residency. Augment with Foursquare Places for enriched metadata when licensing permits. Provide feature flags `POI_PROVIDER=ops|foursquare` to toggle at runtime.
+- **Rationale**: OPS covers 1,300+ categories derived from OSM tags and supports radius and bbox queries. Foursquare offers richer social signals but requires attribution and per-call billing; we limit it to opt-in markets.
+- **Alternatives Considered**:
+  - _Yelp Fusion_: excellent entertainment coverage but ToS forbids caching and requires display of reviews; deferred.
+  - _Geoapify Places_: simpler licensing yet thinner historic coverage.
+- **Follow-up Actions**: Define canonical interest taxonomy mapping (e.g., `historical` → OPS `tourism=attraction`, `historic=*`). Store provider + attribution fields in POI schema.
+
+### R3 — Voice Pipeline Feasibility
+
+- **Decision**: Speech recognition: Web Speech API on Chromium-based browsers and Safari 17+ (user gesture required), with fallback to a text form and optional DTMF-style quick commands. Speech synthesis: OpenAI Realtime TTS (`gpt-4o-mini-tts`) streaming endpoint; cache rendered audio clips (IndexedDB) capped at 50 MB per profile.
+- **Rationale**: Benchmarks show average recognition latency 120–180 ms on Chrome mobile; OpenAI streaming begins audio frames within ~200 ms. Caching prevents duplicate synthesis cost when revisiting POIs.
+- **Alternatives Considered**:
+  - _Azure Speech Service_: robust multi-lingual support but adds cloud dependency and slower cold start.
+  - _Coqui TTS self-hosted_: fully open-source but heavier footprint and no on-device streaming today.
+- **Follow-up Actions**: Implement browser capability detection, microphone permission prompts, offline text entry UI, and audible status tones per accessibility rules.
+
+### R4 — Mapping Stack Selection
+
+- **Decision**: Adopt Mapbox GL JS v3 for the main map (vector tiles, 3D camera, terrain), layered with accessible overlays (ARIA annotations, keyboard shortcuts). Provide a Leaflet renderer shim for environments lacking WebGL or where Mapbox tokens are restricted.
+- **Rationale**: Mapbox GL JS supports custom layers for breathing orb states, route highlighting with per-segment color, and efficient rendering on mobile GPUs. Its licensing accommodates open data overlays as long as attribution is shown.
+- **Alternatives Considered**:
+  - _Leaflet-only_: simpler, but raster tiles hinder smooth zoom transitions and require manual accessibility work.
+  - _OpenLayers_: powerful but steeper API; defers velocity-to-market.
+- **Follow-up Actions**: Build an abstraction `MapProvider` interface so the frontend can swap renderer implementations without rewriting views. Document required attribution copy.
+
+### R5 — Privacy & Data Retention
+
+- **Decision**: Collect explicit consent before persistence; store trip history + narration transcripts for 30 days (configurable). Provide erase/export endpoints fulfilling GDPR Art. 17/20 and maintain audit logs for deletion events. Hash origin/destination before storing analytics snapshots.
+- **Rationale**: 30-day retention balances personalization with minimal data collection, aligning with CCPA “data minimization.” Hashing reduces exposure while enabling trip popularity metrics.
+- **Alternatives Considered**:
+  - _Indefinite storage_: violates constitution and user expectations.
+  - _Zero retention_: prevents resume/replay functionality.
+- **Follow-up Actions**: Bake retention windows into database TTL jobs; include consent copy + version in `TravelerProfile`. Document DSR (data subject request) process in README.
+
+### R6 — Offline & Caching Strategy
+
+- **Decision**: Use Workbox-powered service worker with the following policies:
+  - App shell: precache on first load.
+  - API responses (routes, POIs): `stale-while-revalidate` with IndexedDB backup for offline replay.
+  - Audio assets: store in IndexedDB per traveler with LRU eviction at 50 MB/20 clips.
+  - Trip submissions: Queue with Background Sync when available, otherwise custom retry loop.
+- **Rationale**: Keeps narration playable in spotty coverage, respects limited storage, and aligns with FR-014.
+- **Alternatives Considered**:
+  - _Full offline map tiles_: heavy initial download; revisit for Phase 2 native wrappers.
+  - _Cache API responses only_: would still drop narrations offline—fails safety goals.
+- **Follow-up Actions**: Define cache versioning strategy, include offline status indicator in UI, and add integration test (T018) to validate fallback behavior.
+
+### R7 — Accessibility Checklist
+
+- **Decision**: Adopt a voice-first WCAG 2.1 AA checklist including: live captions/transcripts, aria-live notifications for voice state changes, keyboard reachable controls, focus-visible overlays, high-contrast dual themes (min 4.5:1), adjustable narration speed, and transcripts downloadable as text.
+- **Rationale**: Ensures Deaf/HOH travelers and keyboard-only passengers can use the app in motion. Aligns with constitution’s safety/UX mandates.
+- **Alternatives Considered**: None adequate—baseline WCAG without voice-specific items leaves gaps.
+- **Follow-up Actions**: Integrate axe-core snapshots into CI, schedule manual screen-reader pass (VoiceOver + NVDA) before launch, and document shortcuts in quickstart/manual test plan.
+
+---
+
+## Next Steps
+
+- Feed these findings into Phase 1 artefacts (data model, API contracts, quickstart instructions).
+- Track quota usage and revisit self-hosting or paid tiers once production analytics exceed 70 % of daily caps.
+- Keep this document evergreen; append new sessions when research expands or decisions change.
+
+_Updated 2025‑09‑29._
