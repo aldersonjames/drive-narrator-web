@@ -16,7 +16,7 @@ This repository contains the Spec Kit–driven implementation of the Trip Narrat
   - DB Schema Plan: `specs/001-product-overview-the/db-schema.md`
   - Task List: `specs/001-product-overview-the/tasks.md`
 
-Phase 3.2 (test scaffolding) is complete; Phase 3.3 implementation is next (starting with migrations T021/T022).
+Phase 3.3 (services) in progress—migrations, repositories, and backend service layer are complete (T021–T029). Next milestone: Express controllers / API wiring (T030–T034) followed by frontend UI wiring.
 
 ## Architecture Overview
 
