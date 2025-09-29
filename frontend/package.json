@@ -6,8 +6,9 @@
     "lint": "echo 'TODO: frontend lint pipeline pending implementation'",
     "test": "echo 'TODO: frontend test suite pending implementation'",
     "typecheck": "tsc --project tsconfig.json --noEmit",
-    "build": "echo 'TODO: build command pending implementation'",
-    "dev": "echo 'TODO: dev server pending implementation'"
+    "build": "vite build",
+    "dev": "vite",
+    "preview": "vite preview"
   },
   "dependencies": {
     "react": "^18.3.1",
@@ -15,6 +16,8 @@
   },
   "devDependencies": {
     "@types/react": "^18.3.3",
-    "@types/react-dom": "^18.3.1"
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^5.0.4",
+    "vite": "^7.1.7"
   }
 }
