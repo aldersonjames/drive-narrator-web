@@ -1,0 +1,357 @@
+openapi: 3.1.0
+info:
+  title: Trip Narrator API
+  version: 0.1.0
+  description: REST contract for MVP voice-first trip narrator services.
+servers:
+  - url: https://api.trip-narrator.local
+paths:
+  /api/routes:
+    post:
+      summary: Generate ranked route options for a trip request
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RouteRequest'
+      responses:
+        '201':
+          description: Ranked route options generated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RouteResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /api/pois:
+    get:
+      summary: Fetch filtered POIs for a route
+      parameters:
+        - name: routeId
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: interests
+          in: query
+          required: false
+          schema:
+            type: string
+            description: Comma-separated canonical interest tags
+      responses:
+        '200':
+          description: POIs filtered for the route
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PoiResponse'
+        '404':
+          description: Route not found
+  /api/trips:
+    post:
+      summary: Create a new trip request
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TripCreateRequest'
+      responses:
+        '201':
+          description: Trip created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TripResource'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          description: Duplicate pending trip
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      summary: Bulk delete trip history before a given date
+      parameters:
+        - name: x-traveler-id
+          in: header
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                deleteBefore:
+                  type: string
+                  format: date-time
+      responses:
+        '202':
+          description: Deletion queued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeletionResponse'
+  /api/trips/{tripId}/resume:
+    get:
+      summary: Resume an existing trip
+      parameters:
+        - name: tripId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: x-traveler-id
+          in: header
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Trip context ready for resumption
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TripResource'
+        '404':
+          description: Trip not found
+  /api/preferences:
+    get:
+      summary: Retrieve traveler preferences
+      parameters:
+        - name: x-traveler-id
+          in: header
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Traveler profile/preferences
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TravelerProfile'
+    patch:
+      summary: Update traveler preferences or request deletion
+      parameters:
+        - name: x-traveler-id
+          in: header
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PreferencesUpdate'
+      responses:
+        '200':
+          description: Preferences updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TravelerProfile'
+        '202':
+          description: Deletion requested
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeletionResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+  /api/voices:
+    get:
+      summary: List available voice personas
+      responses:
+        '200':
+          description: Voice catalog
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  voices:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/VoiceResource'
+components:
+  schemas:
+    RouteRequest:
+      type: object
+      required: [origin, destination, departureTime, interests]
+      properties:
+        origin:
+          type: string
+        destination:
+          type: string
+        departureTime:
+          type: string
+          format: date-time
+        interests:
+          type: array
+          items:
+            type: string
+    RouteResponse:
+      type: object
+      properties:
+        requestId:
+          type: string
+        routes:
+          type: array
+          items:
+            type: object
+            properties:
+              routeId:
+                type: string
+              polyline:
+                type: string
+              durationMinutes:
+                type: number
+              distanceKm:
+                type: number
+              score:
+                type: number
+              scoreBreakdown:
+                type: object
+                properties:
+                  poiCount: { type: number }
+                  interestAlignment: { type: number }
+              pois:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PoiResource'
+              attribution:
+                type: object
+                properties:
+                  source: { type: string }
+        notices:
+          type: array
+          items:
+            $ref: '#/components/schemas/Notice'
+    PoiResource:
+      type: object
+      properties:
+        poiId: { type: string }
+        name: { type: string }
+        category: { type: string }
+        relevance: { type: number }
+        coordinates:
+          type: object
+          properties:
+            lat: { type: number }
+            lng: { type: number }
+        summary: { type: string }
+        narrationPreview: { type: string }
+        attribution:
+          type: object
+          properties:
+            provider: { type: string }
+    PoiResponse:
+      type: object
+      properties:
+        routeId: { type: string }
+        pois:
+          type: array
+          items:
+            $ref: '#/components/schemas/PoiResource'
+        notices:
+          type: array
+          items:
+            $ref: '#/components/schemas/Notice'
+    TripCreateRequest:
+      type: object
+      required: [profileId, origin, destination, departureTime, interests, consentVersion]
+      properties:
+        profileId: { type: string }
+        origin: { type: string }
+        destination: { type: string }
+        departureTime: { type: string, format: date-time }
+        interests:
+          type: array
+          items: { type: string }
+        consentVersion: { type: string }
+    TripResource:
+      type: object
+      properties:
+        tripId: { type: string }
+        profileId: { type: string }
+        status: { type: string, enum: [draft, planned, completed, archived, pending_deletion] }
+        origin: { type: string }
+        destination: { type: string }
+        departureTime: { type: string, format: date-time }
+        routes:
+          type: array
+          items:
+            type: object
+            properties:
+              routeId: { type: string }
+              score: { type: number }
+    TravelerProfile:
+      type: object
+      properties:
+        profileId: { type: string }
+        assistantVoiceId: { type: string }
+        narrationVoiceId: { type: string }
+        interestTags:
+          type: array
+          items: { type: string }
+        transcriptOptIn: { type: boolean }
+        consentVersion: { type: string }
+        updatedAt: { type: string, format: date-time }
+    PreferencesUpdate:
+      type: object
+      properties:
+        assistantVoiceId: { type: string }
+        narrationVoiceId: { type: string }
+        interestTags:
+          type: array
+          items: { type: string }
+        transcriptOptIn: { type: boolean }
+        deleteProfile: { type: boolean }
+    DeletionResponse:
+      type: object
+      properties:
+        requestId: { type: string }
+        status: { type: string }
+        message: { type: string }
+    VoiceResource:
+      type: object
+      properties:
+        voiceId: { type: string }
+        displayName: { type: string }
+        provider: { type: string }
+        locale: { type: string }
+        styleTags:
+          type: array
+          items: { type: string }
+    Notice:
+      type: object
+      properties:
+        code: { type: string }
+        message: { type: string }
+    ErrorResponse:
+      type: object
+      properties:
+        code: { type: string }
+        message: { type: string }
+  responses:
+    BadRequest:
+      description: Invalid request payload
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    TooManyRequests:
+      description: Rate limit exceeded from upstream provider
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'

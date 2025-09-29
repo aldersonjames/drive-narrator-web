@@ -8,6 +8,9 @@
 - [x] T001 Capture completed findings for R1–R7 in `specs/001-product-overview-the/research.md` with Decision/Rationale/Alternatives summaries.
 - [x] T002 Scaffold workspace packages (`package.json`, `tsconfig.json`, `turbo.json`) and directories `frontend/`, `backend/`, `shared/` per plan.md.
 - [x] T003 Configure unified linting/formatting/test scripts (`.eslintrc.cjs`, `.prettierrc`, `package.json` scripts, Husky hook) enforcing constitution rules.
+- [x] T003a Capture validation matrix and state transitions in `specs/001-product-overview-the/data-model.md`.
+- [x] T003b Author OpenAPI contract in `specs/001-product-overview-the/contracts/openapi.yaml`.
+- [x] T003c Document database schema plan in `specs/001-product-overview-the/db-schema.md`.
 
 ## Phase 3.2: Tests First (TDD)
 
