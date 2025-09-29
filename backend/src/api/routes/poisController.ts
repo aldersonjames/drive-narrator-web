@@ -64,12 +64,14 @@ export const createPoisController = (deps: Dependencies) => {
 
       const formatted = filtered.pois.map((poi) => ({
         id: poi.poiId,
+        poiId: poi.poiId,
         name: poi.name,
         category: poi.category,
         categories: poi.categories,
         relevance: poi.relevance,
         coordinates: poi.coordinates,
         summary: poi.summary,
+        narrationPreview: poi.summary.slice(0, 120),
         attribution: poi.attribution,
       }));
 

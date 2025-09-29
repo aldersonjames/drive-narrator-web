@@ -2,7 +2,7 @@ import type { Request, Response } from 'express';
 
 import type { VoiceDefinition } from '../../../shared/types/tripNarrator';
 
-const DEFAULT_VOICES: VoiceDefinition[] = [
+export const DEFAULT_VOICES: VoiceDefinition[] = [
   {
     voiceId: 'assistant-default',
     provider: 'openai',
@@ -23,6 +23,34 @@ const DEFAULT_VOICES: VoiceDefinition[] = [
     displayName: 'Serene Narrator',
     locale: 'en-US',
     styleTags: ['calm', 'soothing'],
+  },
+  {
+    voiceId: 'assistant-calm',
+    provider: 'openai',
+    displayName: 'Assistant Calm',
+    locale: 'en-US',
+    styleTags: ['assistant', 'calm'],
+  },
+  {
+    voiceId: 'assistant-serene',
+    provider: 'openai',
+    displayName: 'Assistant Serene',
+    locale: 'en-US',
+    styleTags: ['assistant', 'serene'],
+  },
+  {
+    voiceId: 'narrator-story',
+    provider: 'openai',
+    displayName: 'Narrator Story',
+    locale: 'en-US',
+    styleTags: ['storytelling', 'expressive'],
+  },
+  {
+    voiceId: 'narrator-storyteller',
+    provider: 'openai',
+    displayName: 'Narrator Storyteller',
+    locale: 'en-US',
+    styleTags: ['storytelling', 'lively'],
   },
 ];
 

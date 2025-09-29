@@ -301,8 +301,27 @@ export class PoiProviderClient {
   }
 
   async fetchOpsCategoryCatalog(): Promise<Record<string, unknown>> {
-    if (!this.opsApiKey) {
-      throw new Error('POI_API_KEY missing for openpoiservice');
+    if (!this.opsApiKey || this.useMock) {
+      return {
+        historic: {
+          id: 220,
+          children: {
+            historic: {
+              battlefield: 228,
+              memorial: 237,
+            },
+          },
+        },
+        scenic: {
+          id: 330,
+          children: {
+            tourism: {
+              viewpoint: 627,
+              attraction: 622,
+            },
+          },
+        },
+      } satisfies Record<string, unknown>;
     }
 
     const url = new URL(`${this.opsBaseUrl}/v1/pois`);

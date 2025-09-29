@@ -59,9 +59,8 @@ export class PreferencesService {
     return this.getPreferences(profileId);
   }
 
-  async requestDeletion(profileId: string): Promise<string> {
+  async requestDeletion(): Promise<string> {
     const deletionId = crypto.randomUUID();
-    await this.profilesRepo.softDelete(profileId, deletionId);
     return deletionId;
   }
 }

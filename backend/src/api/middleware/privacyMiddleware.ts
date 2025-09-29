@@ -17,8 +17,13 @@ export const createPrivacyMiddleware = (deps: Dependencies) => {
     res: Response,
     next: NextFunction,
   ): Promise<void> {
+    const headerProfileId =
+      (typeof req.headers['x-traveler-id'] === 'string' && req.headers['x-traveler-id']) ||
+      (typeof req.headers['x-profile-id'] === 'string' && req.headers['x-profile-id']) ||
+      undefined;
+
     const profileId =
-      (req.headers['x-profile-id'] as string | undefined) ??
+      headerProfileId ??
       (typeof req.query.profileId === 'string' ? req.query.profileId : undefined) ??
       (typeof req.body?.profileId === 'string' ? req.body.profileId : undefined);
 
@@ -36,12 +41,10 @@ export const createPrivacyMiddleware = (deps: Dependencies) => {
     }
 
     if (profile.deleted_at) {
-      res
-        .status(423)
-        .json({
-          code: 'PROFILE_PENDING_DELETION',
-          message: 'Traveler profile is pending deletion.',
-        });
+      res.status(423).json({
+        code: 'PROFILE_PENDING_DELETION',
+        message: 'Traveler profile is pending deletion.',
+      });
       return;
     }
 
@@ -55,6 +58,11 @@ export const createPrivacyMiddleware = (deps: Dependencies) => {
           .json({ code: 'CONSENT_UPDATE_REQUIRED', message: 'Traveler consent must be renewed.' });
         return;
       }
+    }
+
+    if (!res.locals || typeof res.locals !== 'object') {
+      // eslint-disable-next-line no-param-reassign
+      res.locals = {};
     }
 
     (res.locals as { privacy?: PrivacyContext }).privacy = { profileId };

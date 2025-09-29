@@ -46,6 +46,16 @@ export class NarrationScheduler {
       .sort((a, b) => a.etaOffsetSeconds - b.etaOffsetSeconds)
       .forEach((poi) => {
         const etaMs = poi.etaOffsetSeconds * 1000;
+        if (poi.etaOffsetSeconds <= minLead) {
+          immediateQueue.push(poi.poiId);
+          const immediateTime = new Date().toISOString();
+          scheduled.push({
+            poiId: poi.poiId,
+            scheduledAt: immediateTime,
+            mode: 'immediate',
+          });
+          return;
+        }
         const desiredStart = tripStartTime + etaMs - minLead * 1000;
         const now = Date.now();
 

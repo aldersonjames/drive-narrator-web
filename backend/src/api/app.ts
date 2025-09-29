@@ -1,3 +1,5 @@
+import crypto from 'node:crypto';
+
 import express from 'express';
 import type { Request, Response } from 'express';
 import bodyParser from 'body-parser';
@@ -9,6 +11,7 @@ import { createTripsRouter } from './routes/tripsController';
 import { createPreferencesController } from './routes/preferencesController';
 import { createVoicesController } from './routes/voicesController';
 import { createPrivacyMiddleware } from './middleware/privacyMiddleware';
+import { createNarrationsController } from './routes/narrationsController';
 import {
   InMemoryTravelerProfilesRepository,
   InMemoryTripsRepository,
@@ -48,6 +51,29 @@ void travelerProfilesRepo.create({
   transcriptOptIn: true,
   consentVersion: '1.0.0',
   consentAcceptedAt: new Date().toISOString(),
+});
+
+void travelerProfilesRepo.create({
+  profileId: 'traveler-voice',
+  displayName: 'Voice Persona Traveler',
+  interestTags: ['historical'],
+  assistantVoiceId: 'assistant-default',
+  narrationVoiceId: 'narrator-default',
+  transcriptOptIn: false,
+  consentVersion: '1.0.0',
+  consentAcceptedAt: new Date().toISOString(),
+});
+
+void tripsRepo.create({
+  tripId: 'trip-abc',
+  profileId: 'traveler-001',
+  originRaw: 'Raleigh, NC',
+  originHash: crypto.createHash('sha1').update('Raleigh, NC').digest('hex'),
+  destinationRaw: 'Asheville, NC',
+  destinationHash: crypto.createHash('sha1').update('Asheville, NC').digest('hex'),
+  departureTime: new Date(Date.now() + 3600_000).toISOString(),
+  interestTags: ['historical'],
+  status: 'planned',
 });
 
 const privacyMiddleware = createPrivacyMiddleware({
@@ -91,6 +117,7 @@ app.use(
     routeOptionsRepo,
     poiRepo,
     narrationRepo: narrationSessionsRepo,
+    preferencesService,
   }),
 );
 
@@ -98,6 +125,8 @@ app.get('/api/preferences', privacyMiddleware, preferencesController.get);
 app.patch('/api/preferences', privacyMiddleware, preferencesController.patch);
 
 app.get('/api/voices', createVoicesController());
+
+app.post('/api/narrations', privacyMiddleware, createNarrationsController({ preferencesService }));
 
 app.use((err: Error, _req: Request, res: Response) => {
   res.status(500).json({ code: 'INTERNAL_ERROR', message: err.message });
