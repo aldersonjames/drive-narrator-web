@@ -37,12 +37,12 @@
 - [x] T021 Create Knex migrations for `traveler_profiles` and repository in `backend/src/db/migrations/2025092901_create_traveler_profiles.ts` & `backend/src/db/repositories/travelerProfilesRepository.ts`.
 - [x] T022 Create Knex migrations for `trip_requests`, `route_options`, `points_of_interest`, `narration_sessions` in `backend/src/db/migrations/2025092902_create_trip_domain.ts` with referential keys.
 - [x] T023 Implement repositories for trips, routes, POIs, narration sessions in `backend/src/db/repositories/*Repository.ts` with privacy-aware queries.
-- [ ] T024 Implement OpenRouteService client with retry + caching in `backend/src/services/routing/openRouteServiceClient.ts` (using env vars).
-- [ ] T025 Implement POI provider client abstraction in `backend/src/services/poi/poiProviderClient.ts` with source attribution.
-- [ ] T026 Implement POI filtering service in `backend/src/services/poi/poiFilteringService.ts` (interest taxonomy + no-match notice logic).
-- [ ] T027 Implement route scoring service in `backend/src/services/scoring/routeScoringService.ts` (count, diversity, relevance weights).
-- [ ] T028 Implement narration scheduler in `backend/src/services/narration/narrationScheduler.ts` (ETA offsets + avoidance of immediate POIs).
-- [ ] T029 Implement preferences service in `backend/src/services/preferences/preferencesService.ts` (voice selections, deletion flow).
+- [x] T024 Implement OpenRouteService client with retry + caching in `backend/src/services/routing/openRouteServiceClient.ts` (using env vars).
+- [x] T025 Implement POI provider client abstraction in `backend/src/services/poi/poiProviderClient.ts` with source attribution.
+- [x] T026 Implement POI filtering service in `backend/src/services/poi/poiFilteringService.ts` (interest taxonomy + no-match notice logic).
+- [x] T027 Implement route scoring service in `backend/src/services/scoring/routeScoringService.ts` (count, diversity, relevance weights).
+- [x] T028 Implement narration scheduler in `backend/src/services/narration/narrationScheduler.ts` (ETA offsets + avoidance of immediate POIs).
+- [x] T029 Implement preferences service in `backend/src/services/preferences/preferencesService.ts` (voice selections, deletion flow).
 - [ ] T030 Implement Express router for `/api/routes` in `backend/src/api/routes/routesController.ts` wiring clients + scoring.
 - [ ] T031 Implement Express router for `/api/pois` in `backend/src/api/routes/poisController.ts` returning filtered POIs + notices.
 - [ ] T032 Implement Express router for `/api/trips` in `backend/src/api/routes/tripsController.ts` covering create/list/resume/delete.
