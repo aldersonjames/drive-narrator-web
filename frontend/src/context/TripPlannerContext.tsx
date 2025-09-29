@@ -38,8 +38,8 @@ export interface PlannerState {
 const TripPlannerContext = createContext<PlannerState | undefined>(undefined);
 
 const API_BASE =
-  (typeof import.meta !== 'undefined' ? import.meta.env.VITE_API_BASE_URL : undefined) ??
-  process.env.REACT_APP_API_BASE_URL ??
+  (typeof import.meta !== 'undefined' ? import.meta.env?.VITE_API_BASE_URL : undefined) ??
+  (typeof process !== 'undefined' ? process.env?.REACT_APP_API_BASE_URL : undefined) ??
   '/api';
 
 async function safeFetch<T>(input: RequestInfo, init?: RequestInit): Promise<T> {

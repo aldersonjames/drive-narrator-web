@@ -85,6 +85,10 @@ npm run test -- --filter=@trip-narrator/backend  # run backend jest suite via tu
 npm run format                           # prettify repo
 ```
 
+```bash
+npm run dev    # launches backend + frontend via Vite (http://localhost:5173)
+```
+
 ### API Endpoints (dev harness)
 
 - `POST /api/routes` — generate candidate trips and scored POIs

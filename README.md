@@ -100,6 +100,7 @@ Reference values are documented in `specs/001-product-overview-the/quickstart.md
 npm run lint          # turbo-run lint across workspaces (placeholder until implementations exist)
 npm run test          # turbo-run test suites (currently red until implementation)
 npm run format        # prettier --write .
+npm run dev           # start backend (express) and frontend (vite) together
 ```
 
 Husky pre-commit hook runs `lint-staged` to enforce ESLint + Prettier.

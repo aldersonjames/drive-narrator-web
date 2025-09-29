@@ -51,15 +51,15 @@
 - [x] T035 Wire authentication + consent middleware in `backend/src/api/middleware/privacyMiddleware.ts` (consent checks, deletion triggers).
 - [x] T036 Implement caching layer (Redis-like fallback via in-memory) in `backend/src/utils/cache.ts` with TTL from config.
 - [x] T037 Implement shared type definitions in `shared/types/tripNarrator.ts` and JSON schemas in `shared/schemas/*.json`.
-- [ ] T038 Implement React context for trip planner state in `frontend/src/context/TripPlannerContext.tsx` (preferences, routes, POIs).
-- [ ] T039 Implement Web Speech voice input hook in `frontend/src/hooks/useVoiceInput.ts` (mic permission, fallback).
-- [ ] T040 Implement voice output service in `frontend/src/services/voice/voiceOutputService.ts` (OpenAI TTS streaming + captions cache).
-- [ ] T041 Build breathing orb component in `frontend/src/components/voice/BreathingOrb.tsx` with aria-live updates.
-- [ ] T042 Build map routes component in `frontend/src/components/map/MapRoutes.tsx` using Mapbox GL (color legend, markers, highlights).
-- [ ] T043 Build preferences page in `frontend/src/pages/PreferencesPage.tsx` (interest taxonomy, voice selection, consent toggles).
-- [ ] T044 Build trip planner page in `frontend/src/pages/TripPlannerPage.tsx` (origin/destination form, route list, breathing orb wiring).
-- [ ] T045 Build narration timeline overlay component in `frontend/src/components/voice/NarrationTimeline.tsx` (upcoming POIs with captions).
-- [ ] T046 Implement offline queue & caching worker in `frontend/src/services/offline/offlineQueue.ts` plus service worker in `frontend/src/sw.ts`.
+- [x] T038 Implement React context for trip planner state in `frontend/src/context/TripPlannerContext.tsx` (preferences, routes, POIs).
+- [x] T039 Implement Web Speech voice input hook in `frontend/src/hooks/useVoiceInput.ts` (mic permission, fallback).
+- [x] T040 Implement voice output service in `frontend/src/services/voice/voiceOutputService.ts` (OpenAI TTS streaming + captions cache).
+- [x] T041 Build breathing orb component in `frontend/src/components/voice/BreathingOrb.tsx` with aria-live updates.
+- [x] T042 Build map routes component in `frontend/src/components/map/MapRoutes.tsx` using Mapbox GL (color legend, markers, highlights).
+- [x] T043 Build preferences page in `frontend/src/pages/PreferencesPage.tsx` (interest taxonomy, voice selection, consent toggles).
+- [x] T044 Build trip planner page in `frontend/src/pages/TripPlannerPage.tsx` (origin/destination form, route list, breathing orb wiring).
+- [x] T045 Build narration timeline overlay component in `frontend/src/components/voice/NarrationTimeline.tsx` (upcoming POIs with captions).
+- [x] T046 Implement offline queue & caching worker in `frontend/src/services/offline/offlineQueue.ts` plus service worker in `frontend/src/sw.ts`.
 
 ## Phase 3.3a: Taxonomy & Provider Enhancements
 

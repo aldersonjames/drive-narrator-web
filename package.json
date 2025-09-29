@@ -12,7 +12,11 @@
     "lint": "turbo run lint",
     "test": "turbo run test",
     "format": "prettier --write .",
-    "prepare": "husky"
+    "prepare": "husky",
+    "dev": "npm run dev:app",
+    "dev:app": "concurrently -k \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:backend": "npm run dev --workspace @trip-narrator/backend",
+    "dev:frontend": "wait-on http://localhost:3000/api/voices && npm run dev --workspace @trip-narrator/frontend"
   },
   "devDependencies": {
     "@playwright/test": "^1.55.1",
@@ -35,7 +39,9 @@
     "prettier": "^3.3.3",
     "supertest": "^7.1.4",
     "ts-jest": "^29.4.4",
-    "turbo": "^2.5.6"
+    "turbo": "^2.5.6",
+    "concurrently": "^9.1.2",
+    "wait-on": "^7.2.0"
   },
   "packageManager": "npm@10.8.1"
 }
