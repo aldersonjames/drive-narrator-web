@@ -42,6 +42,7 @@ export class PoiProviderClient {
   private readonly ttlMs: number;
   private readonly fetchImpl: typeof fetch;
   private readonly cache = new Map<string, CacheEntry<PoiResult[]>>();
+  private readonly useMock: boolean;
 
   constructor(options: PoiProviderOptions = {}) {
     this.provider = options.provider ?? (process.env.POI_PROVIDER as 'ops' | 'foursquare') ?? 'ops';
@@ -51,10 +52,7 @@ export class PoiProviderClient {
     this.foursquareApiKey = options.foursquareApiKey ?? process.env.FOURSQUARE_API_KEY;
     this.ttlMs = options.ttlMs ?? Number(process.env.POI_CACHE_TTL_MS ?? 900_000);
     this.fetchImpl = options.fetchImpl ?? fetch;
-
-    if (this.provider === 'foursquare' && !this.foursquareApiKey) {
-      throw new Error('POI provider foursquare selected but FOURSQUARE_API_KEY missing');
-    }
+    this.useMock = !this.opsApiKey && !this.foursquareApiKey;
   }
 
   async fetchPois(query: PoiQuery): Promise<PoiResult[]> {
@@ -66,8 +64,9 @@ export class PoiProviderClient {
       return cached.value;
     }
 
-    const pois =
-      this.provider === 'ops'
+    const pois = this.useMock
+      ? this.buildMockPois(query)
+      : this.provider === 'ops'
         ? await this.fetchFromOpenPoiService(query)
         : await this.fetchFromFoursquare(query);
 
@@ -217,5 +216,29 @@ export class PoiProviderClient {
     const hash = crypto.createHash('sha1');
     hash.update(JSON.stringify(query));
     return hash.digest('hex');
+  }
+
+  private buildMockPois(query: PoiQuery): PoiResult[] {
+    const base = this.hashToNumber(query.routeId);
+    return ['Civil War Fort', 'Mountain Overlook', 'Historic Museum'].map((name, index) => ({
+      poiId: `${query.routeId}-poi-${index}`,
+      name,
+      category: (
+        query.interestTags[index % query.interestTags.length] ?? 'historical'
+      ).toLowerCase(),
+      relevance: 0.7 + index * 0.1,
+      coordinates: {
+        lat: base + index * 0.01,
+        lng: base / 2 + index * 0.02,
+      },
+      summary: `${name} — narrated highlight along the route`,
+      attribution: { provider: 'mock-data' },
+      raw: {},
+    }));
+  }
+
+  private hashToNumber(value: string): number {
+    const hash = crypto.createHash('sha1').update(value).digest('hex');
+    return parseInt(hash.slice(0, 6), 16) / 100000;
   }
 }

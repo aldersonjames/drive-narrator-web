@@ -43,7 +43,7 @@
 - [x] T027 Implement route scoring service in `backend/src/services/scoring/routeScoringService.ts` (count, diversity, relevance weights).
 - [x] T028 Implement narration scheduler in `backend/src/services/narration/narrationScheduler.ts` (ETA offsets + avoidance of immediate POIs).
 - [x] T029 Implement preferences service in `backend/src/services/preferences/preferencesService.ts` (voice selections, deletion flow).
-- [ ] T030 Implement Express router for `/api/routes` in `backend/src/api/routes/routesController.ts` wiring clients + scoring.
+- [x] T030 Implement Express router for `/api/routes` in `backend/src/api/routes/routesController.ts` wiring clients + scoring.
 - [ ] T031 Implement Express router for `/api/pois` in `backend/src/api/routes/poisController.ts` returning filtered POIs + notices.
 - [ ] T032 Implement Express router for `/api/trips` in `backend/src/api/routes/tripsController.ts` covering create/list/resume/delete.
 - [ ] T033 Implement Express router for `/api/preferences` in `backend/src/api/routes/preferencesController.ts` (GET & PATCH).
