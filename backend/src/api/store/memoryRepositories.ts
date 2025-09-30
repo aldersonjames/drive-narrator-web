@@ -280,3 +280,37 @@ export class InMemoryNarrationSessionsRepository {
     });
   }
 }
+
+export interface DeletionAuditEntry {
+  audit_id: string;
+  profile_id: string;
+  scope: string;
+  created_at: string;
+  metadata: string | null;
+}
+
+export interface DeletionAuditRecordCreate {
+  auditId: string;
+  profileId: string;
+  scope: string;
+  createdAt: string;
+  metadata?: Record<string, unknown> | null;
+}
+
+export class InMemoryDeletionAuditRepository {
+  private entries: DeletionAuditEntry[] = [];
+
+  async record(entry: DeletionAuditRecordCreate): Promise<void> {
+    this.entries.push({
+      audit_id: entry.auditId,
+      profile_id: entry.profileId,
+      scope: entry.scope,
+      created_at: entry.createdAt,
+      metadata: entry.metadata ? JSON.stringify(entry.metadata) : null,
+    });
+  }
+
+  async all(): Promise<DeletionAuditEntry[]> {
+    return [...this.entries];
+  }
+}

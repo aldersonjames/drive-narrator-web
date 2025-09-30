@@ -36,6 +36,7 @@ describe('PATCH /api/preferences contract', () => {
     expect(response.body).toMatchObject({
       status: 'pending-deletion',
       message: expect.stringContaining('deletion requested'),
+      tripCount: expect.any(Number),
     });
   });
 

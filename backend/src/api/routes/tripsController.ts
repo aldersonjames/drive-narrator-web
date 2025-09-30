@@ -1,11 +1,14 @@
 import { Router, Response } from 'express';
 import crypto from 'node:crypto';
+import { z } from 'zod';
 
 import type { TripsRepository } from '../../db/repositories/tripsRepository';
 import type { RouteOptionsRepository } from '../../db/repositories/routeOptionsRepository';
 import type { PointsOfInterestRepository } from '../../db/repositories/pointsOfInterestRepository';
 import type { NarrationSessionsRepository } from '../../db/repositories/narrationSessionsRepository';
 import type { PreferencesService } from '../../services/preferences/preferencesService';
+import type { DeletionService } from '../../services/privacy/deletionService';
+import { validate } from '../../utils/validation';
 
 interface Dependencies {
   tripsRepo: Pick<TripsRepository, 'create' | 'findActiveByProfile' | 'findById' | 'update'>;
@@ -13,6 +16,7 @@ interface Dependencies {
   poiRepo: Pick<PointsOfInterestRepository, 'deleteByRouteId'>;
   narrationRepo: Pick<NarrationSessionsRepository, 'deleteByTripId'>;
   preferencesService: PreferencesService;
+  deletionService: DeletionService;
 }
 
 const toSummary = (record: {
@@ -35,6 +39,31 @@ const toSummary = (record: {
   status: record.status,
   createdAt: record.created_at,
   updatedAt: record.updated_at,
+});
+
+const interestArray = (value: unknown): string[] => {
+  if (Array.isArray(value)) {
+    return value
+      .flatMap((entry) => (typeof entry === 'string' ? entry.split(',') : []))
+      .map((entry) => entry.trim())
+      .filter(Boolean);
+  }
+  if (typeof value === 'string') {
+    return value
+      .split(',')
+      .map((token) => token.trim())
+      .filter(Boolean);
+  }
+  return [];
+};
+
+const createTripSchema = z.object({
+  profileId: z.string().optional(),
+  origin: z.string().min(1),
+  destination: z.string().min(1),
+  departureTime: z.string().optional(),
+  interestTags: z.array(z.string().min(1)).min(1),
+  consentVersion: z.string().min(1),
 });
 
 export const createTripsRouter = (deps: Dependencies): Router => {
@@ -92,39 +121,26 @@ export const createTripsRouter = (deps: Dependencies): Router => {
   });
 
   router.post('/', async (req, res) => {
-    const fallbackProfile =
-      typeof req.body?.profileId === 'string' ? req.body.profileId : undefined;
+    const payload = validate(createTripSchema, {
+      profileId: req.body?.profileId,
+      origin: req.body?.origin,
+      destination: req.body?.destination,
+      departureTime: req.body?.departureTime,
+      interestTags: interestArray(req.body?.interestTags ?? req.body?.interests),
+      consentVersion: req.body?.consentVersion,
+    });
+
+    const fallbackProfile = typeof payload.profileId === 'string' ? payload.profileId : undefined;
     const profileId = resolveProfileId(res, fallbackProfile);
-    const { origin, destination, departureTime, consentVersion } = req.body ?? {};
-    const interestCandidates = Array.isArray(req.body?.interestTags)
-      ? req.body?.interestTags
-      : Array.isArray(req.body?.interests)
-        ? req.body?.interests
-        : typeof req.body?.interests === 'string'
-          ? req.body.interests
-              .split(',')
-              .map((token: string) => token.trim())
-              .filter(Boolean)
-          : [];
-
-    if (!profileId || !origin || !destination || !interestCandidates.length) {
-      return res.status(400).json({
-        code: 'INVALID_REQUEST',
-        message: 'profileId, origin, destination, interestTags are required',
-      });
-    }
-
-    if (!consentVersion || typeof consentVersion !== 'string') {
-      return res
-        .status(400)
-        .json({ code: 'CONSENT_REQUIRED', message: 'Traveler consent version is required.' });
+    if (!profileId) {
+      return res.status(400).json({ code: 'INVALID_REQUEST', message: 'profileId is required' });
     }
 
     const activeTrips = await deps.tripsRepo.findActiveByProfile(profileId);
     const existingDraft = activeTrips.find(
       (trip) =>
-        trip.origin_raw === origin &&
-        trip.destination_raw === destination &&
+        trip.origin_raw === payload.origin &&
+        trip.destination_raw === payload.destination &&
         ['draft', 'planned'].includes(trip.status),
     );
 
@@ -141,12 +157,12 @@ export const createTripsRouter = (deps: Dependencies): Router => {
     const created = await deps.tripsRepo.create({
       tripId,
       profileId,
-      originRaw: origin,
-      originHash: crypto.createHash('sha1').update(origin).digest('hex'),
-      destinationRaw: destination,
-      destinationHash: crypto.createHash('sha1').update(destination).digest('hex'),
-      departureTime: departureTime ?? now,
-      interestTags: interestCandidates,
+      originRaw: payload.origin,
+      originHash: crypto.createHash('sha1').update(payload.origin).digest('hex'),
+      destinationRaw: payload.destination,
+      destinationHash: crypto.createHash('sha1').update(payload.destination).digest('hex'),
+      departureTime: payload.departureTime ?? now,
+      interestTags: payload.interestTags,
       status: 'planned',
       createdAt: now,
       updatedAt: now,
@@ -162,18 +178,7 @@ export const createTripsRouter = (deps: Dependencies): Router => {
       return res.status(404).json({ code: 'TRIP_NOT_FOUND', message: 'Trip not found' });
     }
 
-    await deps.tripsRepo.update(tripId, {
-      status: 'pending_deletion',
-      updatedAt: new Date().toISOString(),
-      lastAccessedAt: null,
-    });
-
-    const routeOptions = await deps.routeOptionsRepo.findByTripId(tripId);
-    for (const option of routeOptions) {
-      await deps.poiRepo.deleteByRouteId(option.route_id);
-    }
-    await deps.routeOptionsRepo.deleteByTripId(tripId);
-    await deps.narrationRepo.deleteByTripId(tripId);
+    await deps.deletionService.queueTripDeletion(tripId, 'user');
 
     return res.status(204).send();
   });
@@ -185,21 +190,13 @@ export const createTripsRouter = (deps: Dependencies): Router => {
       return res.status(400).json({ code: 'INVALID_REQUEST', message: 'profileId is required' });
     }
 
-    const activeTrips = await deps.tripsRepo.findActiveByProfile(profileId);
-    const updatedAt = new Date().toISOString();
-    await Promise.all(
-      activeTrips.map((trip) =>
-        deps.tripsRepo.update(trip.trip_id, {
-          status: 'pending_deletion',
-          updatedAt,
-        }),
-      ),
-    );
+    const result = await deps.deletionService.queueBulkTripDeletion(profileId);
 
     return res.status(202).json({
-      requestId: `del-${Date.now()}`,
+      requestId: result.requestId,
       status: 'pending',
       message: 'Trip history deletion queued.',
+      tripCount: result.count,
     });
   });
 

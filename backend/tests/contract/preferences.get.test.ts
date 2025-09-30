@@ -18,6 +18,11 @@ describe('GET /api/preferences contract', () => {
       interestTags: expect.any(Array),
       consentVersion: expect.any(String),
       updatedAt: expect.any(String),
+      poiProvider: expect.any(String),
+      providerCapabilities: {
+        ops: expect.objectContaining({ available: true }),
+        foursquare: expect.objectContaining({ available: expect.any(Boolean) }),
+      },
     });
   });
 });

@@ -17,37 +17,6 @@ export interface MapRoutesProps {
 
 const ROUTE_COLORS = ['#6366F1', '#0EA5E9', '#F97316', '#22C55E', '#EC4899'];
 
-const baseContainerStyle: React.CSSProperties = {
-  display: 'grid',
-  gap: '1.5rem',
-  gridTemplateColumns: 'minmax(0, 1fr)',
-};
-
-const legendListStyle: React.CSSProperties = {
-  listStyle: 'none',
-  padding: 0,
-  margin: 0,
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '0.75rem',
-};
-
-const mapWrapperStyle: React.CSSProperties = {
-  position: 'relative',
-  width: '100%',
-  height: '340px',
-  borderRadius: '16px',
-  overflow: 'hidden',
-  border: '1px solid #E2E8F0',
-  backgroundColor: '#F8FAFC',
-};
-
-const legendHeaderStyle: React.CSSProperties = {
-  fontSize: '1rem',
-  fontWeight: 600,
-  marginBottom: '0.75rem',
-};
-
 const getRouteColor = (index: number): string => ROUTE_COLORS[index % ROUTE_COLORS.length];
 
 const toRouteFeatures = (routes: RouteSummary[]) =>
@@ -89,6 +58,11 @@ const buildFeatureCollection = <T extends LineString | Point>(
   type: 'FeatureCollection',
   features: features as FeatureCollection<T>['features'],
 });
+
+const getCategoryLabel = (category: string): string => {
+  const token = category.split('.').pop() ?? category;
+  return token.replace(/[_-]/g, ' ');
+};
 
 export const MapRoutes: React.FC<MapRoutesProps> = ({ routes, selectedRouteId, onSelect }) => {
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
@@ -279,33 +253,21 @@ export const MapRoutes: React.FC<MapRoutesProps> = ({ routes, selectedRouteId, o
   }
 
   return (
-    <section aria-label="Candidate routes" style={baseContainerStyle}>
-      <div aria-label="Map preview of candidate routes" role="application" style={mapWrapperStyle}>
-        <div
-          ref={mapContainerRef}
-          style={{ position: 'absolute', inset: 0 }}
-          data-testid="routes-map"
-        />
+    <section aria-label="Candidate routes" className="map-routes">
+      <div
+        aria-label="Map preview of candidate routes"
+        role="application"
+        className="route-map-wrapper"
+      >
+        <div ref={mapContainerRef} className="route-map-canvas" data-testid="routes-map" />
       </div>
 
       <div>
-        <h3 style={legendHeaderStyle}>Route Options</h3>
-        <ul style={legendListStyle}>
+        <h3 className="route-map-heading">Route Options</h3>
+        <ul className="route-card-list">
           {routes.map((route, index) => {
             const isSelected = route.routeId === selectedRouteId;
             const color = getRouteColor(index);
-            const buttonStyle: React.CSSProperties = {
-              border: '1px solid',
-              borderColor: isSelected ? color : '#CBD5F5',
-              borderRadius: '12px',
-              padding: '0.75rem 1rem',
-              textAlign: 'left',
-              background: isSelected ? 'rgba(99, 102, 241, 0.08)' : '#FFFFFF',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '0.35rem',
-              cursor: 'pointer',
-            };
 
             return (
               <li key={route.routeId}>
@@ -313,7 +275,9 @@ export const MapRoutes: React.FC<MapRoutesProps> = ({ routes, selectedRouteId, o
                   type="button"
                   onClick={() => onSelect(route.routeId)}
                   aria-pressed={isSelected}
-                  style={buttonStyle}
+                  className={`route-card${isSelected ? ' route-card--active' : ''}`}
+                  data-testid={`route-card-${route.routeId}`}
+                  style={{ borderColor: isSelected ? color : undefined }}
                 >
                   <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <span
@@ -335,39 +299,30 @@ export const MapRoutes: React.FC<MapRoutesProps> = ({ routes, selectedRouteId, o
                     Score {route.score.toFixed(2)} · Normalised{' '}
                     {(route.scoreNormalized ?? 0).toFixed(2)}
                   </span>
-                  <div style={{ display: 'flex', gap: '0.4rem', marginTop: '0.35rem' }}>
+                  <div className="route-card__thumbs">
                     {route.pois.slice(0, 3).map((poi) => {
-                      const preview = poi.images?.[0]?.url;
+                      const key = poi.poiId ?? poi.id;
+                      const preview = poi.images?.[0];
+                      const categoryLabel = getCategoryLabel(poi.category);
+                      const label = preview?.altText ?? `${poi.name} preview`;
                       return (
-                        <div
-                          key={poi.poiId ?? poi.id}
-                          style={{
-                            position: 'relative',
-                            width: '58px',
-                            height: '48px',
-                            borderRadius: '10px',
-                            overflow: 'hidden',
-                            background: preview
-                              ? `url(${preview}) center/cover`
-                              : 'linear-gradient(135deg, #6366F1, #0EA5E9)',
-                          }}
+                        <figure
+                          key={key}
+                          className={`route-card__thumb${preview ? '' : ' route-card__thumb--placeholder'}`}
+                          aria-label={label}
+                          title={poi.name}
+                          data-testid="poi-photostrip-thumb"
                         >
-                          <span
-                            style={{
-                              position: 'absolute',
-                              left: '6px',
-                              bottom: '6px',
-                              fontSize: '0.6rem',
-                              fontWeight: 600,
-                              color: '#FFFFFF',
-                              textShadow: '0 1px 3px rgba(15, 23, 42, 0.55)',
-                            }}
-                          >
-                            {poi.category.split('.').pop()?.slice(0, 8)}
-                          </span>
-                        </div>
+                          {preview ? <img src={preview.url} alt={label} /> : null}
+                          <span aria-hidden="true">{categoryLabel.slice(0, 8)}</span>
+                        </figure>
                       );
                     })}
+                    {route.pois.length > 3 ? (
+                      <span className="route-card__extra" data-testid="poi-photostrip-more">
+                        +{route.pois.length - 3}
+                      </span>
+                    ) : null}
                   </div>
                 </button>
               </li>

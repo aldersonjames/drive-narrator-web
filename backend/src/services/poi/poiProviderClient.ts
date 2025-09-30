@@ -42,6 +42,8 @@ export interface PoiProviderOptions {
   provider?: 'ops' | 'foursquare';
   opsBaseUrl?: string;
   opsApiKey?: string;
+  opsPoisPath?: string;
+  allowUnauthenticatedOps?: boolean;
   foursquareBaseUrl?: string;
   foursquareApiKey?: string;
   ttlMs?: number;
@@ -51,6 +53,7 @@ export interface PoiProviderOptions {
 export class PoiProviderClient {
   private provider: 'ops' | 'foursquare';
   private readonly opsBaseUrl: string;
+  private readonly opsPoisPath: string;
   private readonly opsApiKey: string | undefined;
   private readonly foursquareBaseUrl: string;
   private readonly foursquareApiKey: string | undefined;
@@ -58,20 +61,34 @@ export class PoiProviderClient {
   private readonly fetchImpl: typeof fetch;
   private readonly cache = new Map<string, CacheEntry<PoiResult[]>>();
   private readonly useMock: boolean;
+  private readonly allowUnauthenticatedOps: boolean;
+  private readonly opsEndpoint: string;
 
   constructor(options: PoiProviderOptions = {}) {
     this.provider = options.provider ?? (process.env.POI_PROVIDER as 'ops' | 'foursquare') ?? 'ops';
     this.opsBaseUrl = options.opsBaseUrl ?? 'https://api.openpoiservice.org';
+    this.opsPoisPath = (options.opsPoisPath ?? process.env.POI_API_PATH ?? 'v1/pois').replace(
+      /^\/+|\/+$/g,
+      '',
+    );
     this.opsApiKey = options.opsApiKey ?? process.env.POI_API_KEY;
     this.foursquareBaseUrl = options.foursquareBaseUrl ?? 'https://api.foursquare.com/v3';
     this.foursquareApiKey = options.foursquareApiKey ?? process.env.FOURSQUARE_API_KEY;
     this.ttlMs = options.ttlMs ?? Number(process.env.POI_CACHE_TTL_MS ?? 900_000);
     this.fetchImpl = options.fetchImpl ?? fetch;
-    this.useMock = !this.opsApiKey && !this.foursquareApiKey;
+    this.allowUnauthenticatedOps =
+      options.allowUnauthenticatedOps ?? process.env.POI_ALLOW_UNAUTHENTICATED === 'true';
+
+    this.opsEndpoint = `${this.opsBaseUrl.replace(/\/+$/, '')}/${this.opsPoisPath}`;
+
+    const opsAvailable = Boolean(this.opsApiKey) || this.allowUnauthenticatedOps;
+    const foursquareAvailable = Boolean(this.foursquareApiKey);
+    this.useMock = this.provider === 'ops' ? !opsAvailable : !foursquareAvailable;
 
     if (this.provider === 'foursquare' && !this.foursquareApiKey) {
       // Foursquare was requested but no credential is available yet; fall back to OPS until a key is provided.
       this.provider = 'ops';
+      this.useMock = !opsAvailable;
     }
   }
 
@@ -99,11 +116,11 @@ export class PoiProviderClient {
   }
 
   private async fetchFromOpenPoiService(query: PoiQuery): Promise<PoiResult[]> {
-    if (!this.opsApiKey) {
+    if (!this.opsApiKey && !this.allowUnauthenticatedOps) {
       throw new Error('POI_API_KEY missing for openpoiservice');
     }
 
-    const url = new URL(`${this.opsBaseUrl}/v1/pois`);
+    const url = new URL(this.opsEndpoint);
 
     const categoryTokens = resolveInterestTokens(query.interestTags);
     const opsCategoryIds = resolveOpsCategoryIds(query.interestTags);
@@ -128,12 +145,16 @@ export class PoiProviderClient {
       body.filters = filters;
     }
 
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+    if (this.opsApiKey) {
+      headers.Authorization = this.opsApiKey;
+    }
+
     const response = await this.fetchImpl(url.toString(), {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: this.opsApiKey,
-      },
+      headers,
       body: JSON.stringify(body),
     });
 
@@ -350,7 +371,7 @@ export class PoiProviderClient {
   }
 
   async fetchOpsCategoryCatalog(): Promise<Record<string, unknown>> {
-    if (!this.opsApiKey || this.useMock) {
+    if (this.useMock) {
       return {
         historic: {
           id: 220,
@@ -373,13 +394,17 @@ export class PoiProviderClient {
       } satisfies Record<string, unknown>;
     }
 
-    const url = new URL(`${this.opsBaseUrl}/v1/pois`);
+    const url = new URL(this.opsEndpoint);
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+    if (this.opsApiKey) {
+      headers.Authorization = this.opsApiKey;
+    }
+
     const response = await this.fetchImpl(url.toString(), {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: this.opsApiKey,
-      },
+      headers,
       body: JSON.stringify({ request: 'list' }),
     });
 

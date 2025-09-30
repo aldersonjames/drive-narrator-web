@@ -1,82 +1,41 @@
 # Trip Narrator Web — Voice-First Road Trip Companion
 
-This repository contains the Spec Kit–driven implementation of the Trip Narrator voice-first MVP: a cross-platform PWA and supporting backend that plan road trips, surface points of interest aligned to traveler interests, and narrate stories with synthesized voices while maintaining strict safety, accessibility, and privacy standards.
+Trip Narrator is a Spec Kit–driven voice-first MVP: a cinematic PWA and TypeScript backend that plan scenic road trips, surface curated points of interest, and narrate stories in a conversational, hands-free experience.
 
 ## Current Status
 
-- **Active Branch**: `001-product-overview-the`
-- **Spec Kit Workflow**:
-  - Constitution: `.specify/memory/constitution.md`
-  - Feature Spec: `specs/001-product-overview-the/spec.md`
-  - Clarifications: embedded in spec under `## Clarifications`
-  - Implementation Plan: `specs/001-product-overview-the/plan.md`
-  - Research: `specs/001-product-overview-the/research.md`
-  - Data Model: `specs/001-product-overview-the/data-model.md`
-  - API Contracts: `specs/001-product-overview-the/contracts/openapi.yaml`
-  - DB Schema Plan: `specs/001-product-overview-the/db-schema.md`
-  - Task List: `specs/001-product-overview-the/tasks.md`
-
-Phase 3.3a shipped core services, MapLibre UI, and the conversational assistant console (T061–T073). Current focus: polish passes (map photostrips, landing tutorial), PWA/validation hardening (T047–T055), and final QA sweep.
+- **Active branch**: `001-product-overview-the`
+- **Focus**: Launch Experience polish (breathing orb + hero map), voice pipeline integration, PWA hardening (T047–T055), final QA (T056–T060).
+- **Spec kit**: Constitution, plan, research, contracts, and tasks live under `specs/001-product-overview-the/`.
 
 ## Architecture Overview
 
 ### Frontend (PWA)
 
-- React 18 + TypeScript, PWA-first.
-- Conversational console powered by Web Speech API capture + sequential TTS playback via the shared `VoiceOutputService`.
-- Map rendering via MapLibre GL to display alternate routes, GeoJSON polylines, and POI photostrips.
-- Accessibility-first UI with ARIA live regions, interactive breathing orb indicator, dark/light theming groundwork.
+- React 18 + TypeScript (Vite 7).
+- Launch Experience: MapLibre hero, Framer Motion breathing orb, Embla carousel for alternate routes, transcript ribbon, narration timeline sheet.
+- Voice adapters prepared for OpenAI Realtime/ElevenLabs; demo hook simulates events while the realtime pipeline lands.
+- Tailwind-style tokens (CSS vars) for glassmorphism, dark/light themes, fully responsive for phone/tablet.
 
 ### Backend
 
-- Node.js 20 + Express 5 (TypeScript).
-- Integrates OpenRouteService for routing, openpoiservice/Foursquare for POIs.
-- Conversational service generates assistant replies + follow-up prompts, exposed via `/api/conversation`.
-- SQLite via Knex for persistence (migrations forthcoming) with repositories/services layered for routing, POI filtering, scoring, narration scheduling, and preferences.
+- Node.js 20 + Express 5.
+- Routing via OpenRouteService; POIs via self-hosted OpenPoiService (OPS) or Foursquare.
+- Voice pipeline (`/api/voice/session`) issues OpenAI Realtime session tokens (WebRTC primary, WebSocket fallback) with modular adapter support for ElevenLabs.
+- Conversation endpoint `/api/conversation` plus shared repos/services for routing, scoring, narration scheduling, preferences, and privacy workflows.
 
-### Shared
+### Shared Workspace
 
-- `shared/` workspace holds JSON Schemas and TypeScript types shared across frontend/backend.
+- `shared/` exposes JSON schemas and TypeScript types used across frontend and backend (`shared/types/tripNarrator.ts`).
 
 ## Getting Started
 
 ### Prerequisites
 
 - Node.js 20.x, npm 10+
-- bun 1.2+ (already installed for Spec Kit CLI build tooling)
-- Git, Docker Desktop (for backend container later)
-- API credentials: Mapbox token, OpenRouteService key, POI provider key, OpenAI API key
-
-#### Optional: Self-host openpoiservice for POIs
-
-If you don’t have a managed POI API key yet, you can run the open-source openpoiservice locally:
-
-1. Install Docker Desktop (already running in this setup).
-2. Clone and start the stack (maps the API to host port `5500` to avoid conflicts):
-   ```bash
-   git clone https://github.com/GIScience/openpoiservice.git ~/AI_Development/Projects/openpoiservice
-   cd ~/AI_Development/Projects/openpoiservice
-   # optional: adjust docker-compose.yml to use "5500:5000" if port 5000 is busy
-   docker compose up init        # imports sample POI data
-   docker compose up -d api      # starts the API at http://localhost:5500
-   ```
-3. Test it (note the bounding box is two coordinate pairs):
-   ```bash
-   curl -X POST http://localhost:5500/pois \
-     -H "Content-Type: application/json" \
-     -d '{
-           "request": "pois",
-           "geometry": { "bbox": [[8.70, 53.05], [8.85, 53.15]] },
-           "limit": 5
-         }'
-   ```
-4. Configure Trip Narrator to use the local instance by adding to `backend/.env`:
-   ```env
-   POI_PROVIDER=ops
-   POI_API_BASE_URL=http://localhost:5500
-   ```
-
-Manage the containers through Docker Desktop (`ops-db` and `ops-api` should both be running).
+- bun 1.2+ (already installed for Spec Kit CLI tooling)
+- Git, Docker Desktop (for optional backend containers)
+- API keys: OpenRouteService, POI provider (OPS/Foursquare), MapLibre/Mapbox tiles, OpenAI Realtime API key (optional ElevenLabs key)
 
 ### Bootstrap
 
@@ -87,73 +46,140 @@ npm run bootstrap      # installs workspace dependencies (frontend/backend/share
 
 ### Environment Variables
 
-Create local env files (never commit them):
-
-- `backend/.env`
-- `frontend/.env.local`
-
-Reference values are documented in `specs/001-product-overview-the/quickstart.md`.
-
-### Tooling Scripts
+Copy examples and customise:
 
 ```bash
-npm run lint          # turbo-run lint across workspaces (placeholder until implementations exist)
-npm run test          # turbo-run test suites (currently red until implementation)
-npm run format        # prettier --write .
-npm run dev           # start backend (express) and frontend (vite) together
+cp backend/.env.example backend/.env
+cp frontend/.env.example frontend/.env.local
 ```
 
-Husky pre-commit hook runs `lint-staged` to enforce ESLint + Prettier.
+**Backend (`backend/.env`)**
+| Variable | Purpose |
+| --- | --- |
+| `PORT` | Express port (default 3000). |
+| `CORS_ALLOWED_ORIGINS` | Comma-separated allowed origins. |
+| `RATE_LIMIT_WINDOW_MS` / `RATE_LIMIT_MAX` | API rate limiting window + max. |
+| `DEFAULT_CACHE_TTL_MS` | fallback cache TTL. |
+| `ORS_API_KEY` | OpenRouteService routing key. |
+| `POI_PROVIDER` | `ops` or `foursquare`. |
+| `POI_API_KEY` / `POI_API_BASE_URL` / `POI_API_PATH` | OPS credentials + endpoint. |
+| `POI_ALLOW_UNAUTHENTICATED` | Allow local OPS without auth. |
+| `POI_CACHE_TTL_MS` / `POI_CATEGORY_CACHE_TTL_MS` | OPS caching windows. |
+| `FOURSQUARE_API_KEY` / `FOURSQUARE_API_BASE_URL` | Optional Foursquare Places. |
+| `OPENAI_API_KEY` | OpenAI Realtime voice pipeline key. |
+| `ELEVENLABS_API_KEY` | Optional ElevenLabs voice key. |
+| `VOICE_ASR_PROVIDER` / `VOICE_TTS_PROVIDER` / `VOICE_NARRATION_PROVIDER` | Provider selection (`openai`/`elevenlabs`). |
+| `VOICE_REGION` | Realtime region (default `iad`). |
+| `VOICE_MODEL_OPENAI` / `VOICE_VOICE_OPENAI` | Default OpenAI model + voice. |
+| `SESSION_TTL_SECONDS` | Voice token TTL (default 300s). |
+| `RATE_LIMIT_PER_DEVICE` | Max `/api/voice/session` calls per device window. |
+| `VOICE_LATENCY_TARGET_MS` / `VOICE_LATENCY_MAX_MS` | Latency hints surfaced to UI. |
+| `VOICE_CAP_MAX_INPUT_MS` | Max utterance length (default 15000 ms). |
 
-## Testing Strategy
+**Frontend (`frontend/.env.local`)**
+| Variable | Purpose |
+| --- | --- |
+| `VITE_API_BASE_URL` | API base (default `/api`). |
+| `VITE_MAPBOX_TOKEN` | Map tiles (optional). |
+| `VITE_OPENAI_ENDPOINT` | Override OpenAI Realtime endpoint. |
 
-- **Contract Tests**: backend tests in `backend/tests/contract/` assert API contracts (routes, POIs, conversation, etc.) against mocked services.
-- **Integration Tests**: `backend/tests/integration/` orchestrate routing + POI flows.
-- **Unit Tests**: services in `backend/tests/unit/`; React components in `frontend/tests/unit/`.
-- **Accessibility**: `frontend/tests/accessibility/` runs axe.
-- **E2E**: Playwright in `frontend/tests/e2e/` covers offline voice fallback (future run once polish stabilises).
-  TypeScript type-checking and Jest suites are being brought online as part of hardening (see T047–T052).
+### Optional: Self-host OPS
+
+```bash
+git clone https://github.com/GIScience/openpoiservice.git ~/AI_Development/Projects/openpoiservice
+cd ~/AI_Development/Projects/openpoiservice
+docker compose up init
+docker compose up -d api
+# backend/.env additions
+POI_PROVIDER=ops
+POI_API_BASE_URL=http://localhost:5500
+POI_API_PATH=pois
+POI_ALLOW_UNAUTHENTICATED=true
+```
+
+## Scripts & Workspaces
+
+```bash
+npm run lint                           # turbo lint across workspaces
+npm run test                           # backend + frontend test suites
+npm run format                         # prettier --write .
+
+npm run dev --workspace @trip-narrator/backend    # backend API (http://localhost:3000)
+npm run dev --workspace @trip-narrator/frontend   # frontend PWA (http://localhost:5173)
+npm run build --workspace @trip-narrator/frontend
+npm run build --workspace @trip-narrator/backend
+npm run typecheck --workspace @trip-narrator/frontend
+npm run typecheck --workspace @trip-narrator/backend
+```
+
+## Key Endpoints
+
+- `POST /api/routes` — Generate candidate routes + POIs.
+- `GET /api/poi/categories` — OPS taxonomy.
+- `GET /api/pois?routeId=` — Filtered POIs for selected route.
+- `POST /api/voice/session` — Issue OpenAI Realtime session token & capabilities.
+- `GET|PATCH /api/preferences` — Traveler preferences.
+- `GET|POST|DELETE /api/trips` — Trip persistence.
+- `POST /api/conversation` — Conversational replies + narration segments.
 
 ## Project Structure
 
 ```
-backend/
-  src/              # to be populated (api/routes, services, db, utils)
-  tests/
-    contract/
-    integration/
-    unit/
 frontend/
   src/
+    components/         # orb, map, carousel, timeline, transcript
+    hooks/
+    pages/
+    styles/
+    mock/
   tests/
     unit/
     integration/
     accessibility/
     e2e/
+backend/
+  src/
+    api/
+    services/
+    db/
+    utils/
+  tests/
+    contract/
+    integration/
+    unit/
 shared/
   schemas/
   types/
+references/
+  ui-components.md     # open-licensed component inspirations
 specs/001-product-overview-the/
   plan.md
   research.md
-  data-model.md
-  quickstart.md
-  contracts/
-  db-schema.md
-  tasks.md
+  ...
 ```
 
-## Workflow & Governance
+## UI Component References
 
-- Follow Spec Kit command order: `/constitution` → `/clarify` → `/plan` → `/tasks` → `/implement`.
-- Maintain >90% test coverage, mock external APIs, enforce WCAG 2.1 AA accessibility.
-- All commits use conventional prefixes (e.g., `feat:`, `fix:`, `test:`).
-- Feature branches follow `00X-feature-name`; current development uses `001-product-overview-the`.
+MIT/Apache-2.0 links for UI building blocks (orb animations, Embla carousel, Radix sheet, Headless UI alerts, etc.) are catalogued in `references/ui-components.md` for quick composability.
+
+## Testing Strategy
+
+- **Backend**: contract/integration/unit suites (`npm run test --workspace @trip-narrator/backend`).
+- **Frontend**: unit snapshots + integration (coming online during polish), Framer Motion smoke tests, Playwright E2E planned for offline/voice fallback.
+- **Type safety**: `npm run typecheck --workspace ...` for both workspaces.
+
+## Manual Smoke Checklist
+
+- Launch PWA → orb animates, hero map + cards render, suggestion chips respond.
+- Trigger demo voice hook → transcript pill slides in, timeline updates, orb phases animate.
+- Toggle OS dark mode → hero & cards adopt dark palette.
+- Backend `/api/voice/session` returns session payload with caps/latency hints.
+- `/api/routes` with mock data → carousel highlights selected route.
 
 ## Next Steps
 
-1. Polish UI layers to match hero screenshots (map card imagery, dark mode, tutorial carousel — T070/T074).
-2. Harden the platform: PWA rebuild via `vite-plugin-pwa`, runtime validation/logging, rate limiting, Docker/CI scaffolding (T047–T055).
-3. Final QA pass (accessibility, performance, manual scripts) ahead of launch (T056–T060).
+1. Wire real voice adapter to OpenAI Realtime (orb driven by live events) and expand telemetry.
+2. Finish PWA polish: `vite-plugin-pwa`, offline caching of narration packages, service worker alerts.
+3. Complete backend hardening (request validation, structured logging, Docker/CI) before final QA pass.
 
-For detailed task sequencing, see `specs/001-product-overview-the/tasks.md`.
+Enjoy the new voice-first Launch Experience! Run `npm run dev --workspace @trip-narrator/frontend` to explore the cinematic mock while the realtime voice pipeline is finalized.

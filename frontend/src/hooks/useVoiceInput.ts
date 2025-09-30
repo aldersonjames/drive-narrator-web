@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 export type VoiceInputStatus = 'idle' | 'listening' | 'error';
 
@@ -6,6 +6,13 @@ export interface VoiceInputOptions {
   continuous?: boolean;
   interimResults?: boolean;
   language?: string;
+  onTranscript?: (details: {
+    transcript: string;
+    isFinal: boolean;
+    event: SpeechRecognitionEvent;
+  }) => void;
+  onStatusChange?: (status: VoiceInputStatus) => void;
+  onError?: (message: string, event?: SpeechRecognitionErrorEvent | DOMException) => void;
 }
 
 export interface VoiceInputController {
@@ -37,14 +44,40 @@ const getRecognition = (): SpeechRecognition | undefined => {
 
 export const useVoiceInput = (options: VoiceInputOptions = {}): VoiceInputController => {
   const recognitionRef = useRef<SpeechRecognition | null>(null);
+  const optionsRef = useRef(options);
   const [status, setStatus] = useState<VoiceInputStatus>('idle');
   const [transcript, setTranscript] = useState('');
   const [error, setError] = useState<string | undefined>();
+
+  useEffect(() => {
+    optionsRef.current = options;
+  }, [options]);
 
   const isSupported = useMemo(() => {
     if (typeof window === 'undefined') return false;
     return Boolean(window.SpeechRecognition || window.webkitSpeechRecognition);
   }, []);
+
+  const updateStatus = useCallback((next: VoiceInputStatus) => {
+    setStatus(next);
+    optionsRef.current.onStatusChange?.(next);
+  }, []);
+
+  const emitTranscript = useCallback(
+    (details: { transcript: string; isFinal: boolean; event: SpeechRecognitionEvent }) => {
+      optionsRef.current.onTranscript?.(details);
+    },
+    [],
+  );
+
+  const emitError = useCallback(
+    (message: string, evt?: SpeechRecognitionErrorEvent | DOMException) => {
+      setError(message);
+      updateStatus('error');
+      optionsRef.current.onError?.(message, evt);
+    },
+    [updateStatus],
+  );
 
   const ensureRecognition = useCallback(() => {
     if (recognitionRef.current) {
@@ -61,41 +94,73 @@ export const useVoiceInput = (options: VoiceInputOptions = {}): VoiceInputContro
       recognition.lang = options.language;
     }
 
-    recognition.onstart = () => setStatus('listening');
+    recognition.onstart = () => {
+      setError(undefined);
+      updateStatus('listening');
+    };
     recognition.onresult = (event) => {
-      const latestResult = Array.from(event.results)
+      const results = Array.from(event.results ?? []);
+      const latestResult = results
         .map((item) => item[0]?.transcript ?? '')
         .join(' ')
         .trim();
       setTranscript(latestResult);
+
+      const latest = results[results.length - 1];
+      const isFinal = Boolean(latest?.isFinal);
+      emitTranscript({ transcript: latestResult, isFinal, event });
+
+      if (isFinal && !(optionsRef.current.continuous ?? false)) {
+        recognition.stop();
+      }
     };
     recognition.onerror = (event) => {
-      setError(event.error ?? 'Speech recognition error');
-      setStatus('error');
+      const code = event.error;
+      const message =
+        code === 'not-allowed' || code === 'service-not-allowed'
+          ? 'Microphone permission denied'
+          : code === 'no-speech'
+            ? 'No speech detected. Try again.'
+            : event.message || 'Speech recognition error';
+      emitError(message, event);
     };
     recognition.onend = () => {
-      setStatus('idle');
+      updateStatus('idle');
     };
 
     recognitionRef.current = recognition;
     return recognition;
-  }, [options.continuous, options.interimResults, options.language]);
+  }, [
+    emitError,
+    emitTranscript,
+    options.continuous,
+    options.interimResults,
+    options.language,
+    updateStatus,
+  ]);
 
   const startListening = useCallback(() => {
     if (!isSupported) {
-      setError('Speech recognition not supported');
-      setStatus('error');
+      emitError('Speech recognition not supported');
       return;
     }
     const recognition = ensureRecognition();
     if (!recognition) {
-      setError('Speech recognition unavailable');
-      setStatus('error');
+      emitError('Speech recognition unavailable');
       return;
     }
     setError(undefined);
-    recognition.start();
-  }, [ensureRecognition, isSupported]);
+    try {
+      recognition.start();
+    } catch (err) {
+      const domError = err as DOMException | undefined;
+      if (domError?.name === 'NotAllowedError') {
+        emitError('Microphone permission denied', domError);
+        return;
+      }
+      emitError(domError?.message || 'Unable to start speech recognition', domError);
+    }
+  }, [emitError, ensureRecognition, isSupported]);
 
   const stopListening = useCallback(() => {
     recognitionRef.current?.stop();
@@ -104,7 +169,17 @@ export const useVoiceInput = (options: VoiceInputOptions = {}): VoiceInputContro
   const reset = useCallback(() => {
     setTranscript('');
     setError(undefined);
-    setStatus('idle');
+    updateStatus('idle');
+  }, [updateStatus]);
+
+  useEffect(() => {
+    return () => {
+      const recognition = recognitionRef.current as
+        | (SpeechRecognition & { abort?: () => void })
+        | null;
+      recognition?.abort?.();
+      recognitionRef.current = null;
+    };
   }, []);
 
   return {

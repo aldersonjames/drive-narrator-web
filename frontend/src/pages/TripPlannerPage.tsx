@@ -36,40 +36,17 @@ export const TripPlannerPage: React.FC = () => {
   );
 
   return (
-    <section
-      className="trip-planner-page"
-      style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-        gap: '2.5rem',
-        padding: '2.5rem clamp(1.5rem, 4vw, 3.5rem)',
-        background: '#F8FAFC',
-      }}
-    >
-      <div
-        style={{
-          background: '#FFFFFF',
-          borderRadius: '20px',
-          padding: '2rem',
-          boxShadow: '0 18px 46px rgba(15, 23, 42, 0.08)',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '1.5rem',
-        }}
-      >
-        <header>
-          <h1 style={{ marginBottom: '0.35rem', fontSize: '1.9rem' }}>Plan your route</h1>
-          <p style={{ margin: 0, color: '#64748B' }}>
+    <section className="trip-planner-page">
+      <div className="planner-panel">
+        <header className="planner-header">
+          <h1>Plan your route</h1>
+          <p>
             Pick destinations and interests; Trip Narrator will scout scenic alternatives and
             story-rich stops.
           </p>
         </header>
 
-        <form
-          className="trip-form"
-          onSubmit={handleSubmit}
-          style={{ display: 'grid', gap: '1rem' }}
-        >
+        <form className="trip-form" onSubmit={handleSubmit}>
           <label>
             Origin
             <input
@@ -112,28 +89,28 @@ export const TripPlannerPage: React.FC = () => {
         )}
       </div>
 
-      <div style={{ display: 'grid', gap: '2rem' }}>
-        <ConversationConsole
-          route={selectedRoute}
-          interestTags={parsedInterests}
-          profileId="traveler-001"
-        />
+      <div className="planner-column">
+        <div className="conversation-panel">
+          <ConversationConsole
+            route={selectedRoute}
+            interestTags={parsedInterests}
+            profileId="traveler-001"
+          />
+        </div>
 
-        <MapRoutes
-          routes={routes}
-          selectedRouteId={selectedRoute?.routeId}
-          onSelect={selectRoute}
-        />
+        <div className="map-panel">
+          <header>
+            <h2>Route options</h2>
+          </header>
+          <MapRoutes
+            routes={routes}
+            selectedRouteId={selectedRoute?.routeId}
+            onSelect={selectRoute}
+          />
+        </div>
 
-        <div
-          style={{
-            background: '#FFFFFF',
-            borderRadius: '18px',
-            padding: '1.75rem',
-            boxShadow: '0 18px 46px rgba(15, 23, 42, 0.08)',
-          }}
-        >
-          <h2 style={{ marginTop: 0 }}>Narration preview</h2>
+        <div className="timeline-panel">
+          <h2>Narration preview</h2>
           <NarrationTimeline route={selectedRoute} />
         </div>
       </div>

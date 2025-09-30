@@ -32,6 +32,7 @@ export interface PlannerState {
   }) => Promise<void>;
   loadTrips: (profileId: string) => Promise<void>;
   updatePreferences: (profileId: string, payload: Partial<PreferencesPayload>) => Promise<void>;
+  loadPreferences: (profileId: string) => Promise<void>;
   selectRoute: (routeId?: string) => void;
 }
 
@@ -107,8 +108,18 @@ export const TripPlannerProvider: React.FC<{ children: ReactNode }> = ({ childre
     }
   }, []);
 
+  const loadPreferences = useCallback(async (profileId: string) => {
+    const payload = await safeFetch<PreferencesPayload>(
+      `${API_BASE}/preferences?profileId=${encodeURIComponent(profileId)}`,
+    );
+    setPreferences(payload);
+  }, []);
+
   const updatePreferences = useCallback(
     async (profileId: string, payload: Partial<PreferencesPayload>) => {
+      const requestPayload = { ...payload } as Record<string, unknown>;
+      delete requestPayload.providerCapabilities;
+
       const next = await safeFetch<PreferencesPayload>(`${API_BASE}/preferences`, {
         method: 'PATCH',
         headers: {
@@ -117,7 +128,7 @@ export const TripPlannerProvider: React.FC<{ children: ReactNode }> = ({ childre
         },
         body: JSON.stringify({
           profileId,
-          ...payload,
+          ...requestPayload,
         }),
       });
       setPreferences(next);
@@ -139,6 +150,7 @@ export const TripPlannerProvider: React.FC<{ children: ReactNode }> = ({ childre
       preferences,
       loadRoutes,
       loadTrips,
+      loadPreferences,
       updatePreferences,
       selectRoute,
     }),
@@ -151,6 +163,7 @@ export const TripPlannerProvider: React.FC<{ children: ReactNode }> = ({ childre
       preferences,
       loadRoutes,
       loadTrips,
+      loadPreferences,
       updatePreferences,
       selectRoute,
     ],

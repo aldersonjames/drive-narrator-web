@@ -1,4 +1,5 @@
 import type { Request, Response } from 'express';
+import { z } from 'zod';
 
 import type {
   OpenRouteServiceClient,
@@ -9,6 +10,7 @@ import type { LineString } from 'geojson';
 import type { PoiProviderClient, PoiResult } from '../../services/poi/poiProviderClient';
 import type { PoiFilteringService } from '../../services/poi/poiFilteringService';
 import type { RouteScoringService, RouteScore } from '../../services/scoring/routeScoringService';
+import { validate } from '../../utils/validation';
 
 interface Dependencies {
   orsClient: OpenRouteServiceClient;
@@ -73,31 +75,55 @@ const formatRoutes = (routeResponse: RouteResponse, scores: RouteScore[], pois: 
   });
 };
 
+const interestListSchema = z.array(z.string().min(1)).min(1);
+
+const routesRequestSchema = z.object({
+  origin: z.string().min(1),
+  destination: z.string().min(1),
+  departureTime: z.string().optional(),
+  interests: interestListSchema,
+});
+
+const parseInterestTags = (value: unknown): string[] => {
+  if (Array.isArray(value)) {
+    return value
+      .flatMap((entry) => (typeof entry === 'string' ? entry.split(',') : []))
+      .map((entry) => entry.trim())
+      .filter(Boolean);
+  }
+  if (typeof value === 'string') {
+    return value
+      .split(',')
+      .map((token) => token.trim())
+      .filter(Boolean);
+  }
+  return [];
+};
+
 export const createRoutesController = (deps: Dependencies) => {
   return async function routesController(req: Request, res: Response): Promise<Response> {
-    const { origin, destination, interests } = req.body ?? {};
-
-    if (!origin || !destination || !Array.isArray(interests)) {
-      return res
-        .status(400)
-        .json({ code: 'INVALID_REQUEST', message: 'origin, destination, interests required' });
-    }
+    const payload = validate(routesRequestSchema, {
+      origin: req.body?.origin,
+      destination: req.body?.destination,
+      departureTime: req.body?.departureTime,
+      interests: parseInterestTags(req.body?.interests ?? req.body?.interestTags),
+    });
 
     try {
       const [routes, pois] = await Promise.all([
         deps.orsClient.getRoutes({
-          origin,
-          destination,
+          origin: payload.origin,
+          destination: payload.destination,
           alternatives: 3,
         }),
         deps.poiClient.fetchPois({
           routeId: 'temp',
-          interestTags: interests,
+          interestTags: payload.interests,
           limit: 100,
         }),
       ]);
 
-      const filtered = deps.poiFilter.filterByInterests(pois, interests);
+      const filtered = deps.poiFilter.filterByInterests(pois, payload.interests);
 
       const candidates = routes.features.map((feature, index) => ({
         routeId: `route-${index}`,
@@ -110,7 +136,7 @@ export const createRoutesController = (deps: Dependencies) => {
         distanceKm: feature.properties.summary.distance / 1000,
       }));
 
-      const scored = deps.scoring.scoreRoutes(candidates, interests);
+      const scored = deps.scoring.scoreRoutes(candidates, payload.interests);
       const formatted = formatRoutes(routes, scored, filtered.pois);
 
       const notices = [...filtered.notices];

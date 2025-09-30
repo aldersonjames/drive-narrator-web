@@ -1,7 +1,11 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 
+import { registerSW } from 'virtual:pwa-register';
+
 import App from './App';
+import './styles/global.css';
+import './styles/launch.css';
 
 const mount = document.getElementById('root');
 
@@ -15,9 +19,10 @@ if (mount) {
 }
 
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.ts').catch((error) => {
-      console.warn('Service worker registration failed', error);
-    });
+  registerSW({
+    immediate: true,
+    onOfflineReady: () => {
+      console.info('Trip Narrator is ready to work offline.');
+    },
   });
 }

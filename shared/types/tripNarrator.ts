@@ -63,16 +63,30 @@ export interface ConversationTurn {
   synopsis?: string;
 }
 
+export type VoiceProviderId = 'openai' | 'elevenlabs';
+
 export interface ConversationAudioSegment {
   id: string;
   voiceId: string;
   text: string;
+  provider?: VoiceProviderId;
+  format?: 'pcm16' | 'mp3' | 'opus' | 'aac';
+  streamingUrl?: string;
+  metadata?: Record<string, unknown>;
+}
+
+export interface VoicePipelineConfig {
+  asrProvider: VoiceProviderId;
+  ttsProvider: VoiceProviderId;
+  narrationProvider: VoiceProviderId;
+  metadata?: Record<string, unknown>;
 }
 
 export interface ConversationReplyPayload {
   turn: ConversationTurn;
   followUps: string[];
   audioSegments: ConversationAudioSegment[];
+  voicePipeline?: VoicePipelineConfig;
 }
 
 export interface ConversationRequestPayload {
@@ -103,6 +117,20 @@ export interface TripSummary {
   updatedAt: string;
 }
 
+export type PoiProviderId = 'ops' | 'foursquare';
+
+export interface ProviderCapability {
+  available: boolean;
+  locked: boolean;
+  label: string;
+  description: string;
+}
+
+export interface ProviderCapabilityMap {
+  ops: ProviderCapability;
+  foursquare: ProviderCapability;
+}
+
 export interface PreferencesPayload {
   profileId: string;
   assistantVoiceId: string;
@@ -110,6 +138,8 @@ export interface PreferencesPayload {
   interestTags: string[];
   transcriptOptIn: boolean;
   retentionDays?: number;
+  poiProvider: PoiProviderId;
+  providerCapabilities: ProviderCapabilityMap;
 }
 
 export interface VoiceDefinition {

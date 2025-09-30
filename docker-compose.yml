@@ -1,0 +1,20 @@
+version: '3.9'
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    environment:
+      PORT: 3000
+      NODE_ENV: production
+    ports:
+      - '3000:3000'
+    volumes:
+      - api-data:/app/backend/.data
+    command: npm run dev --workspace @trip-narrator/backend
+    restart: unless-stopped
+
+volumes:
+  api-data:
+    driver: local

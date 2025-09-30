@@ -1,207 +1,126 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
+import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 
-export type BreathingOrbState = 'idle' | 'listening' | 'speaking' | 'error';
-
-export interface BreathingOrbMessages {
-  idle?: string;
-  listening?: string;
-  speaking?: string;
-  error?: string;
-}
+export type OrbPhase = 'idle' | 'listening' | 'processing' | 'speaking' | 'error';
 
 export interface BreathingOrbProps {
-  state?: BreathingOrbState;
-  onStateChange?: (next: BreathingOrbState) => void;
+  phase?: OrbPhase;
+  /** alias for legacy usage */
+  state?: OrbPhase;
+  caption?: string;
+  subCaption?: string;
+  onTap?: () => void;
   onStartListening?: () => void;
-  onStartSpeaking?: () => void;
   onStop?: () => void;
   disabled?: boolean;
-  messages?: BreathingOrbMessages;
   className?: string;
+  messages?: Partial<Record<OrbPhase, string>>;
 }
 
-const DEFAULT_MESSAGES: Required<BreathingOrbMessages> = {
-  idle: 'Ready to listen',
-  listening: 'Listening…',
-  speaking: 'Speaking…',
-  error: 'Microphone problem',
+const PHASE_COLORS: Record<OrbPhase, string> = {
+  idle: 'rgba(87, 199, 255, 0.45)',
+  listening: 'rgba(99, 102, 241, 0.65)',
+  processing: 'rgba(236, 72, 153, 0.6)',
+  speaking: 'rgba(16, 185, 129, 0.65)',
+  error: 'rgba(248, 113, 113, 0.75)',
 };
 
-const wrapperStyle: React.CSSProperties = {
-  display: 'flex',
-  alignItems: 'center',
-  gap: '1rem',
+const CAPTION_DEFAULTS: Record<OrbPhase, string> = {
+  idle: 'Tap to start listening',
+  listening: 'Listening for your next trip…',
+  processing: 'Mapping possibilities…',
+  speaking: 'Narrating your story…',
+  error: 'Microphone unavailable',
 };
 
-const orbButtonStyle = (current: BreathingOrbState): React.CSSProperties => ({
-  width: '96px',
-  height: '96px',
-  borderRadius: '50%',
-  border: 'none',
-  outline: 'none',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  cursor: 'pointer',
-  color: '#FFFFFF',
-  background: current === 'error' ? '#F87171' : '#6366F1',
-  boxShadow:
-    current === 'listening'
-      ? '0 0 0 8px rgba(99, 102, 241, 0.15), 0 0 25px rgba(99,102,241,0.45)'
-      : '0 12px 28px rgba(15, 23, 42, 0.18)',
-  transition: 'transform 0.3s ease, box-shadow 0.3s ease',
-  transform: current === 'listening' ? 'scale(1.05)' : 'scale(1)',
-  fontSize: '0.95rem',
-});
-
-const controlGroupStyle: React.CSSProperties = {
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '0.5rem',
-};
-
-const controlRowStyle: React.CSSProperties = {
-  display: 'flex',
-  gap: '0.5rem',
-  flexWrap: 'wrap',
-};
-
-const controlButtonStyle = (active = false): React.CSSProperties => ({
-  borderRadius: '8px',
-  border: '1px solid',
-  borderColor: active ? '#6366F1' : '#CBD5F5',
-  padding: '0.45rem 0.75rem',
-  backgroundColor: active ? 'rgba(99, 102, 241, 0.12)' : '#FFFFFF',
-  color: active ? '#312E81' : '#1F2937',
-  cursor: 'pointer',
-  fontSize: '0.85rem',
-});
+const randomEnergy = () => 0.25 + Math.random() * 0.55;
 
 export const BreathingOrb: React.FC<BreathingOrbProps> = ({
-  state: controlledState,
-  onStateChange,
+  phase,
+  state,
+  caption,
+  subCaption,
+  onTap,
   onStartListening,
-  onStartSpeaking,
   onStop,
-  disabled = false,
-  messages,
+  disabled,
   className,
+  messages,
 }) => {
-  const isControlled = controlledState !== undefined;
-  const [internalState, setInternalState] = useState<BreathingOrbState>(controlledState ?? 'idle');
+  const resolvedPhase = phase ?? state ?? 'idle';
+  const energy = useMotionValue(0.35);
+  const glow = useSpring(energy, { stiffness: 70, damping: 18 });
+  const scale = useTransform(glow, (v) => 0.88 + v * 0.3);
+  const aura = useTransform(glow, (v) => `0 0 80px ${v * 120}px ${PHASE_COLORS[resolvedPhase]}`);
+  const intervalRef = useRef<number>();
 
   useEffect(() => {
-    if (isControlled && controlledState && controlledState !== internalState) {
-      setInternalState(controlledState);
+    if (resolvedPhase === 'listening' || resolvedPhase === 'speaking') {
+      energy.set(0.6);
+      intervalRef.current = window.setInterval(() => {
+        energy.set(randomEnergy());
+      }, 900);
+    } else if (resolvedPhase === 'processing') {
+      energy.set(0.8);
+    } else {
+      energy.set(0.35);
     }
-  }, [controlledState, internalState, isControlled]);
 
-  const currentState = isControlled && controlledState ? controlledState : internalState;
+    return () => {
+      if (intervalRef.current) {
+        window.clearInterval(intervalRef.current);
+        intervalRef.current = undefined;
+      }
+    };
+  }, [resolvedPhase, energy]);
 
-  const mergedMessages = useMemo(
-    () => ({
-      ...DEFAULT_MESSAGES,
-      ...messages,
-    }),
-    [messages],
+  useEffect(() => {
+    if (resolvedPhase !== 'listening' && resolvedPhase !== 'speaking') {
+      energy.stop();
+    }
+  }, [resolvedPhase, energy]);
+
+  const captionMap = useMemo(() => ({ ...CAPTION_DEFAULTS, ...messages }), [messages]);
+  const displayCaption = useMemo(
+    () => caption ?? captionMap[resolvedPhase],
+    [caption, captionMap, resolvedPhase],
   );
 
-  const setState = (next: BreathingOrbState) => {
-    if (!isControlled) {
-      setInternalState(next);
-    }
-    onStateChange?.(next);
-  };
-
-  const handleStartListening = () => {
-    if (disabled) return;
-    onStartListening?.();
-    setState('listening');
-  };
-
-  const handleStartSpeaking = () => {
-    if (disabled) return;
-    onStartSpeaking?.();
-    setState('speaking');
-  };
-
-  const handleStop = () => {
-    if (disabled) return;
-    onStop?.();
-    setState('idle');
-  };
-
-  const handleOrbClick = () => {
-    if (disabled) return;
-    if (currentState === 'listening' || currentState === 'speaking') {
-      handleStop();
-    } else if (currentState === 'idle') {
-      handleStartListening();
-    }
-  };
-
-  const orbAriaLabel =
-    currentState === 'listening' || currentState === 'speaking'
-      ? 'Stop voice capture'
-      : 'Start listening';
-
-  const canStartSpeaking = currentState === 'listening' || currentState === 'speaking';
-  const showStop = currentState !== 'idle';
-
   return (
-    <div className={className} style={wrapperStyle} data-state={currentState}>
-      <button
+    <div className={`orb-stack ${className ?? ''}`} data-phase={phase}>
+      <motion.button
         type="button"
-        onClick={handleOrbClick}
-        aria-label={orbAriaLabel}
-        disabled={disabled}
-        style={orbButtonStyle(currentState)}
+        onClick={() => {
+          if (disabled) return;
+          if (onTap) onTap();
+          else if (resolvedPhase === 'idle') onStartListening?.();
+          else if (resolvedPhase === 'speaking') onStop?.();
+        }}
+        className="orb-button"
+        style={{ boxShadow: aura }}
+        animate={{
+          background: PHASE_COLORS[resolvedPhase],
+          cursor: disabled ? 'default' : 'pointer',
+        }}
+        transition={{ type: 'spring', stiffness: 90, damping: 24 }}
+        aria-live="polite"
+        aria-label={displayCaption}
       >
-        <span aria-hidden="true">●</span>
-      </button>
-
-      <div style={controlGroupStyle}>
-        <div
-          role="status"
-          aria-live="polite"
-          aria-atomic="true"
-          aria-busy={currentState !== 'idle'}
-          data-testid="breathing-orb-status"
-        >
-          <span>{mergedMessages[currentState]}</span>
-        </div>
-
-        <div style={controlRowStyle}>
-          <button
-            type="button"
-            onClick={handleStartListening}
-            disabled={disabled || currentState === 'listening'}
-            style={controlButtonStyle(currentState === 'listening')}
-          >
-            Start listening
-          </button>
-          <button
-            type="button"
-            onClick={handleStartSpeaking}
-            disabled={disabled || !canStartSpeaking}
-            style={controlButtonStyle(currentState === 'speaking')}
-          >
-            Start speaking
-          </button>
-          {showStop && (
-            <button
-              type="button"
-              onClick={handleStop}
-              disabled={disabled}
-              style={controlButtonStyle(false)}
-            >
-              Stop
-            </button>
-          )}
-        </div>
+        <motion.span
+          className="orb-core"
+          style={{ scale }}
+          transition={{ type: 'spring', stiffness: 110, damping: 14 }}
+        />
+        <motion.span className="orb-ring" animate={{ opacity: phase === 'idle' ? 0.3 : 0.7 }} />
+      </motion.button>
+      <div className="orb-caption">
+        <strong>{displayCaption}</strong>
+        {subCaption ? <span>{subCaption}</span> : null}
       </div>
     </div>
   );
 };
 
 export default BreathingOrb;
+
+export type BreathingOrbState = OrbPhase;

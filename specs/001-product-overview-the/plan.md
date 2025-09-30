@@ -4,9 +4,20 @@
 **Input**: Feature specification from `/specs/001-product-overview-the/spec.md`
 
 ## Summary
+
 Deliver a voice-first road trip companion that gathers traveler preferences, produces 2–3 enriched driving routes, narrates POI stories using configurable voices, and persists trip history while meeting stringent accessibility, safety, and privacy requirements. Implementation spans a React TypeScript PWA, a Node/Express backend orchestrating routing and POI services, SQLite persistence via Knex, and OpenAI-powered speech synthesis with Web Speech API recognition.
 
+### Canonical UI Baseline (v1)
+
+- **Breathing orb placement**: fixed high-center on the canvas (aligned with hero map) to match design comps; map, transcript ribbon, and chip stacks anchor around this focal point.
+- **Launch affordance**: default state is immediately “Listening for your next trip…” with conversational prompts; no large action tiles on load unless the traveler explicitly requests manual options.
+- **Route preview layout**: primary route card anchored bottom-left with horizontal scroller for alternates (mobile/tablet responsive); no right-side vertical stack.
+- **Transcript behavior**: hidden until speech is captured; expands as a pill ribbon beneath the orb when available and can be dismissed by voice/tap.
+- **Units & scoring**: backend returns SI (meters/seconds, normalized 0–1 score) and frontend formats according to locale (mi/km) while displaying score with two decimal places.
+- **Glass treatments**: use localized glass cards and overlaid panels rather than a single full-screen glass sheet; background map stays dominant per comps.
+
 ## Technical Context
+
 **Language/Version**: TypeScript 5.x (frontend & backend), Node.js 20.x  
 **Primary Dependencies**: React 18, React Router, Mapbox GL JS (or Leaflet), Web Speech API, OpenAI Realtime/TTS SDK, Express 5, Knex, SQLite  
 **Storage**: SQLite (file-based for local/dev) with Knex migrations; option to abstract for Firebase later  
@@ -18,6 +29,7 @@ Deliver a voice-first road trip companion that gathers traveler preferences, pro
 **Scale/Scope**: Pilot release supporting thousands of concurrent trip plans, storing up to tens of thousands of trips/POIs per deployment
 
 ## Constitution Check
+
 - **Code Quality & Style**: Adopt ESLint/Prettier configs for shared TypeScript rules; enforce PR review workflow within GitHub Actions.
 - **Testing & CI**: Configure Jest coverage >90%, integrate axe-core and map rendering smoke tests in CI, mock external APIs.
 - **Voice-First UX & Accessibility**: Ensure breathing orb, aria-live updates, captions, keyboard navigation, dual themes.
@@ -31,6 +43,7 @@ Result: **Initial Constitution Check → PASS** (plan aligns with all principles
 ## Project Structure
 
 ### Documentation (this feature)
+
 ```
 specs/001-product-overview-the/
 ├── plan.md
@@ -42,6 +55,7 @@ specs/001-product-overview-the/
 ```
 
 ### Source Code (repository root)
+
 ```
 backend/
 ├── src/
@@ -84,6 +98,7 @@ shared/
 **Structure Decision**: Maintain a bifurcated `frontend/` + `backend/` workspace with a shared contracts/types layer to keep API schemas aligned; mirrors constitution emphasis on modularity and testability.
 
 ## Phase 0: Outline & Research
+
 1. **Unknowns & Investigation Topics**
    - Validate OpenRouteService coverage limits, rate quotas, and offline caching strategies.
    - Determine optimal POI provider mix (openpoiservice vs. Foursquare/Yelp) and licensing implications.
@@ -104,6 +119,7 @@ shared/
    - Identify any follow-up clarifications; if new blockers arise, update spec before proceeding.
 
 ## Phase 1: Design & Contracts
+
 1. **Data Modeling (`data-model.md`)**
    - Traveler Profile, Trip Request, Route Option, Point of Interest, Narration Session entities with attributes, relationships, validation rules, retention policies.
    - Include diagrams/state transitions for narration scheduling and trip lifecycle.
@@ -125,23 +141,28 @@ shared/
    - Run `.specify/scripts/bash/update-agent-context.sh copilot` after generating artifacts to keep Copilot briefings current.
 
 ## Phase 2: Task Planning Approach
+
 - Use Spec Kit tasks template to derive ~25–30 tasks.
 - Ordering: establish schema & migrations → backend services/tests → frontend voice/map components/tests → integration wiring → hardening (performance, accessibility, safety).
 - Flag parallelizable efforts ([P]) for independent modules (e.g., frontend map vs. backend scoring).
 
 ## Phase 3+: Future Implementation
+
 - **Phase 3**: Execute `/tasks` to materialize task list.
 - **Phase 4**: Implement per tasks with TDD loops, mocking external APIs.
 - **Phase 5**: Run full validation: Jest suites, axe, Playwright E2E, performance smoke, resilience checks.
 
 ## Complexity Tracking
+
 No constitutional deviations identified; table remains empty.
 
 | Violation | Why Needed | Simpler Alternative Rejected Because |
-|-----------|------------|-------------------------------------|
+| --------- | ---------- | ------------------------------------ |
 
 ## Progress Tracking
+
 **Phase Status**:
+
 - [ ] Phase 0: Research complete (/plan command)
 - [ ] Phase 1: Design complete (/plan command)
 - [ ] Phase 2: Task planning complete (/plan command - describe approach only)
@@ -150,10 +171,12 @@ No constitutional deviations identified; table remains empty.
 - [ ] Phase 5: Validation passed
 
 **Gate Status**:
+
 - [x] Initial Constitution Check: PASS
 - [ ] Post-Design Constitution Check: PASS
 - [x] All NEEDS CLARIFICATION resolved
 - [ ] Complexity deviations documented
 
 ---
-*Based on Constitution v1.0.0 - See `/memory/constitution.md`*
+
+_Based on Constitution v1.0.0 - See `/memory/constitution.md`_
