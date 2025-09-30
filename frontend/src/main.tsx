@@ -4,6 +4,7 @@ import ReactDOM from 'react-dom/client';
 import { registerSW } from 'virtual:pwa-register';
 
 import App from './App';
+import { ErrorBoundary } from './components/system/ErrorBoundary';
 import './styles/global.css';
 import './styles/launch.css';
 
@@ -13,7 +14,9 @@ if (mount) {
   const root = ReactDOM.createRoot(mount);
   root.render(
     <React.StrictMode>
-      <App />
+      <ErrorBoundary>
+        <App />
+      </ErrorBoundary>
     </React.StrictMode>,
   );
 }
