@@ -3,9 +3,10 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "lint": "echo 'TODO: shared lint pending implementation'",
-    "test": "echo 'TODO: shared tests pending implementation'",
-    "build": "echo 'TODO: shared build pending implementation'"
+    "lint": "eslint --max-warnings=0 types --ext .ts",
+    "typecheck": "tsc --project tsconfig.json --noEmit",
+    "test": "npm run typecheck",
+    "build": "tsc --project tsconfig.json --outDir dist --declaration --emitDeclarationOnly"
   },
   "devDependencies": {
     "@types/geojson": "^7946.0.16"

@@ -3,8 +3,8 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "lint": "echo 'TODO: frontend lint pipeline pending implementation'",
-    "test": "echo 'TODO: frontend test suite pending implementation'",
+    "lint": "eslint --max-warnings=0 src tests --ext .ts,.tsx",
+    "test": "jest --config jest.config.ts --runInBand",
     "typecheck": "tsc --project tsconfig.json --noEmit",
     "build": "vite build",
     "dev": "vite",

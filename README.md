@@ -104,8 +104,12 @@ npm run lint                           # turbo lint across workspaces
 npm run test                           # backend + frontend test suites
 npm run format                         # prettier --write .
 
-npm run dev --workspace @trip-narrator/backend    # backend API (http://localhost:3000)
-npm run dev --workspace @trip-narrator/frontend   # frontend PWA (http://localhost:5173)
+npm run dev                            # kill stale ports, start backend + frontend, open browser
+npm run dev:stop                       # stop dev servers
+npm run dev:reset                      # clear local caches (frontend/dev-dist, dist, .vite, .turbo)
+
+npm run dev --workspace @trip-narrator/backend    # backend API only (http://localhost:3000)
+npm run dev --workspace @trip-narrator/frontend   # frontend PWA only (http://localhost:5173)
 npm run build --workspace @trip-narrator/frontend
 npm run build --workspace @trip-narrator/backend
 npm run typecheck --workspace @trip-narrator/frontend

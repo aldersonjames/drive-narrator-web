@@ -1,5 +1,10 @@
 module.exports = {
   root: true,
+  env: {
+    es2022: true,
+    browser: true,
+    node: true,
+  },
   extends: [
     'eslint:recommended',
     'plugin:@typescript-eslint/recommended',
@@ -24,5 +29,13 @@ module.exports = {
   ignorePatterns: ['dist', 'build'],
   rules: {
     'react/prop-types': 'off'
-  }
+  },
+  overrides: [
+    {
+      files: ['**/tests/**/*.{ts,tsx}', '**/__tests__/**/*.{ts,tsx}', '**/*.test.{ts,tsx}'],
+      env: {
+        jest: true
+      }
+    }
+  ]
 };

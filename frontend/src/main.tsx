@@ -18,11 +18,16 @@ if (mount) {
   );
 }
 
-if ('serviceWorker' in navigator) {
+if ('serviceWorker' in navigator && import.meta.env.PROD) {
   registerSW({
     immediate: true,
     onOfflineReady: () => {
       console.info('Trip Narrator is ready to work offline.');
     },
   });
+} else if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.getRegistrations().then((regs) => {
+    regs.forEach((registration) => registration.unregister());
+  });
+  console.info('Service worker disabled during development for a clean slate.');
 }

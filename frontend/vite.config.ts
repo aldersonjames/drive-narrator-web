@@ -12,7 +12,7 @@ export default defineConfig({
       includeAssets: ['pwa-icon.svg', 'offline.html'],
       manifest,
       devOptions: {
-        enabled: true,
+        enabled: false,
       },
       workbox: {
         navigateFallback: '/offline.html',
