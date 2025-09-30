@@ -2,7 +2,11 @@ import type { Request, Response } from 'express';
 import { describe, expect, it, jest } from '@jest/globals';
 
 import { createCategoriesController } from '../../../src/api/routes/categoriesController';
-import type { PoiCategoryGroup } from '../../../src/services/poi/categoryCatalogService';
+import type {
+  PoiCategoryGroup,
+  CategoryCatalogService,
+} from '../../../src/services/poi/categoryCatalogService';
+import type { PoiProviderClient } from '../../../src/services/poi/poiProviderClient';
 
 describe('createCategoriesController', () => {
   it('returns catalog with provider metadata', async () => {
@@ -21,17 +25,17 @@ describe('createCategoriesController', () => {
       },
     ];
 
-    const catalogService = {
+    const catalogServiceMock = {
       getCatalog: jest.fn().mockResolvedValue(groups),
     };
 
-    const poiProvider = {
+    const poiProviderMock = {
       isFoursquareEnabled: jest.fn().mockReturnValue(false),
     };
 
     const controller = createCategoriesController({
-      catalogService: catalogService as unknown as typeof catalogService,
-      poiProvider: poiProvider as unknown as typeof poiProvider,
+      catalogService: catalogServiceMock as unknown as Pick<CategoryCatalogService, 'getCatalog'>,
+      poiProvider: poiProviderMock as unknown as Pick<PoiProviderClient, 'isFoursquareEnabled'>,
     });
 
     const json = jest.fn();

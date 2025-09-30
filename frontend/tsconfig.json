@@ -1,6 +1,7 @@
 {
   "extends": "../tsconfig.json",
-  "include": ["src/**/*", "tests/**/*"],
+  "include": ["src/**/*"],
+  "exclude": ["tests"],
   "compilerOptions": {
     "jsx": "react-jsx",
     "types": ["vite/client", "jest", "node", "jest-axe"]

@@ -1,13 +1,17 @@
 import type { Request, Response, NextFunction } from 'express';
 
-import type { TravelerProfilesRepository } from '../../db/repositories/travelerProfilesRepository';
+import type { TravelerProfileRecord } from '../../db/repositories/travelerProfilesRepository';
+
+interface TravelerProfilesLookup {
+  findById(profileId: string): Promise<TravelerProfileRecord | undefined>;
+}
 
 export interface PrivacyContext {
   profileId: string;
 }
 
 interface Dependencies {
-  travelerProfilesRepo: Pick<TravelerProfilesRepository, 'findById'>;
+  travelerProfilesRepo: TravelerProfilesLookup;
   minimumConsentVersion?: string;
 }
 

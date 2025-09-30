@@ -1,6 +1,6 @@
 import type { Request, Response } from 'express';
 
-import type { VoiceDefinition } from '../../../shared/types/tripNarrator';
+import type { VoiceDefinition } from '../../../../shared/types/tripNarrator';
 
 export const DEFAULT_VOICES: VoiceDefinition[] = [
   {

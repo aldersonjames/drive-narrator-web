@@ -1,3 +1,4 @@
+import { describe, expect, it } from '@jest/globals';
 import request from 'supertest';
 
 // Placeholder app import until backend endpoints are wired

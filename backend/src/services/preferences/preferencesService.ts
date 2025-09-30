@@ -1,6 +1,17 @@
 import crypto from 'node:crypto';
 
-import type { TravelerProfilesRepository } from '../../db/repositories/travelerProfilesRepository';
+import type {
+  TravelerProfileRecord,
+  TravelerProfileUpdate,
+} from '../../db/repositories/travelerProfilesRepository';
+
+interface TravelerProfilesGateway {
+  findById(profileId: string): Promise<TravelerProfileRecord | undefined>;
+  update(
+    profileId: string,
+    changes: TravelerProfileUpdate,
+  ): Promise<TravelerProfileRecord | undefined>;
+}
 
 export interface PreferencesDto {
   profileId: string;
@@ -22,7 +33,7 @@ export interface PreferencesUpdateInput {
 }
 
 export class PreferencesService {
-  constructor(private readonly profilesRepo: TravelerProfilesRepository) {}
+  constructor(private readonly profilesRepo: TravelerProfilesGateway) {}
 
   async getPreferences(profileId: string): Promise<PreferencesDto | undefined> {
     const record = await this.profilesRepo.findById(profileId);

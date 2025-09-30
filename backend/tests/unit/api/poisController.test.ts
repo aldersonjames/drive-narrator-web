@@ -3,7 +3,7 @@ import { describe, expect, it, jest } from '@jest/globals';
 
 import { createPoisController } from '../../../src/api/routes/poisController';
 import { PoiFilteringService } from '../../../src/services/poi/poiFilteringService';
-import type { PoiResult } from '../../../src/services/poi/poiProviderClient';
+import type { PoiProviderClient, PoiResult } from '../../../src/services/poi/poiProviderClient';
 
 describe('createPoisController', () => {
   const poiFilter = new PoiFilteringService();
@@ -38,7 +38,7 @@ describe('createPoisController', () => {
   };
 
   it('filters POIs based on interests and returns provider metadata', async () => {
-    const poiClient = {
+    const poiClientMock = {
       fetchPois: jest.fn().mockResolvedValue([
         makePoi({
           poiId: 'battlefield',
@@ -55,7 +55,10 @@ describe('createPoisController', () => {
     };
 
     const controller = createPoisController({
-      poiClient: poiClient as unknown as typeof poiClient,
+      poiClient: poiClientMock as unknown as Pick<
+        PoiProviderClient,
+        'fetchPois' | 'isFoursquareEnabled'
+      >,
       poiFilter,
     });
 
@@ -66,7 +69,7 @@ describe('createPoisController', () => {
 
     await controller(req, response);
 
-    expect(poiClient.fetchPois).toHaveBeenCalledWith({
+    expect(poiClientMock.fetchPois).toHaveBeenCalledWith({
       routeId: 'route-123',
       interestTags: ['historical'],
       bbox: undefined,
@@ -81,13 +84,16 @@ describe('createPoisController', () => {
   });
 
   it('returns 400 when routeId missing', async () => {
-    const poiClient = {
+    const poiClientMock = {
       fetchPois: jest.fn(),
       isFoursquareEnabled: jest.fn().mockReturnValue(false),
     };
 
     const controller = createPoisController({
-      poiClient: poiClient as unknown as typeof poiClient,
+      poiClient: poiClientMock as unknown as Pick<
+        PoiProviderClient,
+        'fetchPois' | 'isFoursquareEnabled'
+      >,
       poiFilter,
     });
     const req = { query: {} } as unknown as Request;
@@ -96,6 +102,6 @@ describe('createPoisController', () => {
     await controller(req, response);
 
     expect(raw.status).toHaveBeenCalledWith(400);
-    expect(poiClient.fetchPois).not.toHaveBeenCalled();
+    expect(poiClientMock.fetchPois).not.toHaveBeenCalled();
   });
 });

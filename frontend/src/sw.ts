@@ -1,9 +1,13 @@
 /// <reference lib="webworker" />
 
+export {};
+
+const swSelf = self as unknown as ServiceWorkerGlobalScope;
+
 const CACHE_NAME = 'trip-narrator-cache-v1';
 const PRECACHE_URLS = ['/'];
 
-self.addEventListener('install', (event: ExtendableEvent) => {
+swSelf.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       return cache.addAll(PRECACHE_URLS);
@@ -11,7 +15,7 @@ self.addEventListener('install', (event: ExtendableEvent) => {
   );
 });
 
-self.addEventListener('fetch', (event: FetchEvent) => {
+swSelf.addEventListener('fetch', (event) => {
   const request = event.request;
   if (request.method !== 'GET') {
     return;

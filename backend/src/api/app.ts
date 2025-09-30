@@ -80,7 +80,9 @@ void tripsRepo.create({
 });
 
 const privacyMiddleware = createPrivacyMiddleware({
-  travelerProfilesRepo,
+  travelerProfilesRepo: {
+    findById: (profileId: string) => travelerProfilesRepo.findById(profileId),
+  },
   minimumConsentVersion: '1.0.0',
 });
 
