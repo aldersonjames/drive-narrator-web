@@ -11,6 +11,12 @@
 - Discovery Stitch screen now consumes live `/api/pois` data with normalized coordinates/images and persists favorite POIs via metadata.
 - Remaining gap: add automated coverage (integration + accessibility) for the new Stitch flows and confirm metadata merge behaviour under concurrent updates.
 
+### Status Update — 2025-10-04
+
+- Voice-first planner now keeps the traveler on a single `/voice` experience with GPS origin defaults, inline route planning, and MapLibre neon styling.
+- Backend OpenRouteService client supports keyed requests, distance-aware fallback, and preference-based retries to surface up to three unique routes before mocking.
+- Route detail card/pills mirror map selections; durations render in hours/minutes and distances in miles for a more realistic itinerary readout.
+
 - Launch screen reflowed: location chip, orb, map, and lower panels now stack responsively for phone/tablet/desktop.
 
 - Landing intro now opens with a path-drawn "TRIP / NARRATOR" title (no map on first view) to mirror the neon Motion demo.

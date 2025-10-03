@@ -2,12 +2,86 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { NavLink } from 'react-router-dom';
 
 import BreathingOrb from '../components/voice/BreathingOrb';
-import RouteCarousel from '../components/routes/RouteCarousel';
+import MapRoutes from '../components/map/MapRoutes';
 import { useTripPlanner } from '../context/TripPlannerContext';
 import { useVoiceConversation } from '../hooks/useVoiceConversation';
 
+type ReverseGeocodeResponse = {
+  address?: {
+    road?: string;
+    house_number?: string;
+  };
+};
+
 const geoToString = (coords: [number, number]): string =>
-  `${coords[1].toFixed(5)},${coords[0].toFixed(5)}`;
+  `${coords[1].toFixed(5)}, ${coords[0].toFixed(5)}`;
+
+const formatAddress = (data?: ReverseGeocodeResponse, coords?: [number, number]): string => {
+  if (data?.address) {
+    const { house_number, road } = data.address;
+    if (road && house_number) {
+      return `${house_number} ${road}`;
+    }
+    if (road) {
+      return road;
+    }
+  }
+  return coords ? geoToString(coords) : 'Location unavailable';
+};
+
+const reverseGeocode = async ([lng, lat]: [number, number]): Promise<
+  ReverseGeocodeResponse | undefined
+> => {
+  try {
+    const params = new URLSearchParams({ format: 'jsonv2', lat: String(lat), lon: String(lng) });
+    const response = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?${params.toString()}`,
+      {
+        headers: {
+          Accept: 'application/json',
+          'User-Agent': 'TripNarrator/0.1 (demo)',
+        },
+      },
+    );
+    if (!response.ok) {
+      return undefined;
+    }
+    const data = (await response.json()) as ReverseGeocodeResponse;
+    return data;
+  } catch (error) {
+    console.info('reverse-geocode-failed', error);
+    return undefined;
+  }
+};
+
+const geocodePlace = async (value: string): Promise<[number, number] | null> => {
+  try {
+    const params = new URLSearchParams({ format: 'jsonv2', q: value, limit: '1' });
+    const response = await fetch(
+      `https://nominatim.openstreetmap.org/search?${params.toString()}`,
+      {
+        headers: {
+          Accept: 'application/json',
+          'User-Agent': 'TripNarrator/0.1 (demo)',
+        },
+      },
+    );
+    if (!response.ok) {
+      return null;
+    }
+    const result = (await response.json()) as Array<{ lat?: string; lon?: string }>;
+    const top = result[0];
+    const lat = top?.lat ? Number.parseFloat(top.lat) : undefined;
+    const lon = top?.lon ? Number.parseFloat(top.lon) : undefined;
+    if (Number.isFinite(lat) && Number.isFinite(lon)) {
+      return [lon as number, lat as number];
+    }
+    return null;
+  } catch (error) {
+    console.info('geocode-failed', error);
+    return null;
+  }
+};
 
 export const VoiceConversationScreen: React.FC = () => {
   const { routes, isLoading, loadRoutes, preferences, selectRoute, selectedRouteId, notices } =
@@ -17,7 +91,6 @@ export const VoiceConversationScreen: React.FC = () => {
   const [originCoords, setOriginCoords] = useState<[number, number] | null>(null);
   const [locationLabel, setLocationLabel] = useState('Locating…');
   const [planDestinationInput, setPlanDestinationInput] = useState('');
-  const [conversationInput, setConversationInput] = useState('');
   const [plannerError, setPlannerError] = useState<string | undefined>();
   const [planning, setPlanning] = useState(false);
 
@@ -40,42 +113,73 @@ export const VoiceConversationScreen: React.FC = () => {
       setLocationLabel('Location unavailable');
       return;
     }
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const coords: [number, number] = [pos.coords.longitude, pos.coords.latitude];
-        setOriginCoords(coords);
-        setLocationLabel(
-          `Current location • ${pos.coords.latitude.toFixed(3)}, ${pos.coords.longitude.toFixed(3)}`,
-        );
-        setOriginInput('Current Location');
-      },
-      () => {
-        setLocationLabel('Use voice or enter an origin');
-      },
-      { enableHighAccuracy: true, timeout: 15000 },
-    );
+
+    let cancelled = false;
+
+    const handlePosition = (pos: GeolocationPosition) => {
+      if (cancelled) return;
+      const coords: [number, number] = [pos.coords.longitude, pos.coords.latitude];
+      setOriginCoords(coords);
+      setOriginInput('Current Location');
+      setLocationLabel(geoToString(coords));
+
+      void reverseGeocode(coords).then((address) => {
+        if (cancelled) return;
+        setLocationLabel(formatAddress(address, coords));
+      });
+    };
+
+    const handleError = () => {
+      if (!cancelled) {
+        setLocationLabel('Location unavailable');
+      }
+    };
+
+    const watchId = navigator.geolocation.watchPosition(handlePosition, handleError, {
+      enableHighAccuracy: true,
+      timeout: 15000,
+      maximumAge: 5000,
+    });
+
+    return () => {
+      cancelled = true;
+      if (typeof watchId === 'number') {
+        navigator.geolocation.clearWatch(watchId);
+      }
+    };
   }, []);
 
   const handlePlan = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const destination = planDestinationInput.trim();
-    if (!destination) {
+    const destinationText = planDestinationInput.trim();
+    if (!destinationText) {
       setPlannerError('Enter a destination to plan your trip.');
-      return;
-    }
-
-    const originValue = originCoords ? geoToString(originCoords) : originInput.trim();
-    if (!originValue) {
-      setPlannerError('Provide an origin to begin planning.');
       return;
     }
 
     setPlannerError(undefined);
     setPlanning(true);
     try {
+      let originValue = originCoords ? geoToString(originCoords) : originInput.trim();
+      if (!originCoords && originValue) {
+        const originLookup = await geocodePlace(originValue);
+        if (originLookup) {
+          originValue = geoToString(originLookup);
+        }
+      }
+
+      const destinationLookup = await geocodePlace(destinationText);
+      const destinationValue = destinationLookup ? geoToString(destinationLookup) : destinationText;
+
+      if (!originValue) {
+        setPlannerError('Provide an origin to begin planning.');
+        setPlanning(false);
+        return;
+      }
+
       await loadRoutes({
         origin: originValue,
-        destination,
+        destination: destinationValue,
         departureTime: new Date().toISOString(),
         interestTags,
       });
@@ -86,36 +190,46 @@ export const VoiceConversationScreen: React.FC = () => {
     }
   };
 
-  const formattedMetrics = selectedRoute
-    ? {
-        duration: `${selectedRoute.durationMinutes.toFixed(0)} min drive`,
-        distance: `${selectedRoute.distanceKm.toFixed(0)} km`,
-        stops: `${selectedRoute.pois.length} narrated stops`,
-      }
-    : undefined;
-
-  const suggestions = conversation.suggestions.length
-    ? conversation.suggestions
-    : ['Preview story', 'Add a scenic detour', 'Share accessibility options'];
-
   return (
     <div
       className="flex h-full min-h-screen flex-col bg-background-light font-display text-white dark:bg-background-dark"
       style={{ minHeight: 'max(884px, 100dvh)' }}
     >
-      <header className="flex flex-col gap-4 p-4 pb-2">
-        <div className="flex items-center justify-between">
+      <header className="p-4 pb-0">
+        <div className="flex justify-center">
           <div className="rounded-full bg-white/10 px-3 py-1 text-sm text-white/80 backdrop-blur">
             <span role="img" aria-hidden="true" className="mr-1">
               📍
             </span>
             {locationLabel}
           </div>
-          <button type="button" className="text-white/70" aria-label="Open settings">
-            <span className="material-symbols-outlined">settings</span>
-          </button>
         </div>
-        <div className="w-full rounded-2xl bg-white/5 p-4 shadow-sm backdrop-blur dark:bg-white/10">
+      </header>
+
+      <main className="flex flex-1 flex-col gap-6 px-4 pb-6">
+        <section className="flex justify-center pt-4">
+          <BreathingOrb
+            phase={conversation.orbState}
+            onStartListening={conversation.startVoice}
+            onStop={conversation.stopVoice}
+            disabled={conversation.isProcessing}
+            messages={{
+              idle: conversation.error ? 'Ready when you are' : 'Tap to start listening',
+              listening: 'Listening…',
+              speaking: 'Narrating…',
+              processing: 'Processing…',
+              error: conversation.error ?? 'Microphone problem',
+            }}
+          />
+        </section>
+
+        {conversation.error && (
+          <p className="text-center text-sm text-rose-300" role="alert">
+            {conversation.error}
+          </p>
+        )}
+
+        <section className="rounded-2xl bg-white/5 p-4 backdrop-blur dark:bg-white/10">
           <form className="space-y-3" onSubmit={handlePlan}>
             <div className="grid gap-3 sm:grid-cols-2">
               <label className="flex flex-col text-left text-white/70">
@@ -140,12 +254,7 @@ export const VoiceConversationScreen: React.FC = () => {
                 />
               </label>
             </div>
-            <div className="flex items-center justify-between gap-3 flex-wrap">
-              <div className="text-xs text-white/60">
-                {originCoords
-                  ? `Using GPS • ${geoToString(originCoords)}`
-                  : 'Edit origin to override GPS'}
-              </div>
+            <div className="flex justify-end">
               <button
                 type="submit"
                 disabled={planning || isLoading}
@@ -167,98 +276,18 @@ export const VoiceConversationScreen: React.FC = () => {
               ))}
             </ul>
           )}
-        </div>
-      </header>
+        </section>
 
-      <main className="flex flex-1 flex-col gap-6 px-4 pb-4">
-        {(planning || routes.length > 0) && (
+        {routes.length > 0 && (
           <section className="rounded-2xl bg-white/5 p-4 backdrop-blur dark:bg-white/10">
-            <div className="flex items-center justify-between gap-3">
-              <h2 className="text-lg font-semibold text-white">Route options</h2>
-              {formattedMetrics && (
-                <div className="flex flex-wrap gap-3 text-xs text-white/60">
-                  <span>{formattedMetrics.duration}</span>
-                  <span>{formattedMetrics.distance}</span>
-                  <span>{formattedMetrics.stops}</span>
-                </div>
-              )}
-            </div>
-            <div className="mt-4">
-              <RouteCarousel
-                routes={routes}
-                selectedRouteId={selectedRoute?.routeId}
-                onSelect={selectRoute}
-              />
-            </div>
+            <MapRoutes
+              routes={routes}
+              selectedRouteId={selectedRoute?.routeId}
+              onSelect={selectRoute}
+            />
           </section>
         )}
-
-        <section className="flex flex-col items-center gap-6 rounded-2xl bg-white/5 px-6 py-8 text-center backdrop-blur dark:bg-white/10">
-          <BreathingOrb
-            phase={conversation.orbState}
-            onStartListening={conversation.startVoice}
-            onStop={conversation.stopVoice}
-            disabled={conversation.isProcessing}
-            messages={{
-              idle: conversation.error ? 'Ready when you are' : 'Tap to start listening',
-              listening: 'Listening…',
-              speaking: 'Narrating…',
-              processing: 'Processing…',
-              error: conversation.error ?? 'Microphone problem',
-            }}
-          />
-
-          <div className="w-full max-w-md space-y-4">
-            <form
-              className="relative"
-              onSubmit={(event) => {
-                event.preventDefault();
-                const trimmed = conversationInput.trim();
-                if (trimmed) {
-                  void conversation.sendText(trimmed);
-                  setConversationInput('');
-                }
-              }}
-            >
-              <input
-                type="text"
-                placeholder="Speak or type to your co-pilot…"
-                value={conversationInput}
-                onChange={(event) => setConversationInput(event.target.value)}
-                disabled={conversation.isProcessing}
-                className="w-full rounded-lg border border-white/10 bg-background-dark/40 py-3 px-4 text-white placeholder-white/40 focus:border-amber focus:outline-none focus:ring-2 focus:ring-amber/60"
-              />
-              <button
-                type="submit"
-                className="absolute inset-y-0 right-0 flex items-center pr-3 text-amber"
-                aria-label="Send message"
-                disabled={!conversationInput.trim() || conversation.isProcessing}
-              >
-                <span className="material-symbols-outlined">arrow_upward</span>
-              </button>
-            </form>
-            <ul className="flex flex-wrap justify-center gap-2 text-xs text-white/70">
-              {suggestions.map((suggestion) => (
-                <li key={suggestion}>
-                  <button
-                    type="button"
-                    onClick={() => void conversation.sendText(suggestion)}
-                    className="rounded-full bg-white/10 px-3 py-1 transition-colors hover:bg-white/20"
-                  >
-                    {suggestion}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </section>
       </main>
-
-      {conversation.error && (
-        <div className="px-4 py-2 text-center text-sm text-red-400" role="alert">
-          {conversation.error}
-        </div>
-      )}
 
       <footer className="flex-shrink-0 border-t border-white/10 bg-background-light/5 backdrop-blur-sm dark:border-white/10 dark:bg-background-dark/5">
         <nav className="flex justify-around p-2">

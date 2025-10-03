@@ -11,6 +11,8 @@ export interface RouteRequest {
   profile?: 'driving-car' | 'driving-hgv' | 'cycling-regular' | 'foot-walking';
   alternatives?: number;
   avoidanceCategories?: string[];
+  departureTime?: string;
+  preference?: 'recommended' | 'fastest' | 'shortest' | 'green';
 }
 
 export interface RouteFeatureProperties {
@@ -67,13 +69,15 @@ export class OpenRouteServiceClient {
     this.retries = options.retries ?? 2;
     this.fetchImpl = options.fetchImpl ?? fetch;
     this.useMock = !this.apiKey;
+
+    if (this.useMock) {
+      console.warn('OpenRouteServiceClient: running in mock mode (no ORS_API_KEY provided).');
+    } else {
+      console.info('OpenRouteServiceClient: using OpenRouteService API.');
+    }
   }
 
   async getRoutes(request: RouteRequest): Promise<RouteResponse> {
-    if (this.useMock) {
-      return this.buildMockResponse(request);
-    }
-
     const originCoord = this.normalizeCoordinate(request.origin);
     const destinationCoord = this.normalizeCoordinate(request.destination);
 
@@ -81,6 +85,7 @@ export class OpenRouteServiceClient {
       ...request,
       origin: originCoord,
       destination: destinationCoord,
+      preference: request.preference ?? 'recommended',
     };
 
     if (this.useMock) {
@@ -100,23 +105,8 @@ export class OpenRouteServiceClient {
       api_key: this.apiKey,
     });
 
-    const body = {
-      coordinates: [
-        [originCoord.lng, originCoord.lat],
-        [destinationCoord.lng, destinationCoord.lat],
-      ],
-      format: 'json',
-      elevation: false,
-      extra_info: ['waytype'],
-      options: {
-        avoid_features: normalized.avoidanceCategories ?? [],
-      },
-      alternative_routes: {
-        target_count: normalized.alternatives ?? 3,
-        weight_factor: 1.2,
-        share_factor: 0.6,
-      },
-    };
+    const estimatedDistance = this.estimateDistanceMeters(originCoord, destinationCoord);
+    let allowAlternatives = (normalized.alternatives ?? 3) > 1 && estimatedDistance <= 140_000;
 
     const url = `${this.baseUrl}/v2/directions/${profile}/geojson?${searchParams.toString()}`;
 
@@ -125,6 +115,27 @@ export class OpenRouteServiceClient {
 
     while (attempt <= this.retries) {
       try {
+        const body = {
+          coordinates: [
+            [originCoord.lng, originCoord.lat],
+            [destinationCoord.lng, destinationCoord.lat],
+          ],
+          format: 'json',
+          elevation: false,
+          extra_info: ['waytype'],
+          preference: normalized.preference ?? 'recommended',
+          options: {
+            avoid_features: normalized.avoidanceCategories ?? [],
+          },
+          alternative_routes: allowAlternatives
+            ? {
+                target_count: Math.min(normalized.alternatives ?? 3, 3),
+                weight_factor: 1.1,
+                share_factor: 0.7,
+              }
+            : undefined,
+        };
+
         const response = await this.fetchImpl(url, {
           method: 'POST',
           headers: {
@@ -134,12 +145,33 @@ export class OpenRouteServiceClient {
           body: JSON.stringify(body),
         });
 
+        const raw = await response.text();
+
         if (!response.ok) {
-          const errorText = await response.text();
-          throw new Error(`OpenRouteService error ${response.status}: ${errorText}`);
+          if (response.status === 400) {
+            try {
+              const parsed = JSON.parse(raw) as { error?: { code?: number } };
+              if (parsed?.error?.code === 2004) {
+                if (allowAlternatives) {
+                  console.warn(
+                    'OpenRouteServiceClient: distance limit hit, retrying without alternatives.',
+                  );
+                  allowAlternatives = false;
+                  continue;
+                }
+                console.warn(
+                  'OpenRouteServiceClient: distance limit hit, falling back to mock route.',
+                );
+                return this.buildMockResponse(normalized);
+              }
+            } catch (parseError) {
+              console.warn('OpenRouteServiceClient: unable to parse ORS error payload', parseError);
+            }
+          }
+          throw new Error(`OpenRouteService error ${response.status}: ${raw}`);
         }
 
-        const json = (await response.json()) as RouteResponse;
+        const json = JSON.parse(raw) as RouteResponse;
         this.cache.set(cacheKey, {
           value: json,
           expiresAt: now + this.ttlMs,
@@ -181,7 +213,22 @@ export class OpenRouteServiceClient {
     }
 
     if (typeof input === 'string') {
-      const hash = this.hashToNumber(input);
+      const trimmed = input.trim();
+      const match = trimmed.match(/^\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*$/);
+      if (match) {
+        const first = Number.parseFloat(match[1]);
+        const second = Number.parseFloat(match[2]);
+        if (Number.isFinite(first) && Number.isFinite(second)) {
+          if (Math.abs(first) <= 90 && Math.abs(second) <= 180) {
+            return { lat: first, lng: second };
+          }
+          if (Math.abs(first) <= 180 && Math.abs(second) <= 90) {
+            return { lat: second, lng: first };
+          }
+        }
+      }
+
+      const hash = this.hashToNumber(trimmed || '0');
       return {
         lat: (hash % 90) - 45,
         lng: ((hash / 90) % 180) - 90,
@@ -192,31 +239,50 @@ export class OpenRouteServiceClient {
   }
 
   private buildMockResponse(request: RouteRequest): RouteResponse {
-    const base = this.hashToNumber(JSON.stringify(request.origin ?? 'origin'));
-    const generateCoords = (offset: number): number[][] => [
-      [base + offset, base / 2 + offset],
-      [base + offset + 0.5, base / 2 + offset + 0.25],
-      [base + offset + 0.8, base / 2 + offset + 0.3],
-    ];
+    const origin =
+      typeof request.origin === 'string'
+        ? this.normalizeCoordinate(request.origin)
+        : request.origin;
+    const destination =
+      typeof request.destination === 'string'
+        ? this.normalizeCoordinate(request.destination)
+        : request.destination;
 
-    const features: RouteFeature[] = [0, 1, 2].map((index) => {
-      const factor = 1 - index * 0.1;
+    const originCoord = origin ?? { lat: 0, lng: 0 };
+    const destinationCoord = destination ?? { lat: 0.5, lng: 0.5 };
+
+    const variations = [0, 0.2, -0.2];
+
+    const features: RouteFeature[] = variations.map((variation, index) => {
+      const steps = 12;
+      const coords: number[][] = [];
+      for (let i = 0; i < steps; i += 1) {
+        const t = i / (steps - 1);
+        const bulge = variation * Math.sin(Math.PI * t);
+        const lat = originCoord.lat + (destinationCoord.lat - originCoord.lat) * t + bulge * 0.3;
+        const lng = originCoord.lng + (destinationCoord.lng - originCoord.lng) * t + bulge * 0.6;
+        coords.push([lng, lat]);
+      }
+
+      const distanceMeters = 200_000 * (1 - index * 0.07);
+      const durationSeconds = 2.5 * 3600 * (1 - index * 0.08);
+
       return {
         type: 'Feature',
         geometry: {
           type: 'LineString',
-          coordinates: generateCoords(index * 0.2),
+          coordinates: coords,
         },
         properties: {
           segments: [
             {
-              distance: 240000 * factor,
-              duration: 3 * 3600 * factor,
+              distance: distanceMeters,
+              duration: durationSeconds,
             },
           ],
           summary: {
-            distance: 240000 * factor,
-            duration: 3 * 3600 * factor,
+            distance: distanceMeters,
+            duration: durationSeconds,
           },
         },
       };
@@ -231,5 +297,19 @@ export class OpenRouteServiceClient {
   private hashToNumber(value: string): number {
     const hash = crypto.createHash('sha1').update(value).digest('hex');
     return parseInt(hash.slice(0, 6), 16) / 100000;
+  }
+
+  private estimateDistanceMeters(a: Coordinate, b: Coordinate): number {
+    const toRad = (deg: number) => (deg * Math.PI) / 180;
+    const R = 6371000;
+    const lat1 = toRad(a.lat);
+    const lat2 = toRad(b.lat);
+    const dLat = toRad(b.lat - a.lat);
+    const dLon = toRad(b.lng - a.lng);
+    const h =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h));
+    return R * c;
   }
 }

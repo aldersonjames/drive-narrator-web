@@ -11,6 +11,7 @@ import type { PoiProviderClient, PoiResult } from '../../services/poi/poiProvide
 import type { PoiFilteringService } from '../../services/poi/poiFilteringService';
 import type { RouteScoringService, RouteScore } from '../../services/scoring/routeScoringService';
 import { validate } from '../../utils/validation';
+import { logger } from '../../utils/logger';
 
 interface Dependencies {
   orsClient: OpenRouteServiceClient;
@@ -29,7 +30,7 @@ const formatRoutes = (routeResponse: RouteResponse, scores: RouteScore[], pois: 
   const minScore = scores.length ? Math.min(...scores.map((entry) => entry.score)) : 0;
   const denominator = maxScore - minScore;
 
-  return scores.map((scoreEntry, index) => {
+  const formatted = scores.map((scoreEntry, index) => {
     const feature =
       featureMap.get(scoreEntry.routeId) ??
       routeResponse.features[index] ??
@@ -73,6 +74,18 @@ const formatRoutes = (routeResponse: RouteResponse, scores: RouteScore[], pois: 
       attribution: { source: 'openrouteservice' },
     };
   });
+
+  const seen = new Set<string>();
+  const unique: typeof formatted = [];
+  formatted.forEach((route) => {
+    const key = JSON.stringify(route.geometry.coordinates);
+    if (!seen.has(key)) {
+      seen.add(key);
+      unique.push(route);
+    }
+  });
+
+  return unique;
 };
 
 const interestListSchema = z.array(z.string().min(1)).min(1);
@@ -137,7 +150,65 @@ export const createRoutesController = (deps: Dependencies) => {
       }));
 
       const scored = deps.scoring.scoreRoutes(candidates, payload.interests);
-      const formatted = formatRoutes(routes, scored, filtered.pois);
+      let formatted = formatRoutes(routes, scored, filtered.pois);
+
+      const dedupe = (items: ReturnType<typeof formatRoutes>) => {
+        const seen = new Set<string>();
+        return items.filter((item) => {
+          const key = JSON.stringify(item.geometry.coordinates);
+          if (seen.has(key)) {
+            return false;
+          }
+          seen.add(key);
+          return true;
+        });
+      };
+
+      formatted = dedupe(formatted);
+
+      const desiredRoutes = 3;
+
+      if (formatted.length < desiredRoutes) {
+        const additionalPrefs: Array<'fastest' | 'shortest' | 'green' | 'recommended'> = [
+          'fastest',
+          'shortest',
+          'green',
+          'recommended',
+        ];
+
+        for (const preference of additionalPrefs) {
+          if (formatted.length >= desiredRoutes) break;
+          try {
+            const prefResponse = await deps.orsClient.getRoutes({
+              origin: payload.origin,
+              destination: payload.destination,
+              departureTime: payload.departureTime,
+              alternatives: 1,
+              preference,
+            });
+
+            const prefCandidates = prefResponse.features.map((feature, index) => ({
+              routeId: `pref-${preference}-${index}`,
+              pois: filtered.pois.map((poi) => ({
+                poiId: poi.poiId,
+                categories: poi.categories,
+                relevance: poi.relevance,
+              })),
+              durationMinutes: feature.properties.summary.duration / 60,
+              distanceKm: feature.properties.summary.distance / 1000,
+            }));
+
+            const prefScores = deps.scoring.scoreRoutes(prefCandidates, payload.interests);
+            const prefFormatted = formatRoutes(prefResponse, prefScores, filtered.pois);
+            formatted = dedupe([...formatted, ...prefFormatted]);
+          } catch (prefError) {
+            logger.warn('route-preference-failed', {
+              preference,
+              message: (prefError as Error).message,
+            });
+          }
+        }
+      }
 
       const notices = [...filtered.notices];
       if (formatted.length < 2) {

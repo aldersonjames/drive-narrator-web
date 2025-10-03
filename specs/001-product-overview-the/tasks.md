@@ -108,6 +108,13 @@
 - [ ] T123 Add backend integration test validating preferences metadata merge behaviour + poiProvider persistence.
 - [ ] T124 Add frontend unit/integration and axe coverage for Stitch Settings/Discovery metadata flows.
 
+## Phase 3.7: Route Planning Refinement
+
+- [x] T125 Collapse manual planner into Stitch Voice screen with GPS origin defaults, inline route planning, and MapLibre neon styling (2025-10-04).
+- [x] T126 Enhance OpenRouteService client to honour API keys, retry with preferences, and dedupe geometry to deliver up to three unique routes before falling back (2025-10-04).
+- [x] T127 Rework Stitch route detail to show a single active card with miles/hr metrics and map-synced neon route pills (2025-10-04).
+- [ ] T128 Add backend regression tests covering ORS retry/dedupe logic; add frontend tests for new route detail behaviour.
+
 ## Dependencies
 
 - T001 → T002 (research informs scaffold scope).

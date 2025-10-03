@@ -15,9 +15,15 @@ export interface MapRoutesProps {
   onSelect: (routeId: string) => void;
 }
 
-const ROUTE_COLORS = ['#6366F1', '#0EA5E9', '#F97316', '#22C55E', '#EC4899'];
+const ROUTE_COLORS = ['#00FFFF', '#FF6EC7', '#FFD400', '#7CFF91', '#9A7CFF'];
 
 const getRouteColor = (index: number): string => ROUTE_COLORS[index % ROUTE_COLORS.length];
+
+interface ImportMetaLite {
+  env?: {
+    VITE_MAPTILER_KEY?: string;
+  };
+}
 
 const toRouteFeatures = (routes: RouteSummary[]) =>
   routes.map((route, index) => ({
@@ -64,6 +70,25 @@ const getCategoryLabel = (category: string): string => {
   return token.replace(/[_-]/g, ' ');
 };
 
+const formatDistance = (distanceKm: number): string => {
+  const miles = distanceKm * 0.621371;
+  return `${miles.toFixed(1)} mi`;
+};
+
+const formatDuration = (durationMinutes: number): string => {
+  if (durationMinutes < 60) {
+    return `${Math.round(durationMinutes)} min`;
+  }
+  const wholeMinutes = Math.round(durationMinutes);
+  const hours = Math.floor(wholeMinutes / 60);
+  const minutes = wholeMinutes % 60;
+  const hourLabel = hours === 1 ? 'hr' : 'hrs';
+  if (minutes === 0) {
+    return `${hours} ${hourLabel}`;
+  }
+  return `${hours} ${hourLabel} ${minutes} min`;
+};
+
 export const MapRoutes: React.FC<MapRoutesProps> = ({ routes, selectedRouteId, onSelect }) => {
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<MapInstance | null>(null);
@@ -71,9 +96,40 @@ export const MapRoutes: React.FC<MapRoutesProps> = ({ routes, selectedRouteId, o
   const [mapReady, setMapReady] = useState(false);
   const lastFittedRoutesKeyRef = useRef<string>('');
 
+  const importMetaEnv = ((): ImportMetaLite['env'] => {
+    if (typeof import.meta !== 'undefined') {
+      return (import.meta as unknown as ImportMetaLite).env;
+    }
+    return undefined;
+  })();
+
+  const maptilerKey =
+    importMetaEnv?.VITE_MAPTILER_KEY ??
+    (typeof process !== 'undefined' ? process.env?.VITE_MAPTILER_KEY : undefined);
+
+  const styleUrl = useMemo(() => {
+    if (maptilerKey) {
+      return `https://api.maptiler.com/maps/stardust-preview/style.json?key=${maptilerKey}`;
+    }
+    return 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json';
+  }, [maptilerKey]);
+
   const routeFeatures = useMemo(() => toRouteFeatures(routes), [routes]);
   const poiFeatures = useMemo(() => toPoiFeatures(routes), [routes]);
   const routesKey = useMemo(() => routes.map((route) => route.routeId).join('|'), [routes]);
+
+  const selectedRoute = useMemo(() => {
+    if (!routes.length) return undefined;
+    return selectedRouteId
+      ? (routes.find((route) => route.routeId === selectedRouteId) ?? routes[0])
+      : routes[0];
+  }, [routes, selectedRouteId]);
+
+  useEffect(() => {
+    if (!selectedRouteId && routes[0]) {
+      onSelect(routes[0].routeId);
+    }
+  }, [selectedRouteId, routes, onSelect]);
 
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) {
@@ -92,7 +148,7 @@ export const MapRoutes: React.FC<MapRoutesProps> = ({ routes, selectedRouteId, o
 
       const map = new maplibregl.Map({
         container: mapContainerRef.current,
-        style: 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json',
+        style: styleUrl,
         center: [-98.5795, 39.8283],
         zoom: 3.3,
         scrollZoom: false,
@@ -116,7 +172,7 @@ export const MapRoutes: React.FC<MapRoutesProps> = ({ routes, selectedRouteId, o
       mapLibRef.current = undefined;
       setMapReady(false);
     };
-  }, []);
+  }, [styleUrl]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -153,6 +209,7 @@ export const MapRoutes: React.FC<MapRoutesProps> = ({ routes, selectedRouteId, o
           'line-width': 4,
           'line-color': ['get', 'color'],
           'line-opacity': 0.65,
+          'line-blur': 1.2,
         },
       });
     }
@@ -167,6 +224,7 @@ export const MapRoutes: React.FC<MapRoutesProps> = ({ routes, selectedRouteId, o
           'line-width': 6,
           'line-color': ['get', 'color'],
           'line-opacity': 0.9,
+          'line-blur': 0.6,
         },
       });
     }
@@ -247,10 +305,10 @@ export const MapRoutes: React.FC<MapRoutesProps> = ({ routes, selectedRouteId, o
   }, [mapReady, onSelect]);
 
   if (!routes.length) {
-    return (
-      <p role="note">No routes available yet. Try adjusting your interests or destinations.</p>
-    );
+    return null;
   }
+
+  const selectedIndex = selectedRoute ? routes.indexOf(selectedRoute) : -1;
 
   return (
     <section aria-label="Candidate routes" className="map-routes">
@@ -262,74 +320,71 @@ export const MapRoutes: React.FC<MapRoutesProps> = ({ routes, selectedRouteId, o
         <div ref={mapContainerRef} className="route-map-canvas" data-testid="routes-map" />
       </div>
 
-      <div>
-        <h3 className="route-map-heading">Route Options</h3>
-        <ul className="route-card-list">
-          {routes.map((route, index) => {
-            const isSelected = route.routeId === selectedRouteId;
-            const color = getRouteColor(index);
-
-            return (
-              <li key={route.routeId}>
+      {selectedRoute ? (
+        <div className="route-detail">
+          <div className="route-switcher" role="tablist" aria-label="Route options">
+            {routes.map((route, index) => {
+              const color = getRouteColor(index);
+              const isActive = route.routeId === selectedRoute.routeId;
+              return (
                 <button
+                  key={route.routeId}
                   type="button"
+                  role="tab"
+                  aria-selected={isActive}
+                  className={`route-pill${isActive ? ' route-pill--active' : ''}`}
+                  style={{ borderColor: color, color: color }}
                   onClick={() => onSelect(route.routeId)}
-                  aria-pressed={isSelected}
-                  className={`route-card${isSelected ? ' route-card--active' : ''}`}
-                  data-testid={`route-card-${route.routeId}`}
-                  style={{ borderColor: isSelected ? color : undefined }}
                 >
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <span
-                      aria-hidden="true"
-                      style={{
-                        width: '14px',
-                        height: '14px',
-                        borderRadius: '999px',
-                        backgroundColor: color,
-                        boxShadow: '0 0 0 2px rgba(255,255,255,0.9)',
-                      }}
-                    />
-                    <strong style={{ fontSize: '1rem' }}>Route {index + 1}</strong>
-                  </span>
-                  <span style={{ fontSize: '0.95rem', color: '#334155' }}>
-                    {route.durationMinutes.toFixed(0)} min · {route.distanceKm.toFixed(1)} km
-                  </span>
-                  <span style={{ fontSize: '0.85rem', color: '#475569' }}>
-                    Score {route.score.toFixed(2)} · Normalised{' '}
-                    {(route.scoreNormalized ?? 0).toFixed(2)}
-                  </span>
-                  <div className="route-card__thumbs">
-                    {route.pois.slice(0, 3).map((poi) => {
-                      const key = poi.poiId ?? poi.id;
-                      const preview = poi.images?.[0];
-                      const categoryLabel = getCategoryLabel(poi.category);
-                      const label = preview?.altText ?? `${poi.name} preview`;
-                      return (
-                        <figure
-                          key={key}
-                          className={`route-card__thumb${preview ? '' : ' route-card__thumb--placeholder'}`}
-                          aria-label={label}
-                          title={poi.name}
-                          data-testid="poi-photostrip-thumb"
-                        >
-                          {preview ? <img src={preview.url} alt={label} /> : null}
-                          <span aria-hidden="true">{categoryLabel.slice(0, 8)}</span>
-                        </figure>
-                      );
-                    })}
-                    {route.pois.length > 3 ? (
-                      <span className="route-card__extra" data-testid="poi-photostrip-more">
-                        +{route.pois.length - 3}
-                      </span>
-                    ) : null}
-                  </div>
+                  <span className="route-pill__swatch" style={{ backgroundColor: color }} />
+                  Route {index + 1}
                 </button>
-              </li>
-            );
-          })}
-        </ul>
-      </div>
+              );
+            })}
+          </div>
+
+          <div
+            className="route-card route-card--active"
+            data-testid={`route-card-${selectedRoute.routeId}`}
+            style={{ borderColor: getRouteColor(selectedIndex >= 0 ? selectedIndex : 0) }}
+          >
+            <span style={{ fontSize: '1rem', fontWeight: 600 }}>Route {selectedIndex + 1}</span>
+            <span style={{ fontSize: '0.95rem', color: '#334155' }}>
+              {formatDuration(selectedRoute.durationMinutes)} ·{' '}
+              {formatDistance(selectedRoute.distanceKm)}
+            </span>
+            <span style={{ fontSize: '0.85rem', color: '#475569' }}>
+              Score {selectedRoute.score.toFixed(2)} · Normalised{' '}
+              {(selectedRoute.scoreNormalized ?? 0).toFixed(2)}
+            </span>
+            <div className="route-card__thumbs">
+              {selectedRoute.pois.slice(0, 3).map((poi) => {
+                const key = poi.poiId ?? poi.id;
+                const preview = poi.images?.[0];
+                const categoryLabel = getCategoryLabel(poi.category);
+                const label = preview?.altText ?? `${poi.name} preview`;
+                return (
+                  <figure
+                    key={key}
+                    className={`route-card__thumb${preview ? '' : ' route-card__thumb--placeholder'}`}
+                    aria-label={label}
+                    title={poi.name}
+                    data-testid="poi-photostrip-thumb"
+                  >
+                    {preview ? <img src={preview.url} alt={label} /> : null}
+                    <span aria-hidden="true">{categoryLabel.slice(0, 8)}</span>
+                  </figure>
+                );
+              })}
+              {selectedRoute.pois.length > 3 ? (
+                <span className="route-card__extra" data-testid="poi-photostrip-more">
+                  +{selectedRoute.pois.length - 3}
+                </span>
+              ) : null}
+            </div>
+          </div>
+        </div>
+      ) : null}
     </section>
   );
 };
