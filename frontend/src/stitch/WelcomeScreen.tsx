@@ -9,6 +9,7 @@ export const WelcomeScreen: React.FC = () => {
       className="relative flex h-screen flex-col items-center justify-between overflow-hidden bg-background-dark py-16 px-6 font-display text-white"
       style={{
         backgroundImage: 'radial-gradient(circle at 50% 50%, rgba(17, 32, 33, 0) 0%, #112021 70%)',
+        minHeight: 'max(884px, 100dvh)',
       }}
     >
       <div className="flex w-full flex-grow flex-col items-center justify-center text-center">

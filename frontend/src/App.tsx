@@ -1,7 +1,6 @@
 import React, { useEffect } from 'react';
-import { BrowserRouter, Navigate, Route, Routes, Outlet, useLocation } from 'react-router-dom';
+import { BrowserRouter, Navigate, Route, Routes, Outlet } from 'react-router-dom';
 
-import BottomNav from './stitch/BottomNav';
 import WelcomeScreen from './stitch/WelcomeScreen';
 import VoiceConversationScreen from './stitch/VoiceConversationScreen';
 import DiscoveryScreen from './stitch/DiscoveryScreen';
@@ -10,15 +9,12 @@ import JourneyMemoriesScreen from './stitch/JourneyMemoriesScreen';
 import SettingsScreen from './stitch/SettingsScreen';
 
 const AppLayout: React.FC = () => {
-  const location = useLocation();
-  const showNav = location.pathname !== '/';
-
   return (
-    <div className="min-h-screen bg-background-light text-white dark:bg-background-dark">
-      <div className="pb-24">
-        <Outlet />
-      </div>
-      {showNav ? <BottomNav /> : null}
+    <div
+      className="min-h-screen bg-background-light dark:bg-background-dark"
+      style={{ minHeight: 'max(884px, 100dvh)' }}
+    >
+      <Outlet />
     </div>
   );
 };

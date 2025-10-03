@@ -91,6 +91,20 @@ a.visually-hidden,
     'opsz' 24;
 }
 
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.pb-safe-bottom {
+  padding-bottom: calc(env(safe-area-inset-bottom) + 1.5rem);
+}
+
+.h-safe-bottom,
+.h-safe-area-bottom,
+.h-safe-bottom[data-safe-area] {
+  height: env(safe-area-inset-bottom);
+}
+
 .app-header {
   display: flex;
   align-items: center;

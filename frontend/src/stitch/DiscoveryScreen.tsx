@@ -1,4 +1,5 @@
 import React from 'react';
+import { NavLink } from 'react-router-dom';
 
 const discoveries = [
   {
@@ -34,7 +35,10 @@ const discoveries = [
 
 export const DiscoveryScreen: React.FC = () => {
   return (
-    <div className="flex min-h-screen flex-col bg-background-light font-display text-stone-900 dark:bg-background-dark dark:text-stone-100">
+    <div
+      className="flex min-h-screen flex-col bg-background-light font-display text-stone-900 dark:bg-background-dark dark:text-stone-100"
+      style={{ minHeight: 'max(884px, 100dvh)' }}
+    >
       <header className="sticky top-0 z-10 bg-background-light/80 backdrop-blur-sm dark:bg-background-dark/80">
         <div className="mx-auto flex max-w-4xl items-center p-4">
           <button type="button" className="text-stone-700 dark:text-stone-300" aria-label="Go back">
@@ -125,6 +129,63 @@ export const DiscoveryScreen: React.FC = () => {
           </div>
         </div>
       </main>
+
+      <footer className="sticky bottom-0 bg-background-light/80 backdrop-blur-sm dark:bg-background-dark/80">
+        <div className="mx-auto flex max-w-4xl justify-around border-t border-primary/20 p-2">
+          <NavLink
+            to="/voice"
+            className={({ isActive }) =>
+              `flex flex-col items-center gap-1 p-2 transition-colors ${
+                isActive
+                  ? 'rounded-lg bg-primary/20 text-primary'
+                  : 'text-stone-500 dark:text-stone-400 hover:text-primary'
+              }`
+            }
+          >
+            <span className="material-symbols-outlined">home</span>
+            <span className="text-xs font-medium">Home</span>
+          </NavLink>
+          <NavLink
+            to="/discoveries"
+            className={({ isActive }) =>
+              `flex flex-col items-center gap-1 rounded-full p-2 transition-colors ${
+                isActive
+                  ? 'bg-primary/20 text-primary'
+                  : 'text-stone-500 dark:text-stone-400 hover:text-primary'
+              }`
+            }
+          >
+            <span className="material-symbols-outlined">compass_calibration</span>
+            <span className="text-xs font-medium">Discoveries</span>
+          </NavLink>
+          <NavLink
+            to="/memories"
+            className={({ isActive }) =>
+              `flex flex-col items-center gap-1 p-2 transition-colors ${
+                isActive
+                  ? 'rounded-lg bg-primary/20 text-primary'
+                  : 'text-stone-500 dark:text-stone-400 hover:text-primary'
+              }`
+            }
+          >
+            <span className="material-symbols-outlined">bookmark_border</span>
+            <span className="text-xs font-medium">Memories</span>
+          </NavLink>
+          <NavLink
+            to="/settings"
+            className={({ isActive }) =>
+              `flex flex-col items-center gap-1 p-2 transition-colors ${
+                isActive
+                  ? 'rounded-lg bg-primary/20 text-primary'
+                  : 'text-stone-500 dark:text-stone-400 hover:text-primary'
+              }`
+            }
+          >
+            <span className="material-symbols-outlined">settings</span>
+            <span className="text-xs font-medium">Settings</span>
+          </NavLink>
+        </div>
+      </footer>
     </div>
   );
 };

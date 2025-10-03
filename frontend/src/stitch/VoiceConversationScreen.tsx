@@ -1,8 +1,12 @@
 import React from 'react';
+import { NavLink } from 'react-router-dom';
 
 export const VoiceConversationScreen: React.FC = () => {
   return (
-    <div className="flex h-full min-h-screen flex-col bg-background-light font-display text-white dark:bg-background-dark">
+    <div
+      className="flex h-full min-h-screen flex-col bg-background-light font-display text-white dark:bg-background-dark"
+      style={{ minHeight: 'max(884px, 100dvh)' }}
+    >
       <header className="flex shrink-0 items-center justify-between p-4">
         <div className="h-8 w-8" aria-hidden="true" />
         <h1 className="text-lg font-bold text-white/90">Roadtrip Companion</h1>
@@ -101,6 +105,64 @@ export const VoiceConversationScreen: React.FC = () => {
           </div>
         </div>
       </main>
+
+      <footer className="flex-shrink-0 border-t border-white/10 bg-background-light/5 backdrop-blur-sm dark:border-white/10 dark:bg-background-dark/5">
+        <nav className="flex justify-around p-2">
+          <NavLink
+            to="/voice"
+            className={({ isActive }) =>
+              `flex flex-col items-center justify-center gap-1 rounded-lg p-2 transition-colors ${
+                isActive ? 'text-primary' : 'text-white/60 dark:text-white/60 hover:text-primary'
+              }`
+            }
+          >
+            <svg
+              fill="currentColor"
+              height="24"
+              viewBox="0 0 256 256"
+              width="24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path d="M224,115.55V208a16,16,0,0,1-16,16H168a16,16,0,0,1-16-16V168a8,8,0,0,0-8-8H112a8,8,0,0,0-8,8v40a16,16,0,0,1-16,16H48a16,16,0,0,1-16-16V115.55a16,16,0,0,1,5.17-11.78l80-75.48.11-.11a16,16,0,0,1,21.53,0,1.14,1.14,0,0,0,.11.11l80,75.48A16,16,0,0,1,224,115.55Z" />
+            </svg>
+            <span className="text-xs font-medium">Home</span>
+          </NavLink>
+          <NavLink
+            to="/discoveries"
+            className={({ isActive }) =>
+              `flex flex-col items-center justify-center gap-1 rounded-lg p-2 transition-colors ${
+                isActive ? 'text-primary' : 'text-white/60 dark:text-white/60 hover:text-primary'
+              }`
+            }
+          >
+            <span className="material-symbols-outlined">compass_calibration</span>
+            <span className="text-xs font-medium">Discover</span>
+          </NavLink>
+          <NavLink
+            to="/memories"
+            className={({ isActive }) =>
+              `flex flex-col items-center justify-center gap-1 rounded-lg p-2 transition-colors ${
+                isActive ? 'text-primary' : 'text-white/60 dark:text-white/60 hover:text-primary'
+              }`
+            }
+          >
+            <span className="material-symbols-outlined">history</span>
+            <span className="text-xs font-medium">Memories</span>
+          </NavLink>
+          <NavLink
+            to="/settings"
+            className={({ isActive }) =>
+              `flex flex-col items-center justify-center gap-1 rounded-lg p-2 transition-colors ${
+                isActive ? 'text-primary' : 'text-white/60 dark:text-white/60 hover:text-primary'
+              }`
+            }
+          >
+            <span className="material-symbols-outlined">settings</span>
+            <span className="text-xs font-medium">Settings</span>
+          </NavLink>
+        </nav>
+        <div className="h-safe-bottom" aria-hidden="true" />
+      </footer>
     </div>
   );
 };
