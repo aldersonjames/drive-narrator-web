@@ -2,6 +2,7 @@ import React, { createContext, useContext, useMemo, useState, useCallback, React
 
 import type {
   PreferencesPayload,
+  PreferencesUpdatePayload,
   RouteSummary,
   TripSummary,
 } from '../../../shared/types/tripNarrator';
@@ -33,7 +34,7 @@ export interface PlannerState {
   loadTrips: (profileId: string) => Promise<void>;
   updatePreferences: (
     profileId: string,
-    payload: Partial<PreferencesPayload>,
+    payload: PreferencesUpdatePayload,
   ) => Promise<PreferencesPayload>;
   loadPreferences: (profileId: string) => Promise<void>;
   selectRoute: (routeId?: string) => void;
@@ -127,9 +128,8 @@ export const TripPlannerProvider: React.FC<{ children: ReactNode }> = ({ childre
   }, []);
 
   const updatePreferences = useCallback(
-    async (profileId: string, payload: Partial<PreferencesPayload>) => {
+    async (profileId: string, payload: PreferencesUpdatePayload) => {
       const requestPayload = { ...payload } as Record<string, unknown>;
-      delete requestPayload.providerCapabilities;
 
       const next = await safeFetch<PreferencesPayload>(`${API_BASE}/preferences`, {
         method: 'PATCH',

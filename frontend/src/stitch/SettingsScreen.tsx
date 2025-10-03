@@ -1,40 +1,88 @@
-import React from 'react';
-import { NavLink } from 'react-router-dom';
+import React, { useEffect, useMemo, useState } from 'react';
+import { NavLink, useNavigate } from 'react-router-dom';
 
-const settingsSections = {
-  account: [
-    { label: 'Email', value: 'sophia.clark@email.com' },
-    { label: 'Change Password' },
-    { label: 'Profile Picture' },
-  ],
-  notifications: [
-    { label: 'New Discovery Alerts', toggle: true },
-    { label: 'Story Reminders', toggle: false },
-    { label: 'Weekly Highlights', toggle: true },
-  ],
-  voice: [
-    { label: 'Narrator Voice', value: 'Harbor Breeze (calm & reflective)' },
-    { label: 'Assistant Voice', value: 'Northstar (crisp & present)' },
-    { label: 'Playback Speed', value: 'Normal (1x)' },
-  ],
-  privacy: [
-    { label: 'Data Usage' },
-    { label: 'Location Permissions' },
-    { label: 'Delete History' },
-    { label: 'Version', value: '1.2.3' },
-  ],
-};
+import { useTripPlanner } from '../context/TripPlannerContext';
+
+const detourLabels = ['None', 'Short', 'Medium', 'Long'] as const;
+const DEFAULT_PROFILE_ID = 'traveler-001';
 
 export const SettingsScreen: React.FC = () => {
+  const navigate = useNavigate();
+  const { preferences, loadPreferences, updatePreferences } = useTripPlanner();
+
+  const profileId = useMemo(() => preferences?.profileId ?? DEFAULT_PROFILE_ID, [preferences]);
+  const metadata = preferences?.metadata ?? undefined;
+
+  const [newDiscoveryAlerts, setNewDiscoveryAlerts] = useState<boolean>(true);
+  const [approachingPoiAlerts, setApproachingPoiAlerts] = useState<boolean>(true);
+  const [detourPreference, setDetourPreference] = useState<number>(1);
+  const [backgroundMusic, setBackgroundMusic] = useState<boolean>(false);
+
+  const newDiscoveryId = 'settings-new-discovery';
+  const approachingPoiId = 'settings-approaching-poi';
+  const backgroundMusicId = 'settings-background-music';
+  const detourPreferenceId = 'settings-max-detour';
+
+  useEffect(() => {
+    void loadPreferences(profileId).catch(() => undefined);
+  }, [loadPreferences, profileId]);
+
+  useEffect(() => {
+    if (!metadata) return;
+    if (typeof metadata.newDiscoveryAlerts === 'boolean') {
+      setNewDiscoveryAlerts(metadata.newDiscoveryAlerts);
+    }
+    if (typeof metadata.approachingPoiAlerts === 'boolean') {
+      setApproachingPoiAlerts(metadata.approachingPoiAlerts);
+    }
+    if (typeof metadata.backgroundMusic === 'boolean') {
+      setBackgroundMusic(metadata.backgroundMusic);
+    }
+    if (typeof metadata.maxDetourPreference === 'number') {
+      setDetourPreference(metadata.maxDetourPreference);
+    }
+  }, [metadata]);
+
+  const persistMetadata = (next: Partial<typeof metadata>) => {
+    void updatePreferences(profileId, {
+      metadata: {
+        ...(metadata ?? {}),
+        ...next,
+      },
+    }).catch(() => undefined);
+  };
+
+  const handleToggle = (key: 'newDiscoveryAlerts' | 'approachingPoiAlerts' | 'backgroundMusic') => {
+    if (key === 'newDiscoveryAlerts') {
+      const next = !newDiscoveryAlerts;
+      setNewDiscoveryAlerts(next);
+      persistMetadata({ newDiscoveryAlerts: next });
+    } else if (key === 'approachingPoiAlerts') {
+      const next = !approachingPoiAlerts;
+      setApproachingPoiAlerts(next);
+      persistMetadata({ approachingPoiAlerts: next });
+    } else {
+      const next = !backgroundMusic;
+      setBackgroundMusic(next);
+      persistMetadata({ backgroundMusic: next });
+    }
+  };
+
+  const handleDetourChange = (value: number) => {
+    setDetourPreference(value);
+    persistMetadata({ maxDetourPreference: value });
+  };
+
   return (
     <div
-      className="relative flex min-h-screen flex-col justify-between overflow-x-hidden bg-background-light font-serif text-gray-800 dark:bg-background-dark dark:text-gray-200"
+      className="relative flex min-h-screen flex-col justify-between overflow-x-hidden bg-background-light font-display text-gray-800 dark:bg-background-dark dark:text-gray-200"
       style={{ minHeight: 'max(884px, 100dvh)' }}
     >
       <div className="flex-grow">
         <header className="sticky top-0 z-10 flex items-center bg-background-light/80 p-4 pb-2 backdrop-blur-sm dark:bg-background-dark/80">
           <button
             type="button"
+            onClick={() => navigate(-1)}
             className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-gray-600 dark:text-gray-300"
             aria-label="Go back"
           >
@@ -57,36 +105,40 @@ export const SettingsScreen: React.FC = () => {
           <section className="px-4 py-6">
             <h2 className="px-4 text-sm font-semibold text-gray-500 dark:text-gray-400">ACCOUNT</h2>
             <div className="mt-2 rounded-xl bg-white/5 dark:bg-zinc-800">
-              {settingsSections.account.map((item, index) => (
-                <React.Fragment key={item.label}>
-                  <button
-                    type="button"
-                    className="flex w-full items-center justify-between gap-4 px-4 py-3"
-                  >
-                    <div className="flex flex-col">
-                      <span className="font-medium text-gray-900 dark:text-white">
-                        {item.label}
-                      </span>
-                      {item.value ? (
-                        <span className="text-sm text-gray-500 dark:text-gray-400">
-                          {item.value}
-                        </span>
-                      ) : null}
-                    </div>
-                    <svg
-                      className="h-5 w-5 text-gray-400 dark:text-gray-500"
-                      fill="currentColor"
-                      viewBox="0 0 256 256"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path d="M181.66,133.66l-80,80a8,8,0,0,1-11.32-11.32L164.69,128,90.34,53.66a8,8,0,0,1,11.32-11.32l80,80A8,8,0,0,1,181.66,133.66Z" />
-                    </svg>
-                  </button>
-                  {index !== settingsSections.account.length - 1 ? (
-                    <hr className="ml-4 border-t border-gray-200/10 dark:border-gray-700" />
-                  ) : null}
-                </React.Fragment>
-              ))}
+              <button
+                type="button"
+                className="flex w-full items-center justify-between gap-4 px-4 py-3"
+              >
+                <div className="flex flex-col text-left">
+                  <span className="font-medium text-gray-900 dark:text-white">Email</span>
+                  <span className="text-sm text-gray-500 dark:text-gray-400">
+                    sophia.clark@email.com
+                  </span>
+                </div>
+                <span className="material-symbols-outlined text-gray-400 dark:text-gray-500">
+                  chevron_right
+                </span>
+              </button>
+              <hr className="mx-4 border-t border-gray-200/10 dark:border-gray-700" />
+              <button
+                type="button"
+                className="flex w-full items-center justify-between gap-4 px-4 py-3"
+              >
+                <span className="font-medium text-gray-900 dark:text-white">Change Password</span>
+                <span className="material-symbols-outlined text-gray-400 dark:text-gray-500">
+                  chevron_right
+                </span>
+              </button>
+              <hr className="mx-4 border-t border-gray-200/10 dark:border-gray-700" />
+              <button
+                type="button"
+                className="flex w-full items-center justify-between gap-4 px-4 py-3"
+              >
+                <span className="font-medium text-gray-900 dark:text-white">Profile Picture</span>
+                <span className="material-symbols-outlined text-gray-400 dark:text-gray-500">
+                  chevron_right
+                </span>
+              </button>
             </div>
           </section>
 
@@ -95,99 +147,157 @@ export const SettingsScreen: React.FC = () => {
               NOTIFICATIONS
             </h2>
             <div className="mt-2 rounded-xl bg-white/5 dark:bg-zinc-800">
-              {settingsSections.notifications.map((item, index) => (
-                <React.Fragment key={item.label}>
-                  <div className="flex items-center justify-between gap-4 px-4 py-3">
-                    <span className="font-medium text-gray-900 dark:text-white">{item.label}</span>
-                    <label
-                      className="relative inline-flex cursor-pointer items-center"
-                      aria-label={item.label}
-                    >
-                      <input
-                        type="checkbox"
-                        defaultChecked={item.toggle}
-                        className="peer sr-only"
-                      />
-                      <span className="sr-only">{item.label}</span>
-                      <div className="peer h-6 w-11 rounded-full bg-gray-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-amber-500 peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none dark:border-gray-600 dark:bg-gray-700" />
-                    </label>
-                  </div>
-                  {index !== settingsSections.notifications.length - 1 ? (
-                    <hr className="ml-4 border-t border-gray-200/10 dark:border-gray-700" />
-                  ) : null}
-                </React.Fragment>
-              ))}
+              <div className="flex items-center justify-between gap-4 px-4 py-3">
+                <span className="font-medium text-gray-900 dark:text-white">
+                  New Discovery Alerts
+                </span>
+                <label
+                  className="relative inline-flex items-center cursor-pointer"
+                  htmlFor={newDiscoveryId}
+                >
+                  <span className="sr-only">Toggle new discovery alerts</span>
+                  <input
+                    id={newDiscoveryId}
+                    type="checkbox"
+                    className="sr-only peer"
+                    checked={newDiscoveryAlerts}
+                    onChange={() => handleToggle('newDiscoveryAlerts')}
+                  />
+                  <div className="peer h-6 w-11 rounded-full bg-gray-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-amber-500 peer-checked:after:translate-x-full peer-checked:after:border-white dark:border-gray-600 dark:bg-gray-700" />
+                </label>
+              </div>
+              <hr className="mx-4 border-t border-gray-200/10 dark:border-gray-700" />
+              <div className="flex items-center justify-between gap-4 px-4 py-3">
+                <span className="font-medium text-gray-900 dark:text-white">
+                  Approaching POI Alerts
+                </span>
+                <label
+                  className="relative inline-flex items-center cursor-pointer"
+                  htmlFor={approachingPoiId}
+                >
+                  <span className="sr-only">Toggle approaching POI alerts</span>
+                  <input
+                    id={approachingPoiId}
+                    type="checkbox"
+                    className="sr-only peer"
+                    checked={approachingPoiAlerts}
+                    onChange={() => handleToggle('approachingPoiAlerts')}
+                  />
+                  <div className="peer h-6 w-11 rounded-full bg-gray-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-amber-500 peer-checked:after:translate-x-full peer-checked:after:border-white dark:border-gray-600 dark:bg-gray-700" />
+                </label>
+              </div>
             </div>
           </section>
 
           <section className="px-4 py-6">
             <h2 className="px-4 text-sm font-semibold text-gray-500 dark:text-gray-400">
-              VOICE &amp; NARRATION
+              DETOUR PREFERENCES
             </h2>
-            <div className="mt-2 space-y-4">
-              <div className="rounded-2xl bg-teal-900/60 p-4 text-white">
-                <p className="text-sm uppercase tracking-wide text-amber-500">Narrator voice</p>
-                <h3 className="mt-2 text-xl font-semibold">Harbor Breeze</h3>
-                <p className="text-sm text-white/80">
-                  Calm &amp; reflective — perfect for scenic storytelling.
-                </p>
-                <button
-                  type="button"
-                  className="mt-3 rounded-full bg-white/10 px-4 py-2 text-sm font-medium text-white"
-                >
-                  Preview voice
-                </button>
-              </div>
-              <div className="rounded-2xl bg-white/5 p-4 dark:bg-zinc-800/60">
-                <p className="text-sm text-gray-500 dark:text-gray-400">Assistant voice</p>
-                <div className="mt-2 flex items-center justify-between">
-                  <div>
-                    <p className="font-semibold text-gray-900 dark:text-white">Northstar</p>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                      Crisp &amp; present — for timely updates.
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    className="rounded-full bg-primary/20 px-4 py-2 text-sm font-medium text-primary"
-                  >
-                    Change
-                  </button>
-                </div>
+            <div className="mt-2 rounded-xl bg-white/5 p-4 dark:bg-zinc-800">
+              <label
+                className="mb-2 block font-medium text-gray-900 dark:text-white"
+                htmlFor={detourPreferenceId}
+              >
+                Max Detour Distance
+              </label>
+              <input
+                id={detourPreferenceId}
+                type="range"
+                min={0}
+                max={3}
+                step={1}
+                value={detourPreference}
+                onChange={(e) => handleDetourChange(Number(e.target.value))}
+                className="w-full cursor-pointer appearance-none rounded-full bg-gray-200 outline-none [&::-webkit-slider-runnable-track]:h-2 [&::-webkit-slider-runnable-track]:rounded-full [&::-webkit-slider-runnable-track]:bg-gray-600 dark:bg-gray-700 dark:[&::-webkit-slider-runnable-track]:bg-gray-500 [&::-webkit-slider-thumb]:mt-[-6px] [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-amber-500"
+              />
+              <div className="mt-2 flex justify-between text-xs text-gray-500 dark:text-gray-400">
+                {detourLabels.map((label) => (
+                  <span key={label}>{label}</span>
+                ))}
               </div>
             </div>
           </section>
 
           <section className="px-4 py-6">
-            <h2 className="px-4 text-sm font-semibold text-gray-500 dark:text-gray-400">PRIVACY</h2>
+            <h2 className="px-4 text-sm font-semibold text-gray-500 dark:text-gray-400">AUDIO</h2>
             <div className="mt-2 rounded-xl bg-white/5 dark:bg-zinc-800">
-              {settingsSections.privacy.map((item, index) => (
-                <React.Fragment key={item.label}>
-                  <button
-                    type="button"
-                    className="flex w-full items-center justify-between gap-4 px-4 py-3"
-                  >
-                    <span className="font-medium text-gray-900 dark:text-white">{item.label}</span>
-                    {item.value ? (
-                      <span className="font-medium text-gray-500 dark:text-gray-400">
-                        {item.value}
-                      </span>
-                    ) : (
-                      <svg
-                        className="h-5 w-5 text-gray-400 dark:text-gray-500"
-                        fill="currentColor"
-                        viewBox="0 0 256 256"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <path d="M181.66,133.66l-80,80a8,8,0,0,1-11.32-11.32L164.69,128,90.34,53.66a8,8,0,0,1,11.32-11.32l80,80A8,8,0,0,1,181.66,133.66Z" />
-                      </svg>
-                    )}
-                  </button>
-                  {index !== settingsSections.privacy.length - 1 ? (
-                    <hr className="ml-4 border-t border-gray-200/10 dark:border-gray-700" />
-                  ) : null}
-                </React.Fragment>
-              ))}
+              <button
+                type="button"
+                className="flex w-full items-center justify-between gap-4 px-4 py-3"
+              >
+                <span className="font-medium text-gray-900 dark:text-white">Narration Speed</span>
+                <span className="text-gray-500 dark:text-gray-400">1.0x</span>
+              </button>
+              <hr className="mx-4 border-t border-gray-200/10 dark:border-gray-700" />
+              <button
+                type="button"
+                className="flex w-full items-center justify-between gap-4 px-4 py-3"
+              >
+                <span className="font-medium text-gray-900 dark:text-white">Volume Control</span>
+                <span className="text-gray-500 dark:text-gray-400">75%</span>
+              </button>
+              <hr className="mx-4 border-t border-gray-200/10 dark:border-gray-700" />
+              <div className="flex items-center justify-between gap-4 px-4 py-3">
+                <span className="font-medium text-gray-900 dark:text-white">Background Music</span>
+                <label
+                  className="relative inline-flex items-center cursor-pointer"
+                  htmlFor={backgroundMusicId}
+                >
+                  <span className="sr-only">Toggle background music</span>
+                  <input
+                    id={backgroundMusicId}
+                    type="checkbox"
+                    className="sr-only peer"
+                    checked={backgroundMusic}
+                    onChange={() => handleToggle('backgroundMusic')}
+                  />
+                  <div className="peer h-6 w-11 rounded-full bg-gray-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-amber-500 peer-checked:after:translate-x-full peer-checked:after:border-white dark:border-gray-600 dark:bg-gray-700" />
+                </label>
+              </div>
+            </div>
+          </section>
+
+          <section className="px-4 py-6">
+            <h2 className="px-4 text-sm font-semibold text-gray-500 dark:text-gray-400">
+              PRIVACY &amp; INFO
+            </h2>
+            <div className="mt-2 rounded-xl bg-white/5 dark:bg-zinc-800">
+              <button
+                type="button"
+                className="flex w-full items-center justify-between gap-4 px-4 py-3"
+              >
+                <span className="font-medium text-gray-900 dark:text-white">Data Usage</span>
+                <span className="material-symbols-outlined text-gray-400 dark:text-gray-500">
+                  chevron_right
+                </span>
+              </button>
+              <hr className="mx-4 border-t border-gray-200/10 dark:border-gray-700" />
+              <button
+                type="button"
+                className="flex w-full items-center justify-between gap-4 px-4 py-3"
+              >
+                <span className="font-medium text-gray-900 dark:text-white">
+                  Location Permissions
+                </span>
+                <span className="material-symbols-outlined text-gray-400 dark:text-gray-500">
+                  chevron_right
+                </span>
+              </button>
+              <hr className="mx-4 border-t border-gray-200/10 dark:border-gray-700" />
+              <button
+                type="button"
+                className="flex w-full items-center justify-between gap-4 px-4 py-3"
+              >
+                <span className="font-medium text-gray-900 dark:text-white">Delete History</span>
+                <span className="material-symbols-outlined text-gray-400 dark:text-gray-500">
+                  chevron_right
+                </span>
+              </button>
+              <hr className="mx-4 border-t border-gray-200/10 dark:border-gray-700" />
+              <div className="flex items-center justify-between gap-4 px-4 py-3">
+                <span className="font-medium text-gray-900 dark:text-white">Version</span>
+                <span className="text-gray-500 dark:text-gray-400">1.2.3</span>
+              </div>
             </div>
           </section>
         </main>
@@ -204,14 +314,7 @@ export const SettingsScreen: React.FC = () => {
               }`
             }
           >
-            <svg
-              className="h-6 w-6"
-              fill="currentColor"
-              viewBox="0 0 256 256"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path d="M218.83,103.77l-80-75.48a16,16,0,0,0-21.66,0l-80,75.48A16,16,0,0,0,32,115.55V208a16,16,0,0,0,16,16H96a16,16,0,0,0,16-16V160h32v48a16,16,0,0,0,16,16h48a16,16,0,0,0,16-16V115.55A16,16,0,0,0,218.83,103.77Z" />
-            </svg>
+            <span className="material-symbols-outlined">home</span>
             <span className="text-xs font-medium">Home</span>
           </NavLink>
           <NavLink
@@ -224,14 +327,7 @@ export const SettingsScreen: React.FC = () => {
               }`
             }
           >
-            <svg
-              className="h-6 w-6"
-              fill="currentColor"
-              viewBox="0 0 256 256"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm0,192a88,88,0,1,1,88-88A88.1,88.1,0,0,1,128,216Zm44.42-143.16-64,32a8.05,8.05,0,0,0-3.58,3.58l-32,64A8,8,0,0,0,80,184a8.1,8.1,0,0,0,3.58-.84l64-32a8.05,8.05,0,0,0,3.58-3.58l32-64a8,8,0,0,0-10.74-10.74ZM138,138,97.89,158.11,118,118l40.15-20.07Z" />
-            </svg>
+            <span className="material-symbols-outlined">explore</span>
             <span className="text-xs font-medium">Discoveries</span>
           </NavLink>
           <NavLink
@@ -244,14 +340,7 @@ export const SettingsScreen: React.FC = () => {
               }`
             }
           >
-            <svg
-              className="h-6 w-6"
-              fill="currentColor"
-              viewBox="0 0 256 256"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path d="M184,32H72A16,16,0,0,0,56,48V224a8,8,0,0,0,12.24,6.78L128,193.43l59.77,37.35A8,8,0,0,0,200,224V48A16,16,0,0,0,184,32Zm0,16V161.57l-51.77-32.35a8,8,0,0,0-8.48,0L72,161.56V48ZM132.23,177.22a8,8,0,0,0-8.48,0L72,209.57V180.43l56-35,56,35v29.14Z" />
-            </svg>
+            <span className="material-symbols-outlined">history</span>
             <span className="text-xs font-medium">Memories</span>
           </NavLink>
           <NavLink
@@ -264,14 +353,7 @@ export const SettingsScreen: React.FC = () => {
               }`
             }
           >
-            <svg
-              className="h-6 w-6"
-              fill="currentColor"
-              viewBox="0 0 256 256"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path d="M216,130.16q.06-2.16,0-4.32l14.92-18.64a8,8,0,0,0,1.48-7.06,107.6,107.6,0,0,0-10.88-26.25,8,8,0,0,0-6-3.93l-23.72-2.64q-1.48-1.56-3-3L186,40.54a8,8,0,0,0-3.94-6,107.29,107.29,0,0,0-26.25-10.86,8,8,0,0,0-7.06,1.48L130.16,40Q128,40,125.84,40L107.2,25.11a8,8,0,0,0-7.06-1.48A107.6,107.6,0,0,0,73.89,34.51a8,8,0,0,0-3.93,6L67.32,64.27q-1.56,1.49-3,3L40.54,70a8,8,0,0,0-6,3.94,107.71,107.71,0,0,0-10.87,26.25,8,8,0,0,0,1.49,7.06L40,125.84Q40,128,40,130.16L25.11,148.8a8,8,0,0,0-1.48,7.06,107.6,107.6,0,0,0,10.88,26.25,8,8,0,0,0,6,3.93l23.72,2.64q1.49,1.56,3,3L70,215.46a8,8,0,0,0,3.94,6,107.71,107.71,0,0,0,26.25,10.87,8,8,0,0,0,7.06-1.49L125.84,216q2.16.06,4.32,0l18.64,14.92a8,8,0,0,0,7.06,1.48,107.21,107.21,0,0,0,26.25-10.88,8,8,0,0,0,3.93-6l2.64-23.72q1.56-1.48,3-3L215.46,186a8,8,0,0,0,6-3.94,107.71,107.71,0,0,0,10.87-26.25,8,8,0,0,0-1.49-7.06ZM128,168a40,40,0,1,1,40-40A40,40,0,0,1,128,168Z" />
-            </svg>
+            <span className="material-symbols-outlined">settings</span>
             <span className="text-xs font-medium">Settings</span>
           </NavLink>
         </nav>

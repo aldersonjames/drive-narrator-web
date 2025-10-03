@@ -4,12 +4,11 @@ import type {
   TravelerProfileRecord,
   TravelerProfileUpdate,
 } from '../../db/repositories/travelerProfilesRepository';
-import type { PoiProviderId } from '../../../../shared/types/tripNarrator';
-
-interface PreferencesMetadata {
-  poiProvider?: PoiProviderId;
-  [key: string]: unknown;
-}
+import type {
+  PoiProviderId,
+  PreferencesMetadata,
+  PreferencesUpdatePayload,
+} from '../../../../shared/types/tripNarrator';
 
 const parseMetadata = (raw: string | null): PreferencesMetadata => {
   if (!raw) {
@@ -44,17 +43,10 @@ export interface PreferencesDto {
   consentVersion: string;
   updatedAt: string;
   poiProvider: PoiProviderId;
+  metadata: PreferencesMetadata | null;
 }
 
-export interface PreferencesUpdateInput {
-  assistantVoiceId?: string;
-  narrationVoiceId?: string;
-  interestTags?: string[];
-  transcriptOptIn?: boolean;
-  retentionDays?: number;
-  metadata?: Record<string, unknown> | null;
-  poiProvider?: PoiProviderId;
-}
+export type PreferencesUpdateInput = PreferencesUpdatePayload;
 
 export class PreferencesService {
   constructor(private readonly profilesRepo: TravelerProfilesGateway) {}
@@ -78,6 +70,7 @@ export class PreferencesService {
       consentVersion: record.consent_version,
       updatedAt: record.updated_at,
       poiProvider,
+      metadata: Object.keys(metadata).length ? metadata : null,
     };
   }
 
@@ -103,8 +96,16 @@ export class PreferencesService {
 
     const shouldUpdateMetadata = update.metadata !== undefined || update.poiProvider !== undefined;
     if (shouldUpdateMetadata) {
-      let nextMetadata: PreferencesMetadata =
-        update.metadata !== undefined ? (update.metadata ?? {}) : { ...metadata };
+      let nextMetadata: PreferencesMetadata = { ...metadata };
+
+      if (update.metadata === null) {
+        nextMetadata = {};
+      } else if (update.metadata !== undefined) {
+        nextMetadata = {
+          ...metadata,
+          ...update.metadata,
+        };
+      }
 
       if (update.poiProvider) {
         nextMetadata = {

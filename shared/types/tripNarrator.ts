@@ -131,6 +131,15 @@ export interface ProviderCapabilityMap {
   foursquare: ProviderCapability;
 }
 
+export interface PreferencesMetadata {
+  newDiscoveryAlerts?: boolean;
+  approachingPoiAlerts?: boolean;
+  backgroundMusic?: boolean;
+  maxDetourPreference?: number;
+  favoritePoiIds?: string[];
+  [key: string]: unknown;
+}
+
 export interface PreferencesPayload {
   profileId: string;
   assistantVoiceId: string;
@@ -140,6 +149,17 @@ export interface PreferencesPayload {
   retentionDays?: number;
   poiProvider: PoiProviderId;
   providerCapabilities: ProviderCapabilityMap;
+  metadata?: PreferencesMetadata | null;
+}
+
+export interface PreferencesUpdatePayload {
+  assistantVoiceId?: string;
+  narrationVoiceId?: string;
+  interestTags?: string[];
+  transcriptOptIn?: boolean;
+  retentionDays?: number;
+  metadata?: PreferencesMetadata | null;
+  poiProvider?: PoiProviderId;
 }
 
 export interface VoiceDefinition {

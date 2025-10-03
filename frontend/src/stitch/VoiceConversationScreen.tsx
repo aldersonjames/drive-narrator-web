@@ -1,7 +1,26 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 
+import { useVoiceConversation } from '../hooks/useVoiceConversation';
+import BreathingOrb from '../components/voice/BreathingOrb';
+
 export const VoiceConversationScreen: React.FC = () => {
+  const conversation = useVoiceConversation();
+  const [textInput, setTextInput] = useState('');
+  const interestOptions = ['Museums', 'Parks', 'Restaurants', 'Viewpoints'];
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const trimmed = textInput.trim();
+    if (!trimmed) return;
+    void conversation.sendText(trimmed);
+    setTextInput('');
+  };
+
+  const handleOptionClick = (label: string) => {
+    void conversation.sendText(label);
+  };
+
   return (
     <div
       className="flex h-full min-h-screen flex-col bg-background-light font-display text-white dark:bg-background-dark"
@@ -24,33 +43,20 @@ export const VoiceConversationScreen: React.FC = () => {
       </header>
 
       <main className="flex flex-grow flex-col items-center justify-center px-4 text-center">
-        <div className="breathing-orb relative mb-6 flex h-48 w-48 items-center justify-center sm:h-56 sm:w-56">
-          <div
-            className="absolute h-full w-full animate-pulse rounded-full bg-primary/20"
-            aria-hidden="true"
+        <div className="mb-6">
+          <BreathingOrb
+            phase={conversation.orbState}
+            onStartListening={conversation.startVoice}
+            onStop={conversation.stopVoice}
+            disabled={conversation.isProcessing}
+            messages={{
+              idle: conversation.error ? 'Ready when you are' : 'Tap to start listening',
+              listening: 'Listening…',
+              speaking: 'Narrating…',
+              processing: 'Processing…',
+              error: conversation.error ?? 'Microphone problem',
+            }}
           />
-          <div
-            className="absolute h-full w-full animate-ping rounded-full bg-primary/30"
-            aria-hidden="true"
-          />
-          <div className="flex h-40 w-40 items-center justify-center rounded-full bg-primary shadow-2xl shadow-primary/30 sm:h-48 sm:w-48">
-            <svg
-              className="text-white/80"
-              fill="none"
-              height="64"
-              stroke="currentColor"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              viewBox="0 0 24 24"
-              width="64"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
-              <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
-              <line x1="12" x2="12" y1="19" y2="23" />
-            </svg>
-          </div>
         </div>
 
         <h2 className="mt-4 text-2xl font-bold text-white/90">What are you interested in?</h2>
@@ -58,17 +64,20 @@ export const VoiceConversationScreen: React.FC = () => {
           Tell me, or choose from the options below.
         </p>
 
-        <div className="w-full max-w-sm space-y-4">
+        <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-4">
           <div className="relative">
             <input
               type="text"
               placeholder="e.g., 'historical landmarks', 'local folklore'"
+              value={textInput}
+              onChange={(e) => setTextInput(e.target.value)}
               className="w-full rounded-lg border border-white/20 bg-background-dark/50 py-3 px-4 text-white placeholder-white/40 focus:border-amber focus:ring-2 focus:ring-amber transition-colors"
             />
             <button
-              type="button"
+              type="submit"
               className="absolute inset-y-0 right-0 flex items-center pr-3"
               aria-label="Submit interest"
+              disabled={!textInput.trim() || conversation.isProcessing}
             >
               <svg
                 className="text-amber"
@@ -89,22 +98,24 @@ export const VoiceConversationScreen: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-2 gap-3 text-left">
-            {['Museums', 'Parks', 'Restaurants', 'Viewpoints'].map((label) => (
-              <label
+            {interestOptions.map((label) => (
+              <button
                 key={label}
-                className="flex cursor-pointer items-center space-x-3 rounded-lg border border-white/20 bg-background-dark/50 p-3 transition-colors hover:bg-primary/20"
+                type="button"
+                onClick={() => handleOptionClick(label)}
+                className="flex items-center space-x-3 rounded-lg border border-white/20 bg-background-dark/50 p-3 transition-colors hover:bg-primary/20"
               >
-                <input
-                  type="radio"
-                  name="poi-type"
-                  className="form-radio bg-transparent text-amber focus:ring-amber"
-                />
+                <span className="form-radio h-4 w-4 rounded-full border border-amber/50 bg-transparent" />
                 <span className="text-white/80">{label}</span>
-              </label>
+              </button>
             ))}
           </div>
-        </div>
+        </form>
       </main>
+
+      {conversation.error && (
+        <div className="px-4 py-2 text-center text-sm text-red-400">{conversation.error}</div>
+      )}
 
       <footer className="flex-shrink-0 border-t border-white/10 bg-background-light/5 backdrop-blur-sm dark:border-white/10 dark:bg-background-dark/5">
         <nav className="flex justify-around p-2">
@@ -116,15 +127,7 @@ export const VoiceConversationScreen: React.FC = () => {
               }`
             }
           >
-            <svg
-              fill="currentColor"
-              height="24"
-              viewBox="0 0 256 256"
-              width="24"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path d="M224,115.55V208a16,16,0,0,1-16,16H168a16,16,0,0,1-16-16V168a8,8,0,0,0-8-8H112a8,8,0,0,0-8,8v40a16,16,0,0,1-16,16H48a16,16,0,0,1-16-16V115.55a16,16,0,0,1,5.17-11.78l80-75.48.11-.11a16,16,0,0,1,21.53,0,1.14,1.14,0,0,0,.11.11l80,75.48A16,16,0,0,1,224,115.55Z" />
-            </svg>
+            <span className="material-symbols-outlined">home</span>
             <span className="text-xs font-medium">Home</span>
           </NavLink>
           <NavLink

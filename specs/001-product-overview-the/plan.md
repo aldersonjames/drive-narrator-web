@@ -5,6 +5,12 @@
 
 ## Summary
 
+### Status Update — 2025-10-03
+
+- Aligned preferences metadata end-to-end: shared types, Trip Planner context, and backend merge logic now remain in sync and prevent accidental wipes.
+- Discovery Stitch screen now consumes live `/api/pois` data with normalized coordinates/images and persists favorite POIs via metadata.
+- Remaining gap: add automated coverage (integration + accessibility) for the new Stitch flows and confirm metadata merge behaviour under concurrent updates.
+
 - Launch screen reflowed: location chip, orb, map, and lower panels now stack responsively for phone/tablet/desktop.
 
 - Landing intro now opens with a path-drawn "TRIP / NARRATOR" title (no map on first view) to mirror the neon Motion demo.

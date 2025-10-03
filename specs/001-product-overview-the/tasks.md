@@ -101,6 +101,13 @@
 - [ ] T059 Update root `README.md` with architecture diagram, setup steps, and troubleshooting from quickstart.
 - [ ] T060 Run final regression (all npm scripts) and ensure green CI before requesting review.
 
+## Phase 3.6: Stitch Metadata Follow-up
+
+- [x] T121 Align preferences metadata typing across shared types, Trip Planner context, and backend merge logic to preserve traveler settings (2025-10-03).
+- [x] T122 Normalize Stitch Discovery screen to consume live `/api/pois` results, convert coordinates/images, and persist favorites (2025-10-03).
+- [ ] T123 Add backend integration test validating preferences metadata merge behaviour + poiProvider persistence.
+- [ ] T124 Add frontend unit/integration and axe coverage for Stitch Settings/Discovery metadata flows.
+
 ## Dependencies
 
 - T001 → T002 (research informs scaffold scope).

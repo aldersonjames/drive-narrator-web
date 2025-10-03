@@ -7,6 +7,7 @@ Trip Narrator is a Spec Kit–driven voice-first MVP: a cinematic PWA and TypeSc
 - **Active branch**: `001-product-overview-the`
 - **Focus**: Story-first trip planning (voice loop + route highlights), launch experience polish, voice pipeline integration, PWA hardening (T047–T055), final QA (T056–T060).
 - **Spec kit**: Constitution, plan, research, contracts, and tasks live under `specs/001-product-overview-the/`.
+- **Latest (2025-10-03)**: Preferences metadata flow is fully typed/merge-safe across shared → backend → Trip Planner; Stitch Discovery now consumes live `/api/pois` data with persisted favorites (follow-up tests tracked in T123–T124).
 
 ## Architecture Overview
 

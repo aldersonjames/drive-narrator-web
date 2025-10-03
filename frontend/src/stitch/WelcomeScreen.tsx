@@ -40,7 +40,7 @@ export const WelcomeScreen: React.FC = () => {
               strokeWidth="1.5"
             />
           </svg>
-          <h1 className="text-4xl font-bold text-white">Trip Narrator</h1>
+          <h1 className="text-4xl font-bold text-white">Trop Narrator</h1>
         </div>
         <p className="mb-12 text-lg text-white/70">Uncover stories, one mile at a time.</p>
         <div className="w-full max-w-xs space-y-4">
