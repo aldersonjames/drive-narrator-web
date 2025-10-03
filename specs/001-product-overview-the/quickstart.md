@@ -27,7 +27,7 @@ cp frontend/.env.example frontend/.env.local
 
 ```env
 # core API
-PORT=3000
+PORT=41234
 CORS_ALLOWED_ORIGINS=http://localhost:5173
 RATE_LIMIT_WINDOW_MS=60000
 RATE_LIMIT_MAX=120
@@ -63,7 +63,7 @@ VOICE_CAP_MAX_INPUT_MS=15000
 **frontend/.env.local**
 
 ```env
-VITE_API_BASE_URL=http://localhost:3000/api
+VITE_API_BASE_URL=http://localhost:41234/api
 VITE_MAPBOX_TOKEN=
 VITE_OPENAI_ENDPOINT=https://api.openai.com/v1/realtime
 ```
@@ -116,8 +116,10 @@ references/       # ui-components.md (open-licensed inspirations)
 
 - `npm run dev --workspace @trip-narrator/frontend` → orb breathes, hero map renders.
 - Transcript pill slides in during demo voice loop; carousel snaps to selected route.
+- Planner view → submit a plan and confirm the new Story highlights panel lists upcoming narrative beats next to the conversation console.
+- Preferences → change assistant/narrator voices and check for the success acknowledgement banner.
 - Dark mode toggle (system) updates hero + cards.
-- `POST http://localhost:3000/api/voice/session` returns session token payload with latency/cap caps.
+- `POST http://localhost:41234/api/voice/session` returns session token payload with latency/cap caps.
 
 ## 8. Deployment prep (later)
 

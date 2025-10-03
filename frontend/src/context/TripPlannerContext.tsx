@@ -31,15 +31,26 @@ export interface PlannerState {
     interestTags: string[];
   }) => Promise<void>;
   loadTrips: (profileId: string) => Promise<void>;
-  updatePreferences: (profileId: string, payload: Partial<PreferencesPayload>) => Promise<void>;
+  updatePreferences: (
+    profileId: string,
+    payload: Partial<PreferencesPayload>,
+  ) => Promise<PreferencesPayload>;
   loadPreferences: (profileId: string) => Promise<void>;
   selectRoute: (routeId?: string) => void;
 }
 
 const TripPlannerContext = createContext<PlannerState | undefined>(undefined);
 
+const resolveImportMetaEnv = () => {
+  try {
+    return Function('return import.meta.env;')() as { VITE_API_BASE_URL?: string } | undefined;
+  } catch (_err) {
+    return undefined;
+  }
+};
+
 const API_BASE =
-  (typeof import.meta !== 'undefined' ? import.meta.env?.VITE_API_BASE_URL : undefined) ??
+  resolveImportMetaEnv()?.VITE_API_BASE_URL ??
   (typeof process !== 'undefined' ? process.env?.REACT_APP_API_BASE_URL : undefined) ??
   '/api';
 
@@ -132,6 +143,7 @@ export const TripPlannerProvider: React.FC<{ children: ReactNode }> = ({ childre
         }),
       });
       setPreferences(next);
+      return next;
     },
     [],
   );

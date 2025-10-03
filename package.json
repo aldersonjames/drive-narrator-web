@@ -15,13 +15,13 @@
     "prepare": "husky",
     "dev": "npm run dev:start",
     "dev:start": "npm run kill-ports && concurrently --success=all --kill-others-on-fail \"npm run dev:backend\" \"npm run dev:frontend\" \"npm run open:frontend\"",
-    "kill-ports": "kill-port 3000 5173 4173 || true",
+    "kill-ports": "kill-port 41234 5173 4173 || true",
     "open:frontend": "wait-on http://localhost:5173 && open http://localhost:5173",
-    "dev:stop": "kill-port 3000 5173 4173 || true",
+    "dev:stop": "kill-port 41234 5173 4173 || true",
     "dev:reset": "rimraf frontend/dev-dist frontend/dist frontend/.vite dist backend/dist .turbo",
     "dev:safe": "npm run kill-ports && concurrently --raw --success=all --kill-others-on-fail \"npm run dev:backend\" \"npm run dev:frontend:safe\"",
     "dev:backend": "npm run dev --workspace @trip-narrator/backend",
-    "dev:frontend": "wait-on http://localhost:3000/api/voices && npm run dev --workspace @trip-narrator/frontend",
+    "dev:frontend": "wait-on http://localhost:41234/api/voices && npm run dev --workspace @trip-narrator/frontend",
     "dev:frontend:safe": "npm run dev --workspace @trip-narrator/frontend",
     "dev:stop:force": "node scripts/kill-dev.mjs"
   },
@@ -58,5 +58,8 @@
     "turbo": "^2.5.6",
     "wait-on": "^7.2.0"
   },
-  "packageManager": "npm@10.8.1"
+  "packageManager": "npm@10.8.1",
+  "dependencies": {
+    "text-to-svg": "^3.1.5"
+  }
 }

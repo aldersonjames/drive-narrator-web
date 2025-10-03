@@ -7,6 +7,7 @@ import type {
 } from '../../../shared/types/tripNarrator';
 import { VoiceOutputService } from '../services/voice/voiceOutputService';
 import { useVoiceInput } from './useVoiceInput';
+import type { VoiceInputStatus } from './useVoiceInput';
 import type { BreathingOrbState } from '../components/voice/BreathingOrb';
 
 const getApiBase = (): string =>
@@ -34,6 +35,8 @@ export interface VoiceConversationController {
   suggestions: string[];
   isProcessing: boolean;
   error?: string;
+  micStatus: VoiceInputStatus;
+  micError?: string;
   startVoice: () => void;
   stopVoice: () => void;
   sendText: (text: string) => Promise<void>;
@@ -45,6 +48,7 @@ export const useVoiceConversation = (
 ): VoiceConversationController => {
   const apiBase = useMemo(() => getApiBase(), []);
   const voiceInput = useVoiceInput({ continuous: false, interimResults: true });
+  const pauseTimerRef = useRef<number>();
   const [orbState, setOrbState] = useState<BreathingOrbState>('idle');
   const [conversation, setConversation] = useState<ConversationTurn[]>([]);
   const [suggestions, setSuggestions] = useState<string[]>([]);
@@ -142,6 +146,10 @@ export const useVoiceConversation = (
 
   const startVoice = useCallback(() => {
     if (isProcessing) return;
+    if (pauseTimerRef.current) {
+      window.clearTimeout(pauseTimerRef.current);
+      pauseTimerRef.current = undefined;
+    }
     capturePendingRef.current = true;
     setOrbState('listening');
     setError(undefined);
@@ -152,6 +160,10 @@ export const useVoiceConversation = (
   const stopVoice = useCallback(() => {
     capturePendingRef.current = false;
     voiceInput.stopListening();
+    if (pauseTimerRef.current) {
+      window.clearTimeout(pauseTimerRef.current);
+      pauseTimerRef.current = undefined;
+    }
     if (!isProcessing) {
       setOrbState('idle');
     }
@@ -202,6 +214,8 @@ export const useVoiceConversation = (
     suggestions,
     isProcessing,
     error,
+    micStatus: voiceInput.status,
+    micError: voiceInput.error,
     startVoice,
     stopVoice,
     sendText,

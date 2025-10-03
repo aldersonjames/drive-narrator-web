@@ -5,7 +5,7 @@ Trip Narrator is a Spec Kit–driven voice-first MVP: a cinematic PWA and TypeSc
 ## Current Status
 
 - **Active branch**: `001-product-overview-the`
-- **Focus**: Launch Experience polish (breathing orb + hero map), voice pipeline integration, PWA hardening (T047–T055), final QA (T056–T060).
+- **Focus**: Story-first trip planning (voice loop + route highlights), launch experience polish, voice pipeline integration, PWA hardening (T047–T055), final QA (T056–T060).
 - **Spec kit**: Constitution, plan, research, contracts, and tasks live under `specs/001-product-overview-the/`.
 
 ## Architecture Overview
@@ -14,6 +14,8 @@ Trip Narrator is a Spec Kit–driven voice-first MVP: a cinematic PWA and TypeSc
 
 - React 18 + TypeScript (Vite 7).
 - Launch Experience: MapLibre hero, Framer Motion breathing orb, Embla carousel for alternate routes, transcript ribbon, narration timeline sheet.
+- Trip Planner: conversational console, storyteller map view, and a curated “Story highlights” panel that teases upcoming lore for the selected route.
+- Traveler preferences page now returns an in-experience acknowledgement when voices/transcript settings update.
 - Voice adapters prepared for OpenAI Realtime/ElevenLabs; demo hook simulates events while the realtime pipeline lands.
 - Tailwind-style tokens (CSS vars) for glassmorphism, dark/light themes, fully responsive for phone/tablet.
 
@@ -56,7 +58,7 @@ cp frontend/.env.example frontend/.env.local
 **Backend (`backend/.env`)**
 | Variable | Purpose |
 | --- | --- |
-| `PORT` | Express port (default 3000). |
+| `PORT` | Express port (default 41234). |
 | `CORS_ALLOWED_ORIGINS` | Comma-separated allowed origins. |
 | `RATE_LIMIT_WINDOW_MS` / `RATE_LIMIT_MAX` | API rate limiting window + max. |
 | `DEFAULT_CACHE_TTL_MS` | fallback cache TTL. |
@@ -108,7 +110,7 @@ npm run dev                            # kill stale ports, start backend + front
 npm run dev:stop                       # stop dev servers
 npm run dev:reset                      # clear local caches (frontend/dev-dist, dist, .vite, .turbo)
 
-npm run dev --workspace @trip-narrator/backend    # backend API only (http://localhost:3000)
+npm run dev --workspace @trip-narrator/backend    # backend API only (http://localhost:41234)
 npm run dev --workspace @trip-narrator/frontend   # frontend PWA only (http://localhost:5173)
 npm run build --workspace @trip-narrator/frontend
 npm run build --workspace @trip-narrator/backend
@@ -169,13 +171,15 @@ MIT/Apache-2.0 links for UI building blocks (orb animations, Embla carousel, Rad
 ## Testing Strategy
 
 - **Backend**: contract/integration/unit suites (`npm run test --workspace @trip-narrator/backend`).
-- **Frontend**: unit snapshots + integration (coming online during polish), Framer Motion smoke tests, Playwright E2E planned for offline/voice fallback.
+- **Frontend**: unit and integration coverage for launch timeline + story highlights, preferences flow regression (`npm run test --workspace @trip-narrator/frontend`).
 - **Type safety**: `npm run typecheck --workspace ...` for both workspaces.
+- **Upcoming**: Framer Motion smoke tests and Playwright E2E for offline/voice fallback.
 
 ## Manual Smoke Checklist
 
 - Launch PWA → orb animates, hero map + cards render, suggestion chips respond.
 - Trigger demo voice hook → transcript pill slides in, timeline updates, orb phases animate.
+- Trip Planner → run a plan; confirm the new Story highlights panel teases upcoming stops while the conversation console reflects the selected route.
 - Toggle OS dark mode → hero & cards adopt dark palette.
 - Backend `/api/voice/session` returns session payload with caps/latency hints.
 - `/api/routes` with mock data → carousel highlights selected route.

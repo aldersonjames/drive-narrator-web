@@ -1,0 +1,35 @@
+.hero-map-container {
+  position: relative;
+  width: min(100%, 1100px);
+  aspect-ratio: 16 / 9;
+  border-radius: 44px;
+  overflow: hidden;
+  background: rgba(12, 17, 34, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 0 40px 80px rgba(15, 23, 42, 0.38);
+  isolation: isolate;
+}
+
+.hero-map-container::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 15% 20%, rgba(99, 102, 241, 0.2), transparent 55%),
+    radial-gradient(circle at 70% 25%, rgba(14, 165, 233, 0.18), transparent 60%),
+    linear-gradient(180deg, rgba(12, 18, 36, 0.35) 0%, rgba(12, 18, 36, 0.75) 100%);
+  pointer-events: none;
+  mix-blend-mode: screen;
+}
+
+.hero-map-container .maplibregl-canvas {
+  width: 100% !important;
+  height: 100% !important;
+  filter: saturate(1.2) brightness(1.12) contrast(1.05);
+}
+
+@media (max-width: 640px) {
+  .hero-map-container {
+    border-radius: 28px;
+  }
+}

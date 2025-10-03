@@ -38,6 +38,9 @@ export const PreferencesPage: React.FC = () => {
   );
   const [transcriptOptIn, setTranscriptOptIn] = useState(preferences?.transcriptOptIn ?? false);
   const [poiProvider, setPoiProvider] = useState<PoiProviderId>(preferences?.poiProvider ?? 'ops');
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle');
+  const [statusMessage, setStatusMessage] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
 
   useEffect(() => {
     if (!preferences) {
@@ -71,12 +74,34 @@ export const PreferencesPage: React.FC = () => {
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    await updatePreferences('traveler-001', {
-      assistantVoiceId,
-      narrationVoiceId,
-      transcriptOptIn,
-      poiProvider,
-    });
+    setSaveStatus('saving');
+    setStatusMessage('');
+    setErrorMessage('');
+    try {
+      const updated = await updatePreferences('traveler-001', {
+        assistantVoiceId,
+        narrationVoiceId,
+        transcriptOptIn,
+        poiProvider,
+      });
+
+      const assistantVoice = VOICES.find(
+        (voice) => voice.voiceId === updated.assistantVoiceId,
+      )?.displayName;
+      const narratorVoice = VOICES.find(
+        (voice) => voice.voiceId === updated.narrationVoiceId,
+      )?.displayName;
+
+      setStatusMessage(
+        `Narrator ready: ${narratorVoice ?? 'Selected voice'} will share stories while ${assistantVoice ?? 'your guide'} handles requests.`,
+      );
+      setSaveStatus('success');
+    } catch (error) {
+      setErrorMessage(
+        (error as Error).message || 'We could not save your storytelling preferences.',
+      );
+      setSaveStatus('error');
+    }
   };
 
   const providerCapabilities = preferences?.providerCapabilities ?? DEFAULT_PROVIDER_CAPABILITIES;
@@ -87,6 +112,14 @@ export const PreferencesPage: React.FC = () => {
       <header>
         <h1>Traveler Preferences</h1>
       </header>
+      <div aria-live="polite" role="status" className="preferences-status">
+        {saveStatus === 'saving' ? 'Staging your storyteller settings…' : statusMessage}
+      </div>
+      {saveStatus === 'error' ? (
+        <div role="alert" className="preferences-error">
+          {errorMessage}
+        </div>
+      ) : null}
       <form onSubmit={handleSubmit}>
         <label>
           Assistant Voice
@@ -165,7 +198,9 @@ export const PreferencesPage: React.FC = () => {
           </div>
         </fieldset>
 
-        <button type="submit">Save preferences</button>
+        <button type="submit" disabled={saveStatus === 'saving'}>
+          {saveStatus === 'saving' ? 'Saving…' : 'Save preferences'}
+        </button>
       </form>
 
       <div style={{ marginTop: '2rem' }}>

@@ -5,6 +5,12 @@
 
 ## Summary
 
+- Launch screen reflowed: location chip, orb, map, and lower panels now stack responsively for phone/tablet/desktop.
+
+- Landing intro now opens with a path-drawn "TRIP / NARRATOR" title (no map on first view) to mirror the neon Motion demo.
+
+- Trip planner surfaces a story highlights panel (shared timeline formatter) alongside the conversational console and route map; preferences page now announces successful narrator voice updates in-app.
+
 Deliver a voice-first road trip companion that gathers traveler preferences, produces 2–3 enriched driving routes, narrates POI stories using configurable voices, and persists trip history while meeting stringent accessibility, safety, and privacy requirements. Implementation spans a React TypeScript PWA, a Node/Express backend orchestrating routing and POI services, SQLite persistence via Knex, and OpenAI-powered speech synthesis with Web Speech API recognition.
 
 ### Canonical UI Baseline (v1)

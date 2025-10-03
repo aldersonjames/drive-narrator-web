@@ -4,7 +4,7 @@ import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 
 const exec = promisify(execFile);
-const ports = [3000, 5173, 4173];
+const ports = [41234, 5173, 4173];
 
 const killOnPosix = async (port) => {
   let stdout = '';

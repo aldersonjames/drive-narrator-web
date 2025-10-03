@@ -4,6 +4,7 @@ import { useTripPlanner } from '../context/TripPlannerContext';
 import { MapRoutes } from '../components/map/MapRoutes';
 import { NarrationTimeline } from '../components/voice/NarrationTimeline';
 import { ConversationConsole } from '../components/voice/ConversationConsole';
+import { StoryHighlights } from '../components/routes/StoryHighlights';
 
 export const TripPlannerPage: React.FC = () => {
   const { routes, loadRoutes, selectRoute, selectedRouteId, notices, isLoading } = useTripPlanner();
@@ -108,6 +109,8 @@ export const TripPlannerPage: React.FC = () => {
             onSelect={selectRoute}
           />
         </div>
+
+        <StoryHighlights route={selectedRoute} isLoading={isLoading && !routes.length} />
 
         <div className="timeline-panel">
           <h2>Narration preview</h2>

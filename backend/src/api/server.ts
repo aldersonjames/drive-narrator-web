@@ -2,7 +2,7 @@ import http from 'node:http';
 
 import app from './app';
 
-const PORT = Number(process.env.PORT ?? 3000);
+const PORT = Number(process.env.PORT ?? 41234);
 
 const server = http.createServer(app);
 

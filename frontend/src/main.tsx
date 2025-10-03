@@ -5,6 +5,7 @@ import { registerSW } from 'virtual:pwa-register';
 
 import App from './App';
 import { ErrorBoundary } from './components/system/ErrorBoundary';
+import { TripPlannerProvider } from './context/TripPlannerContext';
 import './styles/global.css';
 import './styles/launch.css';
 
@@ -15,7 +16,9 @@ if (mount) {
   root.render(
     <React.StrictMode>
       <ErrorBoundary>
-        <App />
+        <TripPlannerProvider>
+          <App />
+        </TripPlannerProvider>
       </ErrorBoundary>
     </React.StrictMode>,
   );

@@ -1,3 +1,5 @@
+import type { LineString } from 'geojson';
+
 import type { RouteSummary, PoiSummary } from '../../../shared/types/tripNarrator';
 
 const uid = (() => {
@@ -123,25 +125,105 @@ export const suggestionPhrases = [
   'Add family-friendly detours',
 ];
 
-export const heroRoutes = [
+export interface HeroRouteConfig {
+  id: string;
+  color: string;
+  geometry: LineString;
+}
+
+export interface HeroCalloutConfig {
+  id: string;
+  label: string;
+  detail?: string;
+  coordinate: [number, number];
+  color?: string;
+}
+
+export interface HeroMapConfig {
+  center: [number, number];
+  zoom: number;
+  currentLocation: {
+    label: string;
+    coordinate: [number, number];
+  };
+  callouts: HeroCalloutConfig[];
+}
+
+export const heroRoutes: HeroRouteConfig[] = [
   {
-    id: 'hero-main',
-    color: 'rgba(99, 102, 241, 0.95)',
-    path: 'M180 720 C 360 540, 520 500, 780 580 S 1140 520, 1400 360',
+    id: 'routeA',
+    color: '#00E5FF',
+    geometry: {
+      type: 'LineString',
+      coordinates: [
+        [-80.743, 34.924],
+        [-80.843, 35.227],
+        [-81.254, 35.473],
+        [-81.341, 35.733],
+        [-81.677, 36.135],
+        [-81.674, 36.216],
+      ],
+    },
   },
   {
-    id: 'hero-alt',
-    color: 'rgba(14, 165, 233, 0.85)',
-    path: 'M200 680 C 420 620, 600 460, 840 420 S 1180 420, 1440 280',
+    id: 'routeB',
+    color: '#FF6EC7',
+    geometry: {
+      type: 'LineString',
+      coordinates: [
+        [-80.743, 34.924],
+        [-80.843, 35.227],
+        [-80.889, 35.781],
+        [-81.15, 36.145],
+        [-81.563, 36.231],
+        [-81.674, 36.216],
+      ],
+    },
   },
   {
-    id: 'hero-alt-2',
-    color: 'rgba(236, 72, 153, 0.7)',
-    path: 'M220 700 C 380 520, 540 480, 760 500 S 1180 460, 1460 340',
+    id: 'routeC',
+    color: '#FFB020',
+    geometry: {
+      type: 'LineString',
+      coordinates: [
+        [-80.743, 34.924],
+        [-81.187, 35.262],
+        [-81.536, 35.292],
+        [-81.538, 35.914],
+        [-81.674, 36.216],
+      ],
+    },
   },
 ];
 
-export const mapHighlights = [
-  { id: 'hl-1', label: '3h 45m', position: { x: 980, y: 420 } },
-  { id: 'hl-2', label: '245 km', position: { x: 480, y: 340 } },
-];
+export const heroMapConfig: HeroMapConfig = {
+  center: [-81.1, 35.6],
+  zoom: 7.2,
+  currentLocation: {
+    label: 'Near Waxhaw, NC',
+    coordinate: [-80.743, 34.924],
+  },
+  callouts: [
+    {
+      id: 'routeA',
+      label: 'Scenic Ridge',
+      detail: 'Waxhaw → Boone',
+      coordinate: [-81.25, 35.9],
+      color: '#00E5FF',
+    },
+    {
+      id: 'routeB',
+      label: 'Statesville Run',
+      detail: 'Waxhaw → Boone',
+      coordinate: [-81.1, 35.95],
+      color: '#FF6EC7',
+    },
+    {
+      id: 'routeC',
+      label: 'Foothills Sweep',
+      detail: 'Waxhaw → Boone',
+      coordinate: [-81.5, 35.5],
+      color: '#FFB020',
+    },
+  ],
+};
