@@ -108,7 +108,7 @@ export const NowPlayingScreen: React.FC = () => {
             <span className="text-xs font-medium">Route</span>
           </NavLink>
           <NavLink
-            to="/memories"
+            to="/trips"
             className={({ isActive }) =>
               `flex flex-col items-center gap-1 transition-colors ${
                 isActive ? 'text-primary' : 'text-zinc-500 dark:text-zinc-400 hover:text-primary'
@@ -116,7 +116,7 @@ export const NowPlayingScreen: React.FC = () => {
             }
           >
             <span className="material-symbols-outlined">bookmark</span>
-            <span className="text-xs font-medium">Memories</span>
+            <span className="text-xs font-medium">Trips</span>
           </NavLink>
           <NavLink
             to="/settings"

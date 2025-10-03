@@ -49,7 +49,14 @@ export const WelcomeScreen: React.FC = () => {
             onClick={() => navigate('/voice')}
             className="w-full rounded-lg bg-primary py-4 px-4 text-lg font-bold text-white transition-colors duration-300 hover:bg-primary/90"
           >
-            Plan Your Trip
+            Plan a New Trip
+          </button>
+          <button
+            type="button"
+            onClick={() => navigate('/trips')}
+            className="w-full rounded-lg bg-white/10 py-4 px-4 text-lg font-bold text-white transition-colors duration-300 hover:bg-white/20"
+          >
+            Open a Saved Trip
           </button>
           <button
             type="button"

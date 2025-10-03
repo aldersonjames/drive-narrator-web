@@ -331,7 +331,7 @@ export const SettingsScreen: React.FC = () => {
             <span className="text-xs font-medium">Discoveries</span>
           </NavLink>
           <NavLink
-            to="/memories"
+            to="/trips"
             className={({ isActive }) =>
               `flex flex-1 flex-col items-center gap-1 py-1 transition-colors ${
                 isActive
@@ -340,8 +340,8 @@ export const SettingsScreen: React.FC = () => {
               }`
             }
           >
-            <span className="material-symbols-outlined">history</span>
-            <span className="text-xs font-medium">Memories</span>
+            <span className="material-symbols-outlined">bookmark</span>
+            <span className="text-xs font-medium">Trips</span>
           </NavLink>
           <NavLink
             to="/settings"

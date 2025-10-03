@@ -431,7 +431,7 @@ export const DiscoveryScreen: React.FC = () => {
             <span className="text-xs font-medium">Discoveries</span>
           </NavLink>
           <NavLink
-            to="/memories"
+            to="/trips"
             className={({ isActive }) =>
               `flex flex-col items-center gap-1 p-2 transition-colors ${
                 isActive
@@ -440,8 +440,8 @@ export const DiscoveryScreen: React.FC = () => {
               }`
             }
           >
-            <span className="material-symbols-outlined">bookmark_border</span>
-            <span className="text-xs font-medium">Memories</span>
+            <span className="material-symbols-outlined">bookmark</span>
+            <span className="text-xs font-medium">Trips</span>
           </NavLink>
           <NavLink
             to="/settings"

@@ -5,7 +5,7 @@ import WelcomeScreen from './stitch/WelcomeScreen';
 import VoiceConversationScreen from './stitch/VoiceConversationScreen';
 import DiscoveryScreen from './stitch/DiscoveryScreen';
 import NowPlayingScreen from './stitch/NowPlayingScreen';
-import JourneyMemoriesScreen from './stitch/JourneyMemoriesScreen';
+import TripsScreen from './stitch/TripsScreen';
 import SettingsScreen from './stitch/SettingsScreen';
 
 const AppLayout: React.FC = () => {
@@ -35,7 +35,7 @@ export const App: React.FC = () => {
           <Route path="/voice" element={<VoiceConversationScreen />} />
           <Route path="/discoveries" element={<DiscoveryScreen />} />
           <Route path="/now-playing" element={<NowPlayingScreen />} />
-          <Route path="/memories" element={<JourneyMemoriesScreen />} />
+          <Route path="/trips" element={<TripsScreen />} />
           <Route path="/settings" element={<SettingsScreen />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
