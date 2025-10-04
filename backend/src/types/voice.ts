@@ -35,6 +35,7 @@ export interface VoiceSessionPayload {
   issuedAt: string;
   latencyHints: VoiceSessionLatencyHints;
   caps: VoiceSessionCaps;
+  conversationInstructions?: string;
 }
 
 export type VoiceEvent =
@@ -55,6 +56,11 @@ export type VoiceEvent =
 export interface VoiceAdapterSessionContext {
   deviceId: string;
   transport: VoiceTransport;
+  voicePreferences?: {
+    voiceId?: string;
+    personaId?: string;
+    accentId?: string;
+  };
 }
 
 export interface VoiceAdapterConfig {
@@ -119,4 +125,9 @@ export interface VoiceRateLimitConfig {
 export interface CreateSessionOptions {
   deviceId: string;
   transport: VoiceTransport;
+  voicePreferences?: {
+    voiceId?: string;
+    personaId?: string;
+    accentId?: string;
+  };
 }

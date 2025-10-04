@@ -25,20 +25,25 @@ export class RealtimeVoiceService {
   private reconnectAttempts = 0;
   private maxReconnectAttempts = 5;
   private reconnectDelay = 1000;
-  private sessionData: any = null;
+  private sessionData: {
+    session: { ephemeralToken: string; model: string; voice: { id: string } };
+  } | null = null;
 
   constructor() {
     this.handleVisibilityChange = this.handleVisibilityChange.bind(this);
     this.handleOnline = this.handleOnline.bind(this);
     this.handleOffline = this.handleOffline.bind(this);
-    
+
     // Add event listeners for connection management
     document.addEventListener('visibilitychange', this.handleVisibilityChange);
     window.addEventListener('online', this.handleOnline);
     window.addEventListener('offline', this.handleOffline);
   }
 
-  async connect(config: RealtimeVoiceConfig, callbacks: RealtimeVoiceCallbacks = {}): Promise<void> {
+  async connect(
+    config: RealtimeVoiceConfig,
+    callbacks: RealtimeVoiceCallbacks = {},
+  ): Promise<void> {
     this.config = config;
     this.callbacks = callbacks;
 
@@ -46,7 +51,9 @@ export class RealtimeVoiceService {
       // Get OpenAI API key from environment or user settings
       const apiKey = await this.getApiKey();
       if (!apiKey) {
-        throw new Error('OpenAI API key not available in browser environment. Please configure voice settings.');
+        throw new Error(
+          'OpenAI API key not available in browser environment. Please configure voice settings.',
+        );
       }
 
       // Create WebSocket connection to OpenAI Realtime API using session data
@@ -59,8 +66,9 @@ export class RealtimeVoiceService {
       this.ws.onclose = this.handleClose.bind(this);
       this.ws.onerror = this.handleError.bind(this);
 
-      logger.info('RealtimeVoiceService: Connecting to OpenAI Realtime API', { voiceId: config.voiceId });
-
+      logger.info('RealtimeVoiceService: Connecting to OpenAI Realtime API', {
+        voiceId: config.voiceId,
+      });
     } catch (error) {
       logger.error('RealtimeVoiceService: Failed to connect', { error });
       this.callbacks.onError?.(error as Error);
@@ -78,8 +86,11 @@ export class RealtimeVoiceService {
           'x-device-id': this.getDeviceId(),
         },
         body: JSON.stringify({
-          transport: 'websocket'
-        })
+          transport: 'websocket',
+          voiceId: this.config?.voiceId,
+          personaId: this.config?.personaId,
+          accentId: this.config?.accentId,
+        }),
       });
 
       if (!response.ok) {
@@ -87,10 +98,10 @@ export class RealtimeVoiceService {
       }
 
       const sessionData = await response.json();
-      
+
       // Store session data for later use
       this.sessionData = sessionData;
-      
+
       // Return the ephemeral token for WebSocket connection
       return sessionData.session.ephemeralToken;
     } catch (error) {
@@ -128,7 +139,7 @@ export class RealtimeVoiceService {
     }
   }
 
-  private processMessage(data: any): void {
+  private processMessage(data: { type: string; delta?: string; [key: string]: unknown }): void {
     switch (data.type) {
       case 'response.audio.delta':
         this.handleAudioChunk(data.delta);
@@ -177,7 +188,10 @@ export class RealtimeVoiceService {
   }
 
   private handleClose(event: CloseEvent): void {
-    logger.info('RealtimeVoiceService: Connection closed', { code: event.code, reason: event.reason });
+    logger.info('RealtimeVoiceService: Connection closed', {
+      code: event.code,
+      reason: event.reason,
+    });
     this.isConnected = false;
     this.isSpeaking = false;
     this.callbacks.onDisconnected?.();
@@ -206,13 +220,13 @@ export class RealtimeVoiceService {
         input_audio_format: 'pcm16',
         output_audio_format: 'pcm16',
         input_audio_transcription: {
-          model: 'whisper-1'
+          model: 'whisper-1',
         },
         turn_detection: {
           type: 'server_vad',
           threshold: 0.5,
           prefix_padding_ms: 300,
-          silence_duration_ms: 200
+          silence_duration_ms: 200,
         },
         tools: [
           {
@@ -226,10 +240,10 @@ export class RealtimeVoiceService {
                   latitude: { type: 'number', description: 'Current latitude' },
                   longitude: { type: 'number', description: 'Current longitude' },
                   speed: { type: 'number', description: 'Current speed in MPH' },
-                  heading: { type: 'number', description: 'Current heading in degrees' }
-                }
-              }
-            }
+                  heading: { type: 'number', description: 'Current heading in degrees' },
+                },
+              },
+            },
           },
           {
             type: 'function',
@@ -242,13 +256,17 @@ export class RealtimeVoiceService {
                   latitude: { type: 'number', description: 'Current latitude' },
                   longitude: { type: 'number', description: 'Current longitude' },
                   radius: { type: 'number', description: 'Search radius in miles' },
-                  interests: { type: 'array', items: { type: 'string' }, description: 'User interests' }
-                }
-              }
-            }
-          }
-        ]
-      }
+                  interests: {
+                    type: 'array',
+                    items: { type: 'string' },
+                    description: 'User interests',
+                  },
+                },
+              },
+            },
+          },
+        ],
+      },
     };
 
     this.ws.send(JSON.stringify(config));
@@ -258,49 +276,64 @@ export class RealtimeVoiceService {
     if (!this.config) return '';
 
     const { personaId, accentId, instructions } = this.config;
-    
+
     // Get persona and accent details from voice presets
     const persona = this.getPersonaDetails(personaId);
     const accent = this.getAccentDetails(accentId);
-    
+
     let instructionText = `You are a drive narrator companion. ${persona.description}`;
-    
+
     if (accent.description) {
       instructionText += ` ${accent.description}`;
     }
-    
+
     if (instructions) {
       instructionText += ` ${instructions}`;
     }
-    
+
     instructionText += `\n\nYou should speak naturally and conversationally, providing interesting stories and information about points of interest as the user drives. Keep responses concise but engaging.`;
-    
+
     return instructionText;
   }
 
   private getPersonaDetails(personaId: string): { description: string } {
     // This should be imported from your voice presets
     const personas: Record<string, { description: string }> = {
-      'local-expert': { description: 'You are a knowledgeable local expert who knows the area well and loves sharing interesting stories about local history, culture, and hidden gems.' },
-      'adventure-seeker': { description: 'You are an enthusiastic adventure seeker who gets excited about outdoor activities, unique experiences, and off-the-beaten-path discoveries.' },
-      'history-buff': { description: 'You are a passionate history enthusiast who loves sharing detailed historical stories and context about places and events.' },
-      'foodie': { description: 'You are a food lover who knows all the best local restaurants, food trucks, and culinary experiences in the area.' },
-      'nature-lover': { description: 'You are a nature enthusiast who appreciates the beauty of the outdoors and loves sharing information about local flora, fauna, and natural features.' }
+      'local-expert': {
+        description:
+          'You are a knowledgeable local expert who knows the area well and loves sharing interesting stories about local history, culture, and hidden gems.',
+      },
+      'adventure-seeker': {
+        description:
+          'You are an enthusiastic adventure seeker who gets excited about outdoor activities, unique experiences, and off-the-beaten-path discoveries.',
+      },
+      'history-buff': {
+        description:
+          'You are a passionate history enthusiast who loves sharing detailed historical stories and context about places and events.',
+      },
+      foodie: {
+        description:
+          'You are a food lover who knows all the best local restaurants, food trucks, and culinary experiences in the area.',
+      },
+      'nature-lover': {
+        description:
+          'You are a nature enthusiast who appreciates the beauty of the outdoors and loves sharing information about local flora, fauna, and natural features.',
+      },
     };
-    
+
     return personas[personaId] || personas['local-expert'];
   }
 
   private getAccentDetails(accentId: string): { description: string } {
     // This should be imported from your voice presets
     const accents: Record<string, { description: string }> = {
-      'american': { description: 'Speak with a clear American accent.' },
-      'british': { description: 'Speak with a refined British accent.' },
-      'australian': { description: 'Speak with a friendly Australian accent.' },
-      'southern': { description: 'Speak with a warm Southern American accent.' },
-      'new-york': { description: 'Speak with a distinctive New York accent.' }
+      american: { description: 'Speak with a clear American accent.' },
+      british: { description: 'Speak with a refined British accent.' },
+      australian: { description: 'Speak with a friendly Australian accent.' },
+      southern: { description: 'Speak with a warm Southern American accent.' },
+      'new-york': { description: 'Speak with a distinctive New York accent.' },
     };
-    
+
     return accents[accentId] || accents['american'];
   }
 
@@ -313,12 +346,12 @@ export class RealtimeVoiceService {
     try {
       // Convert ArrayBuffer to base64
       const bytes = new Uint8Array(audioData);
-      const binaryString = Array.from(bytes, byte => String.fromCharCode(byte)).join('');
+      const binaryString = Array.from(bytes, (byte) => String.fromCharCode(byte)).join('');
       const base64Audio = btoa(binaryString);
 
       const message = {
         type: 'input_audio_buffer.append',
-        audio: base64Audio
+        audio: base64Audio,
       };
 
       this.ws.send(JSON.stringify(message));
@@ -341,10 +374,10 @@ export class RealtimeVoiceService {
         content: [
           {
             type: 'input_text',
-            text: text
-          }
-        ]
-      }
+            text: text,
+          },
+        ],
+      },
     };
 
     this.ws.send(JSON.stringify(message));
@@ -357,8 +390,8 @@ export class RealtimeVoiceService {
       type: 'response.audio.create',
       response: {
         modalities: ['audio'],
-        instructions: 'Respond with audio only'
-      }
+        instructions: 'Respond with audio only',
+      },
     };
 
     this.ws.send(JSON.stringify(message));
@@ -370,7 +403,7 @@ export class RealtimeVoiceService {
     if (!this.ws || !this.isConnected) return;
 
     const message = {
-      type: 'response.audio.stop'
+      type: 'response.audio.stop',
     };
 
     this.ws.send(JSON.stringify(message));
@@ -381,15 +414,15 @@ export class RealtimeVoiceService {
   private scheduleReconnect(): void {
     this.reconnectAttempts++;
     const delay = this.reconnectDelay * Math.pow(2, this.reconnectAttempts - 1);
-    
-    logger.info('RealtimeVoiceService: Scheduling reconnect', { 
-      attempt: this.reconnectAttempts, 
-      delay 
+
+    logger.info('RealtimeVoiceService: Scheduling reconnect', {
+      attempt: this.reconnectAttempts,
+      delay,
     });
 
     setTimeout(() => {
       if (this.config) {
-        this.connect(this.config, this.callbacks).catch(error => {
+        this.connect(this.config, this.callbacks).catch((error) => {
           logger.error('RealtimeVoiceService: Reconnect failed', { error });
         });
       }
@@ -409,7 +442,7 @@ export class RealtimeVoiceService {
   private handleOnline(): void {
     logger.info('RealtimeVoiceService: Network online, attempting to reconnect');
     if (this.config && !this.isConnected) {
-      this.connect(this.config, this.callbacks).catch(error => {
+      this.connect(this.config, this.callbacks).catch((error) => {
         logger.error('RealtimeVoiceService: Reconnect on online failed', { error });
       });
     }
@@ -428,7 +461,9 @@ export class RealtimeVoiceService {
 
   resume(): void {
     if (this.ws && this.isConnected) {
-      this.ws.send(JSON.stringify({ type: 'session.update', session: { modalities: ['text', 'audio'] } }));
+      this.ws.send(
+        JSON.stringify({ type: 'session.update', session: { modalities: ['text', 'audio'] } }),
+      );
     }
   }
 
@@ -451,7 +486,7 @@ export class RealtimeVoiceService {
   getConnectionStatus(): { connected: boolean; speaking: boolean } {
     return {
       connected: this.isConnected,
-      speaking: this.isSpeaking
+      speaking: this.isSpeaking,
     };
   }
 }

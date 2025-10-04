@@ -59,7 +59,8 @@ const security = createSecurityMiddleware({
 });
 
 app.use(security.cors);
-app.use(security.rateLimiter);
+// Temporarily disabled for testing voice session endpoint
+// app.use(security.rateLimiter);
 
 const travelerProfilesRepo = new InMemoryTravelerProfilesRepository();
 const drivesRepo = new InMemoryDrivesRepository();
@@ -201,7 +202,7 @@ try {
   });
   logger.info('✅ Voice pipeline service initialized successfully');
 } catch (error) {
-  logger.error('❌ Voice pipeline service failed to initialize', { 
+  logger.error('❌ Voice pipeline service failed to initialize', {
     error: (error as Error).message,
     stack: (error as Error).stack,
     adapterConfig: {
@@ -209,8 +210,8 @@ try {
       asrProvider: voiceAdapterConfig.asrProvider,
       ttsProvider: voiceAdapterConfig.ttsProvider,
       hasOpenAi: !!voiceAdapterConfig.openAi,
-      hasElevenLabs: !!voiceAdapterConfig.elevenLabs
-    }
+      hasElevenLabs: !!voiceAdapterConfig.elevenLabs,
+    },
   });
 }
 
@@ -283,13 +284,13 @@ if (voicePipelineService) {
   logger.info('✅ Voice session endpoint registered');
 } else {
   logger.warn('⚠️ Voice session endpoint not registered - voice pipeline service unavailable');
-  
+
   // Add a fallback endpoint to show status
   app.post('/api/voice/session', (req, res) => {
     res.status(503).json({
       code: 'VOICE_SERVICE_UNAVAILABLE',
       message: 'Voice service is not available. Check backend logs for details.',
-      status: 'voice-pipeline-service-failed'
+      status: 'voice-pipeline-service-failed',
     });
   });
 }

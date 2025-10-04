@@ -31,9 +31,27 @@ export const createVoiceSessionController = ({ voiceService, logger }: Dependenc
 
     const transport = toTransport(req.query.transport ?? req.body?.transport);
 
+    // Extract voice preferences from request body
+    const { voiceId, personaId, accentId } = req.body || {};
+
     try {
-      const { session, pipeline } = await voiceService.createSession({ deviceId, transport });
-      logger.info('voice-session-issued', { deviceId, transport, provider: session.provider });
+      const { session, pipeline } = await voiceService.createSession({
+        deviceId,
+        transport,
+        voicePreferences: {
+          voiceId,
+          personaId,
+          accentId,
+        },
+      });
+      logger.info('voice-session-issued', {
+        deviceId,
+        transport,
+        provider: session.provider,
+        voiceId,
+        personaId,
+        accentId,
+      });
       return res.status(201).json({
         ...session,
         voicePipeline: pipeline,

@@ -38,6 +38,11 @@ export class OpenAiVoiceAdapter implements VoiceAdapter {
       throw new Error('OpenAI configuration missing');
     }
 
+    // Apply voice preferences
+    const voiceId = ctx.voicePreferences?.voiceId || openAi.voice;
+    const personaId = ctx.voicePreferences?.personaId;
+    const accentId = ctx.voicePreferences?.accentId;
+
     const response = await fetch(OPENAI_REALTIME_SESSION_URL, {
       method: 'POST',
       headers: {
@@ -67,13 +72,27 @@ export class OpenAiVoiceAdapter implements VoiceAdapter {
     const ttlMs = sessionTtlSeconds * 1000;
     const expiresAtMs = expiresAt ? expiresAt * 1000 : issuedAtMs + ttlMs;
 
+    // Build conversation instructions based on persona and accent
+    let conversationInstructions =
+      'You are a helpful voice assistant for a road trip companion app. Keep responses concise and natural.';
+
+    if (personaId) {
+      // TODO: Load persona instructions from shared data
+      conversationInstructions += `\n\nPersona: ${personaId}`;
+    }
+
+    if (accentId) {
+      // TODO: Load accent instructions from shared data
+      conversationInstructions += `\n\nAccent: ${accentId}`;
+    }
+
     const session: VoiceSessionPayload = {
       provider: 'openai',
       transport: ctx.transport,
       ephemeralToken: ephemeralSecret,
       model: openAi.model,
       voice: {
-        id: openAi.voice,
+        id: voiceId,
         lang: 'en-US',
         rate: 1.0,
         style: 'narration',
@@ -89,6 +108,7 @@ export class OpenAiVoiceAdapter implements VoiceAdapter {
       issuedAt: new Date(issuedAtMs).toISOString(),
       latencyHints,
       caps,
+      conversationInstructions, // Add conversation instructions
     };
 
     const pipeline: VoicePipelineConfig = {

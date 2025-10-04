@@ -43,6 +43,7 @@ export class VoicePipelineService {
       .createSession({
         deviceId: options.deviceId,
         transport: options.transport,
+        voicePreferences: options.voicePreferences,
       })
       .then(({ session, pipeline }) => {
         const token = session.ephemeralToken;
