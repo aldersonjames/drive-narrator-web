@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpenAI Voice WebSocket Example</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .connected { background-color: #d4edda; color: #155724; }
+        .disconnected { background-color: #f8d7da; color: #721c24; }
+        .listening { background-color: #d1ecf1; color: #0c5460; }
+        .speaking { background-color: #fff3cd; color: #856404; }
+        
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            margin: 5px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover { background-color: #0056b3; }
+        button:disabled { background-color: #6c757d; cursor: not-allowed; }
+        
+        .controls {
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        .log {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            height: 200px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        
+        .audio-visualizer {
+            width: 100%;
+            height: 60px;
+            background-color: #000;
+            border-radius: 5px;
+            margin: 10px 0;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .audio-bar {
+            position: absolute;
+            bottom: 0;
+            width: 4px;
+            background-color: #00ff00;
+            transition: height 0.1s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>OpenAI Voice WebSocket Example</h1>
+        <p>This example demonstrates two-way voice conversation with OpenAI using WebSockets, including barge-in capabilities.</p>
+        
+        <div id="status" class="status disconnected">Disconnected</div>
+        
+        <div class="controls">
+            <button id="connectBtn">Connect</button>
+            <button id="disconnectBtn" disabled>Disconnect</button>
+            <button id="startListeningBtn" disabled>Start Listening</button>
+            <button id="stopListeningBtn" disabled>Stop Listening</button>
+        </div>
+        
+        <div class="audio-visualizer" id="audioVisualizer"></div>
+        
+        <h3>Event Log</h3>
+        <div id="log" class="log"></div>
+    </div>
+
+    <script>
+        class VoiceWebSocketClient {
+            constructor() {
+                this.ws = null;
+                this.audioContext = null;
+                this.mediaStream = null;
+                this.audioProcessor = null;
+                this.isListening = false;
+                this.isSpeaking = false;
+                this.audioQueue = [];
+                this.currentAudio = null;
+                
+                // Voice Activity Detection
+                this.vadThreshold = 0.01;
+                this.silenceDuration = 1000; // ms
+                this.lastSpeechTime = 0;
+                
+                this.initializeElements();
+                this.setupEventListeners();
+            }
+            
+            initializeElements() {
+                this.statusEl = document.getElementById('status');
+                this.logEl = document.getElementById('log');
+                this.visualizerEl = document.getElementById('audioVisualizer');
+                
+                this.connectBtn = document.getElementById('connectBtn');
+                this.disconnectBtn = document.getElementById('disconnectBtn');
+                this.startListeningBtn = document.getElementById('startListeningBtn');
+                this.stopListeningBtn = document.getElementById('stopListeningBtn');
+            }
+            
+            setupEventListeners() {
+                this.connectBtn.addEventListener('click', () => this.connect());
+                this.disconnectBtn.addEventListener('click', () => this.disconnect());
+                this.startListeningBtn.addEventListener('click', () => this.startListening());
+                this.stopListeningBtn.addEventListener('click', () => this.stopListening());
+            }
+            
+            log(message) {
+                const timestamp = new Date().toLocaleTimeString();
+                this.logEl.innerHTML += `[${timestamp}] ${message}<br>`;
+                this.logEl.scrollTop = this.logEl.scrollHeight;
+                console.log(message);
+            }
+            
+            updateStatus(status, className) {
+                this.statusEl.textContent = status;
+                this.statusEl.className = `status ${className}`;
+            }
+            
+            async connect() {
+                try {
+                    // In a real application, you would get this from your server
+                    const apiKey = prompt('Enter your OpenAI API key:');
+                    if (!apiKey) return;
+                    
+                    this.log('Connecting to OpenAI Realtime API...');
+                    
+                    // Note: In production, you should use ephemeral tokens from your server
+                    this.ws = new WebSocket('wss://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview-2024-12-17', {
+                        headers: {
+                            'Authorization': `Bearer ${apiKey}`,
+                            'OpenAI-Beta': 'realtime=v1'
+                        }
+                    });
+                    
+                    this.ws.onopen = () => {
+                        this.log('WebSocket connected');
+                        this.updateStatus('Connected', 'connected');
+                        this.connectBtn.disabled = true;
+                        this.disconnectBtn.disabled = false;
+                        this.startListeningBtn.disabled = false;
+                        
+                        // Initialize the conversation
+                        this.initializeConversation();
+                    };
+                    
+                    this.ws.onmessage = (event) => {
+                        this.handleMessage(event);
+                    };
+                    
+                    this.ws.onerror = (error) => {
+                        this.log(`WebSocket error: ${error}`);
+                        this.updateStatus('Error', 'disconnected');
+                    };
+                    
+                    this.ws.onclose = () => {
+                        this.log('WebSocket disconnected');
+                        this.updateStatus('Disconnected', 'disconnected');
+                        this.connectBtn.disabled = false;
+                        this.disconnectBtn.disabled = true;
+                        this.startListeningBtn.disabled = true;
+                        this.stopListeningBtn.disabled = true;
+                    };
+                    
+                } catch (error) {
+                    this.log(`Connection error: ${error.message}`);
+                }
+            }
+            
+            initializeConversation() {
+                // Send initial configuration
+                const config = {
+                    type: 'session.update',
+                    session: {
+                        modalities: ['text', 'audio'],
+                        instructions: 'You are a helpful voice assistant. Keep responses concise and natural.',
+                        voice: 'alloy',
+                        input_audio_format: 'pcm16',
+                        output_audio_format: 'pcm16',
+                        input_audio_transcription: {
+                            model: 'whisper-1'
+                        },
+                        turn_detection: {
+                            type: 'server_vad',
+                            threshold: 0.5,
+                            prefix_padding_ms: 300,
+                            silence_duration_ms: 200
+                        }
+                    }
+                };
+                
+                this.ws.send(JSON.stringify(config));
+                this.log('Conversation initialized');
+            }
+            
+            handleMessage(event) {
+                try {
+                    const message = JSON.parse(event.data);
+                    this.log(`Received: ${message.type}`);
+                    
+                    switch (message.type) {
+                        case 'session.created':
+                            this.log('Session created successfully');
+                            break;
+                            
+                        case 'session.updated':
+                            this.log('Session updated');
+                            break;
+                            
+                        case 'conversation.item.input_audio_buffer.committed':
+                            this.log('Audio input committed');
+                            break;
+                            
+                        case 'conversation.item.input_audio_buffer.speech_started':
+                            this.log('Speech started');
+                            this.updateStatus('Listening', 'listening');
+                            break;
+                            
+                        case 'conversation.item.input_audio_buffer.speech_stopped':
+                            this.log('Speech stopped');
+                            break;
+                            
+                        case 'conversation.item.input_audio_buffer.transcript':
+                            this.log(`User said: ${message.transcript}`);
+                            break;
+                            
+                        case 'conversation.item.created':
+                            this.log('New conversation item created');
+                            break;
+                            
+                        case 'conversation.item.input_audio_buffer.speech_stopped':
+                            this.log('Input speech stopped');
+                            break;
+                            
+                        case 'conversation.item.output_audio_buffer.speech_started':
+                            this.log('AI started speaking');
+                            this.updateStatus('AI Speaking', 'speaking');
+                            this.isSpeaking = true;
+                            break;
+                            
+                        case 'conversation.item.output_audio_buffer.speech_stopped':
+                            this.log('AI stopped speaking');
+                            this.updateStatus('Connected', 'connected');
+                            this.isSpeaking = false;
+                            break;
+                            
+                        case 'conversation.item.output_audio_buffer.audio':
+                            this.handleAudioOutput(message.audio);
+                            break;
+                            
+                        case 'conversation.item.output_audio_buffer.done':
+                            this.log('Audio output complete');
+                            break;
+                            
+                        case 'error':
+                            this.log(`Error: ${message.error.message}`);
+                            break;
+                            
+                        default:
+                            this.log(`Unknown message type: ${message.type}`);
+                    }
+                } catch (error) {
+                    this.log(`Error parsing message: ${error.message}`);
+                }
+            }
+            
+            handleAudioOutput(audioData) {
+                // Convert base64 audio to ArrayBuffer
+                const binaryString = atob(audioData);
+                const bytes = new Uint8Array(binaryString.length);
+                for (let i = 0; i < binaryString.length; i++) {
+                    bytes[i] = binaryString.charCodeAt(i);
+                }
+                
+                // Play audio
+                this.playAudio(bytes.buffer);
+            }
+            
+            async playAudio(audioBuffer) {
+                try {
+                    if (!this.audioContext) {
+                        this.audioContext = new AudioContext();
+                    }
+                    
+                    // Decode PCM16 audio
+                    const audioData = new Int16Array(audioBuffer);
+                    const sampleRate = 24000; // OpenAI uses 24kHz
+                    const length = audioData.length;
+                    const buffer = this.audioContext.createBuffer(1, length, sampleRate);
+                    const channelData = buffer.getChannelData(0);
+                    
+                    // Convert PCM16 to float32
+                    for (let i = 0; i < length; i++) {
+                        channelData[i] = audioData[i] / 32768.0;
+                    }
+                    
+                    const source = this.audioContext.createBufferSource();
+                    source.buffer = buffer;
+                    source.connect(this.audioContext.destination);
+                    
+                    // Handle barge-in during playback
+                    source.onended = () => {
+                        this.log('Audio playback ended');
+                    };
+                    
+                    source.start(0);
+                    this.currentAudio = source;
+                    
+                } catch (error) {
+                    this.log(`Error playing audio: ${error.message}`);
+                }
+            }
+            
+            async startListening() {
+                try {
+                    this.log('Requesting microphone access...');
+                    this.mediaStream = await navigator.mediaDevices.getUserMedia({ 
+                        audio: {
+                            sampleRate: 24000,
+                            channelCount: 1,
+                            echoCancellation: true,
+                            noiseSuppression: true
+                        }
+                    });
+                    
+                    this.audioContext = new AudioContext({ sampleRate: 24000 });
+                    const source = this.audioContext.createMediaStreamSource(this.mediaStream);
+                    
+                    // Create audio processor for real-time processing
+                    this.audioProcessor = this.audioContext.createScriptProcessor(4096, 1, 1);
+                    source.connect(this.audioProcessor);
+                    this.audioProcessor.connect(this.audioContext.destination);
+                    
+                    this.audioProcessor.onaudioprocess = (event) => {
+                        this.processAudioInput(event);
+                    };
+                    
+                    this.isListening = true;
+                    this.updateStatus('Listening', 'listening');
+                    this.startListeningBtn.disabled = true;
+                    this.stopListeningBtn.disabled = false;
+                    
+                    this.log('Microphone access granted, listening...');
+                    
+                } catch (error) {
+                    this.log(`Error accessing microphone: ${error.message}`);
+                }
+            }
+            
+            processAudioInput(event) {
+                if (!this.isListening || !this.ws) return;
+                
+                const inputData = event.inputBuffer.getChannelData(0);
+                
+                // Visualize audio
+                this.visualizeAudio(inputData);
+                
+                // Voice Activity Detection for barge-in
+                const isUserSpeaking = this.detectVoiceActivity(inputData);
+                
+                if (isUserSpeaking && this.isSpeaking) {
+                    this.log('Barge-in detected! Interrupting AI...');
+                    this.sendInterrupt();
+                }
+                
+                // Convert float32 to PCM16 and send to OpenAI
+                const pcm16Data = new Int16Array(inputData.length);
+                for (let i = 0; i < inputData.length; i++) {
+                    pcm16Data[i] = Math.max(-32768, Math.min(32767, inputData[i] * 32768));
+                }
+                
+                // Send audio data to OpenAI
+                const audioMessage = {
+                    type: 'input_audio_buffer.append',
+                    audio: btoa(String.fromCharCode(...new Uint8Array(pcm16Data.buffer)))
+                };
+                
+                this.ws.send(JSON.stringify(audioMessage));
+            }
+            
+            detectVoiceActivity(audioData) {
+                // Simple voice activity detection based on RMS energy
+                let sum = 0;
+                for (let i = 0; i < audioData.length; i++) {
+                    sum += audioData[i] * audioData[i];
+                }
+                const rms = Math.sqrt(sum / audioData.length);
+                
+                if (rms > this.vadThreshold) {
+                    this.lastSpeechTime = Date.now();
+                    return true;
+                }
+                
+                return false;
+            }
+            
+            visualizeAudio(audioData) {
+                // Simple audio visualization
+                const bars = this.visualizerEl.children;
+                const barCount = 20;
+                
+                // Calculate RMS for visualization
+                let sum = 0;
+                for (let i = 0; i < audioData.length; i++) {
+                    sum += audioData[i] * audioData[i];
+                }
+                const rms = Math.sqrt(sum / audioData.length);
+                const height = Math.min(100, rms * 2000);
+                
+                // Update visualization bars
+                for (let i = 0; i < barCount; i++) {
+                    let bar = bars[i];
+                    if (!bar) {
+                        bar = document.createElement('div');
+                        bar.className = 'audio-bar';
+                        bar.style.left = `${(i / barCount) * 100}%`;
+                        this.visualizerEl.appendChild(bar);
+                    }
+                    
+                    const barHeight = height * (0.5 + 0.5 * Math.sin(i * 0.5));
+                    bar.style.height = `${barHeight}%`;
+                }
+            }
+            
+            sendInterrupt() {
+                if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+                    const interruptMessage = {
+                        type: 'response.interrupt'
+                    };
+                    this.ws.send(JSON.stringify(interruptMessage));
+                    this.log('Interrupt signal sent');
+                }
+            }
+            
+            stopListening() {
+                if (this.audioProcessor) {
+                    this.audioProcessor.disconnect();
+                    this.audioProcessor = null;
+                }
+                
+                if (this.mediaStream) {
+                    this.mediaStream.getTracks().forEach(track => track.stop());
+                    this.mediaStream = null;
+                }
+                
+                this.isListening = false;
+                this.updateStatus('Connected', 'connected');
+                this.startListeningBtn.disabled = false;
+                this.stopListeningBtn.disabled = true;
+                
+                this.log('Stopped listening');
+            }
+            
+            disconnect() {
+                if (this.ws) {
+                    this.ws.close();
+                    this.ws = null;
+                }
+                
+                this.stopListening();
+                this.log('Disconnected from OpenAI');
+            }
+        }
+        
+        // Initialize the voice client when the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            new VoiceWebSocketClient();
+        });
+    </script>
+</body>
+</html>
+

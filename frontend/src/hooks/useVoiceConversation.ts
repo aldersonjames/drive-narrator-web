@@ -1,224 +1,213 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
+import { useVoiceRecognition } from './useVoiceRecognition';
+import { useVoiceCommands, VoiceCommand } from './useVoiceCommands';
+import { useConversationalAI, ConversationContext } from './useConversationalAI';
+import { useVoiceResponse, VoiceResponseOptions } from './useVoiceResponse';
 
-import type {
-  ConversationReplyPayload,
-  ConversationTurn,
-  RouteSummary,
-} from '../../../shared/types/tripNarrator';
-import { VoiceOutputService } from '../services/voice/voiceOutputService';
-import { useVoiceInput } from './useVoiceInput';
-import type { VoiceInputStatus } from './useVoiceInput';
-import type { BreathingOrbState } from '../components/voice/BreathingOrb';
-
-const getApiBase = (): string =>
-  (typeof import.meta !== 'undefined' ? import.meta.env?.VITE_API_BASE_URL : undefined) ??
-  (typeof process !== 'undefined' ? process.env?.REACT_APP_API_BASE_URL : undefined) ??
-  '/api';
-
-const createId = (): string => {
-  if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
-    return crypto.randomUUID();
-  }
-  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
-};
-
-type UseVoiceConversationOptions = {
-  route?: RouteSummary;
-  interestTags?: string[];
-  profileId?: string;
-};
-
-export interface VoiceConversationController {
-  orbState: BreathingOrbState;
-  transcript: string;
-  conversation: ConversationTurn[];
-  suggestions: string[];
-  isProcessing: boolean;
-  error?: string;
-  micStatus: VoiceInputStatus;
-  micError?: string;
-  startVoice: () => void;
-  stopVoice: () => void;
-  sendText: (text: string) => Promise<void>;
-  reset: () => void;
+export interface VoiceConversationOptions {
+  context?: ConversationContext;
+  voiceSettings?: {
+    voiceId: string;
+    personaId: string;
+    accentId: string;
+  };
+  onCommand?: (command: VoiceCommand) => void;
+  onResponse?: (response: string) => void;
+  onError?: (error: string) => void;
+  autoListen?: boolean;
+  wakeWords?: string[];
 }
 
-export const useVoiceConversation = (
-  options: UseVoiceConversationOptions = {},
-): VoiceConversationController => {
-  const apiBase = useMemo(() => getApiBase(), []);
-  const voiceInput = useVoiceInput({ continuous: false, interimResults: true });
-  const pauseTimerRef = useRef<number>();
-  const [orbState, setOrbState] = useState<BreathingOrbState>('idle');
-  const [conversation, setConversation] = useState<ConversationTurn[]>([]);
-  const [suggestions, setSuggestions] = useState<string[]>([]);
-  const [isProcessing, setProcessing] = useState(false);
-  const [error, setError] = useState<string | undefined>();
-  const capturePendingRef = useRef(false);
-  const voiceOutputRef = useRef(
-    new VoiceOutputService({
-      onStart: () => setOrbState('speaking'),
-      onEnd: () => setOrbState('idle'),
-      onError: (_segment, err) => {
-        setError(err.message);
-        setOrbState('error');
-      },
-    }),
-  );
+export const useVoiceConversation = (options: VoiceConversationOptions = {}) => {
+  const {
+    context,
+    voiceSettings = { voiceId: 'alloy', personaId: 'local-expert', accentId: 'american' },
+    onCommand,
+    onResponse,
+    onError,
+    autoListen = false,
+    wakeWords = ['hey drive narrator', 'drive narrator', 'narrate my drive'],
+  } = options;
 
-  const appendTurn = useCallback((turn: ConversationTurn) => {
-    setConversation((prev) => [...prev, turn]);
-  }, []);
+  const [isActive, setIsActive] = useState(false);
+  const [isAwake, setIsAwake] = useState(false);
+  const [lastActivity, setLastActivity] = useState<Date | null>(null);
+  const conversationRef = useRef<HTMLDivElement>(null);
 
-  const sendText = useCallback(
-    async (raw: string): Promise<void> => {
-      const text = raw.trim();
-      if (!text || isProcessing) {
-        return;
-      }
-
-      const now = new Date().toISOString();
-      const travelerTurn: ConversationTurn = {
-        id: createId(),
-        role: 'traveler',
-        text,
-        createdAt: now,
-      };
-
-      appendTurn(travelerTurn);
-      setProcessing(true);
-      setError(undefined);
-
-      try {
-        const response = await fetch(`${apiBase}/conversation`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-traveler-id': options.profileId ?? 'traveler-001',
-          },
-          body: JSON.stringify({
-            message: text,
-            routeId: options.route?.routeId,
-            routeName: options.route ? `Route ${options.route.routeId}` : undefined,
-            interestTags: options.interestTags ?? [],
-          }),
-        });
-
-        if (!response.ok) {
-          const detail = await response.text();
-          throw new Error(detail || 'Conversation request failed');
-        }
-
-        const payload = (await response.json()) as ConversationReplyPayload;
-
-        appendTurn(payload.turn);
-        setSuggestions(payload.followUps);
-
-        if (payload.audioSegments.length) {
-          for (const segment of payload.audioSegments) {
-            await voiceOutputRef.current.speak({
-              id: segment.id,
-              text: segment.text,
-              voiceId: segment.voiceId,
-            });
-          }
-        } else {
-          setOrbState('idle');
-        }
-      } catch (err) {
-        setError((err as Error).message);
-        setOrbState('error');
-      } finally {
-        setProcessing(false);
-        voiceInput.reset();
-      }
+  // Voice recognition
+  const voiceRecognition = useVoiceRecognition({
+    continuous: true,
+    interimResults: true,
+    onResult: (transcript, confidence) => {
+      setLastActivity(new Date());
+      voiceCommands.processTranscript(transcript, confidence);
     },
-    [
-      apiBase,
-      appendTurn,
-      isProcessing,
-      options.interestTags,
-      options.profileId,
-      options.route,
-      voiceInput,
-    ],
-  );
+    onError: (error) => {
+      onError?.(error);
+    },
+  });
 
-  const startVoice = useCallback(() => {
-    if (isProcessing) return;
-    if (pauseTimerRef.current) {
-      window.clearTimeout(pauseTimerRef.current);
-      pauseTimerRef.current = undefined;
-    }
-    capturePendingRef.current = true;
-    setOrbState('listening');
-    setError(undefined);
-    voiceInput.reset();
-    voiceInput.startListening();
-  }, [isProcessing, voiceInput]);
+  // Voice commands
+  const voiceCommands = useVoiceCommands({
+    onCommand: (command) => {
+      setLastActivity(new Date());
+      onCommand?.(command);
+      conversationalAI.processCommand(command);
+    },
+    onError: (error) => {
+      onError?.(error);
+    },
+    wakeWords,
+  });
 
-  const stopVoice = useCallback(() => {
-    capturePendingRef.current = false;
-    voiceInput.stopListening();
-    if (pauseTimerRef.current) {
-      window.clearTimeout(pauseTimerRef.current);
-      pauseTimerRef.current = undefined;
-    }
-    if (!isProcessing) {
-      setOrbState('idle');
-    }
-  }, [isProcessing, voiceInput]);
+  // Conversational AI
+  const conversationalAI = useConversationalAI({
+    context,
+    voiceSettings,
+    onResponse: (response) => {
+      setLastActivity(new Date());
+      onResponse?.(response);
+      voiceResponse.speak(response);
+    },
+    onError: (error) => {
+      onError?.(error);
+    },
+  });
 
-  const reset = useCallback(() => {
-    capturePendingRef.current = false;
-    setConversation([]);
-    setSuggestions([]);
-    setError(undefined);
-    setOrbState('idle');
-    voiceInput.reset();
-    voiceOutputRef.current.stop();
-  }, [voiceInput]);
+  // Voice response
+  const voiceResponseOptions: VoiceResponseOptions = {
+    ...voiceSettings,
+    onStart: () => {
+      setIsAwake(true);
+    },
+    onEnd: () => {
+      setIsAwake(false);
+    },
+    onError: (error) => {
+      onError?.(error);
+    },
+  };
 
+  const voiceResponse = useVoiceResponse(voiceResponseOptions);
+
+  // Auto-listen functionality
   useEffect(() => {
-    if (voiceInput.status === 'error') {
-      setError(voiceInput.error ?? 'Speech recognition error');
-      setOrbState('error');
-      capturePendingRef.current = false;
+    if (autoListen && isActive) {
+      voiceRecognition.startListening();
+    } else if (!autoListen) {
+      voiceRecognition.stopListening();
     }
-  }, [voiceInput.error, voiceInput.status]);
+  }, [autoListen, isActive, voiceRecognition]);
 
+  // Wake word detection
   useEffect(() => {
-    if (!capturePendingRef.current) {
-      return;
-    }
+    setIsAwake(voiceCommands.isAwake);
+  }, [voiceCommands.isAwake]);
 
-    if (voiceInput.status === 'idle') {
-      capturePendingRef.current = false;
-      const text = voiceInput.transcript.trim();
-      if (text) {
-        void sendText(text);
-      } else {
-        setOrbState('idle');
-      }
-    } else if (voiceInput.status === 'listening') {
-      setOrbState('listening');
-    }
-  }, [sendText, voiceInput.status, voiceInput.transcript]);
+  const startConversation = useCallback(() => {
+    setIsActive(true);
+    voiceRecognition.startListening();
+    setLastActivity(new Date());
+  }, [voiceRecognition]);
 
-  const transcript = voiceInput.status === 'listening' ? voiceInput.transcript : '';
+  const stopConversation = useCallback(() => {
+    setIsActive(false);
+    voiceRecognition.stopListening();
+    voiceResponse.stop();
+    voiceCommands.sleep();
+  }, [voiceRecognition, voiceResponse, voiceCommands]);
+
+  const pauseConversation = useCallback(() => {
+    voiceRecognition.stopListening();
+    voiceResponse.pause();
+  }, [voiceRecognition, voiceResponse]);
+
+  const resumeConversation = useCallback(() => {
+    if (isActive) {
+      voiceRecognition.startListening();
+      voiceResponse.resume();
+    }
+  }, [isActive, voiceRecognition, voiceResponse]);
+
+  const sendMessage = useCallback((message: string) => {
+    if (!isActive) return;
+    
+    setLastActivity(new Date());
+    conversationalAI.processMessage(message);
+  }, [isActive, conversationalAI]);
+
+  const clearHistory = useCallback(() => {
+    conversationalAI.clearHistory();
+    voiceCommands.clearLastCommand();
+    voiceRecognition.clearTranscript();
+  }, [conversationalAI, voiceCommands, voiceRecognition]);
+
+  const getStatus = useCallback(() => {
+    return {
+      isActive,
+      isAwake,
+      isListening: voiceRecognition.isListening,
+      isSpeaking: voiceResponse.isSpeaking,
+      isProcessing: conversationalAI.isProcessing,
+      lastActivity,
+      conversationLength: conversationalAI.conversationHistory.length,
+      queueLength: voiceResponse.getQueueLength(),
+    };
+  }, [
+    isActive,
+    isAwake,
+    voiceRecognition.isListening,
+    voiceResponse.isSpeaking,
+    conversationalAI.isProcessing,
+    lastActivity,
+    conversationalAI.conversationHistory.length,
+    voiceResponse.getQueueLength,
+  ]);
+
+  const getConversationSummary = useCallback(() => {
+    return conversationalAI.getConversationSummary();
+  }, [conversationalAI]);
 
   return {
-    orbState,
-    transcript,
-    conversation,
-    suggestions,
-    isProcessing,
-    error,
-    micStatus: voiceInput.status,
-    micError: voiceInput.error,
-    startVoice,
-    stopVoice,
-    sendText,
-    reset,
+    // State
+    isActive,
+    isAwake,
+    isListening: voiceRecognition.isListening,
+    isSpeaking: voiceResponse.isSpeaking,
+    isProcessing: conversationalAI.isProcessing,
+    transcript: voiceRecognition.transcript,
+    lastCommand: voiceCommands.lastCommand,
+    lastResponse: conversationalAI.lastResponse,
+    conversationHistory: conversationalAI.conversationHistory,
+    lastActivity,
+
+    // Controls
+    startConversation,
+    stopConversation,
+    pauseConversation,
+    resumeConversation,
+    sendMessage,
+    clearHistory,
+
+    // Voice recognition
+    startListening: voiceRecognition.startListening,
+    stopListening: voiceRecognition.stopListening,
+    clearTranscript: voiceRecognition.clearTranscript,
+
+    // Voice response
+    speak: voiceResponse.speak,
+    stopSpeaking: voiceResponse.stop,
+    pauseSpeaking: voiceResponse.pause,
+    resumeSpeaking: voiceResponse.resume,
+
+    // Commands
+    wakeUp: voiceCommands.wakeUp,
+    sleep: voiceCommands.sleep,
+
+    // Utils
+    getStatus,
+    getConversationSummary,
+    isSupported: voiceRecognition.isSupported,
+    error: voiceRecognition.error,
   };
 };

@@ -42,7 +42,7 @@ export const demoRoutes: RouteSummary[] = [
       buildPoi({ id: 'aurora-2', name: 'Mountain Overlook', category: 'scenic.viewpoint' }),
       buildPoi({ id: 'aurora-3', name: 'Wildflower Meadow', category: 'nature.meadow' }),
     ],
-    attribution: { source: 'Trip Narrator' },
+    attribution: { source: 'Drive Narrator' },
   },
   {
     routeId: 'route-horizon',
@@ -64,7 +64,7 @@ export const demoRoutes: RouteSummary[] = [
       buildPoi({ id: 'horizon-2', name: 'Indie Book Nook', category: 'culture.bookshop' }),
       buildPoi({ id: 'horizon-3', name: 'Riverwalk Promenade', category: 'scenic.walk' }),
     ],
-    attribution: { source: 'Trip Narrator' },
+    attribution: { source: 'Drive Narrator' },
   },
   {
     routeId: 'route-express',
@@ -90,7 +90,7 @@ export const demoRoutes: RouteSummary[] = [
       buildPoi({ id: 'express-2', name: 'Midnight Drive-In', category: 'sustenance.diner' }),
       buildPoi({ id: 'express-3', name: 'Historic Railway Depot', category: 'historic.depot' }),
     ],
-    attribution: { source: 'Trip Narrator' },
+    attribution: { source: 'Drive Narrator' },
   },
 ];
 

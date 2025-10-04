@@ -76,7 +76,7 @@ export class Logger {
   }
 }
 
-export const logger = new Logger({ service: 'trip-narrator-api' });
+export const logger = new Logger({ service: 'drive-narrator-api' });
 
 export const requestLogger = (rootLogger: Logger) => {
   return (req: Request, res: Response, next: NextFunction): void => {

@@ -27,6 +27,9 @@ const LETTER_PATHS: Record<string, string[]> = {
   N: ['M0 120 V0', 'M0 0 L120 120', 'M120 120 V0'],
   A: ['M0 120 L60 0 L120 120', 'M25 70 H95'],
   O: ['M60 0 Q110 0 110 60 Q110 120 60 120 Q10 120 10 60 Q10 0 60 0 Z'],
+  D: ['M0 0 V120', 'M0 0 H75 Q120 0 120 60 Q120 120 75 120 H0'],
+  V: ['M0 0 L60 120 L120 0'],
+  E: ['M0 0 H110', 'M0 0 V120', 'M0 60 H85', 'M0 120 H110'],
 };
 
 type StrokeDefinition = {
@@ -65,14 +68,14 @@ const buildWord = (
   });
 };
 
-const tripWidth = computeRowWidth('TRIP');
+const driveWidth = computeRowWidth('DRIVE');
 const narratorWidth = computeRowWidth('NARRATOR');
 const STROKES: StrokeDefinition[] = [
-  ...buildWord('TRIP', 0, 0.2, 'forward'),
+  ...buildWord('DRIVE', 0, 0.2, 'forward'),
   ...buildWord('NARRATOR', 1, 1.7, 'reverse'),
 ];
 
-const VIEWBOX_WIDTH = Math.max(tripWidth, narratorWidth) + 220;
+const VIEWBOX_WIDTH = Math.max(driveWidth, narratorWidth) + 220;
 const VIEWBOX_HEIGHT = LINE_GAP + 220;
 
 const strokeVariants: Variants = {
@@ -145,7 +148,7 @@ const PathWordmark: React.FC = () => {
     <motion.svg
       className="landing-wordmark"
       role="img"
-      aria-label="Trip Narrator"
+      aria-label="Drive Narrator"
       viewBox={`0 0 ${VIEWBOX_WIDTH} ${VIEWBOX_HEIGHT}`}
       initial="hidden"
       animate="visible"

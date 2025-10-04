@@ -19,7 +19,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
 
   componentDidCatch(error: Error, info: React.ErrorInfo) {
     // eslint-disable-next-line no-console
-    console.error('Trip Narrator render error', error, info);
+    console.error('Drive Narrator render error', error, info);
   }
 
   render(): React.ReactNode {

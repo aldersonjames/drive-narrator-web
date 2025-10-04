@@ -5,6 +5,15 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Hide scrollbars for carousel components */
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* Internet Explorer 10+ */
+  scrollbar-width: none;  /* Firefox */
+}
+.scrollbar-hide::-webkit-scrollbar { 
+  display: none;  /* Safari and Chrome */
+}
+
 :root {
   --color-bg: #f1f5f9;
   --color-surface: #ffffff;

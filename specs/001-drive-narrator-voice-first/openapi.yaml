@@ -1,0 +1,1172 @@
+openapi: 3.0.3
+info:
+  title: Drive Narrator Voice-First Companion API
+  description: |
+    API for the Drive Narrator voice-first companion app that provides location-aware storytelling 
+    and POI narration during drives. Designed for voice-first interaction with minimal visual dependency.
+  version: 1.0.0
+  contact:
+    name: Drive Narrator Team
+    email: support@drivenarrator.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: https://api.drivenarrator.com/v1
+    description: Production server
+  - url: https://staging-api.drivenarrator.com/v1
+    description: Staging server
+  - url: http://localhost:41234/api
+    description: Development server
+
+paths:
+  # User Profile Management
+  /users/{profileId}:
+    get:
+      summary: Get user profile
+      description: Retrieve user profile information and preferences
+      operationId: getUserProfile
+      tags:
+        - Users
+      parameters:
+        - name: profileId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: User profile ID
+      responses:
+        '200':
+          description: User profile retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+        '404':
+          description: User profile not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    put:
+      summary: Update user profile
+      description: Update user profile information and preferences
+      operationId: updateUserProfile
+      tags:
+        - Users
+      parameters:
+        - name: profileId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: User profile ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserProfileUpdate'
+      responses:
+        '200':
+          description: User profile updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: User profile not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # Voice Settings
+  /voices:
+    get:
+      summary: Get available voices
+      description: Retrieve list of available voices, personas, and accents
+      operationId: getVoices
+      tags:
+        - Voice
+      responses:
+        '200':
+          description: Voices retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  voices:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/VoiceDefinition'
+                  personas:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PersonaDefinition'
+                  accents:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/AccentDefinition'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /voices/preview:
+    post:
+      summary: Preview voice combination
+      description: Generate and return audio preview for voice, persona, and accent combination
+      operationId: previewVoice
+      tags:
+        - Voice
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VoicePreviewRequest'
+      responses:
+        '200':
+          description: Voice preview generated successfully
+          content:
+            audio/mpeg:
+              schema:
+                type: string
+                format: binary
+            application/json:
+              schema:
+                type: object
+                properties:
+                  audioUrl:
+                    type: string
+                    format: uri
+                  duration:
+                    type: number
+                    description: Audio duration in seconds
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # Drive Session Management
+  /drives:
+    post:
+      summary: Start new drive session
+      description: Create a new drive session for voice-first narration
+      operationId: startDrive
+      tags:
+        - Drives
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DriveStartRequest'
+      responses:
+        '201':
+          description: Drive session started successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DriveSession'
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /drives/{driveId}:
+    get:
+      summary: Get drive session
+      description: Retrieve drive session information and status
+      operationId: getDrive
+      tags:
+        - Drives
+      parameters:
+        - name: driveId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Drive session ID
+      responses:
+        '200':
+          description: Drive session retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DriveSession'
+        '404':
+          description: Drive session not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    put:
+      summary: Update drive session
+      description: Update drive session status or settings
+      operationId: updateDrive
+      tags:
+        - Drives
+      parameters:
+        - name: driveId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Drive session ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DriveUpdateRequest'
+      responses:
+        '200':
+          description: Drive session updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DriveSession'
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Drive session not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # Voice Conversation
+  /conversation:
+    post:
+      summary: Process voice conversation
+      description: Process voice input and return conversational response
+      operationId: processConversation
+      tags:
+        - Conversation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConversationRequest'
+      responses:
+        '200':
+          description: Conversation processed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConversationResponse'
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # POI Management
+  /pois:
+    get:
+      summary: Get nearby POIs
+      description: Retrieve POIs near the specified location
+      operationId: getNearbyPois
+      tags:
+        - POIs
+      parameters:
+        - name: latitude
+          in: query
+          required: true
+          schema:
+            type: number
+            format: double
+          description: Latitude coordinate
+        - name: longitude
+          in: query
+          required: true
+          schema:
+            type: number
+            format: double
+          description: Longitude coordinate
+        - name: radius
+          in: query
+          required: false
+          schema:
+            type: number
+            format: double
+            default: 5.0
+          description: Search radius in miles
+        - name: interests
+          in: query
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+          description: Interest tags for filtering
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 50
+            maximum: 100
+          description: Maximum number of POIs to return
+      responses:
+        '200':
+          description: POIs retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  pois:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PointOfInterest'
+                  totalCount:
+                    type: integer
+                  searchRadius:
+                    type: number
+        '400':
+          description: Invalid request parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /pois/{poiId}:
+    get:
+      summary: Get POI details
+      description: Retrieve detailed information about a specific POI
+      operationId: getPoi
+      tags:
+        - POIs
+      parameters:
+        - name: poiId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: POI ID
+      responses:
+        '200':
+          description: POI details retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PointOfInterest'
+        '404':
+          description: POI not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # POI Alerts
+  /alerts:
+    get:
+      summary: Get POI alerts
+      description: Retrieve POI alerts for a drive session
+      operationId: getPoiAlerts
+      tags:
+        - Alerts
+      parameters:
+        - name: driveId
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Drive session ID
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [triggered, delivered, acknowledged, skipped, favorited, expired]
+          description: Filter by alert status
+      responses:
+        '200':
+          description: POI alerts retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  alerts:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PoiAlert'
+                  totalCount:
+                    type: integer
+        '400':
+          description: Invalid request parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /alerts/{alertId}:
+    put:
+      summary: Update POI alert
+      description: Update POI alert status or user response
+      operationId: updatePoiAlert
+      tags:
+        - Alerts
+      parameters:
+        - name: alertId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: POI alert ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PoiAlertUpdate'
+      responses:
+        '200':
+          description: POI alert updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PoiAlert'
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: POI alert not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # Drive History
+  /drives/history:
+    get:
+      summary: Get drive history
+      description: Retrieve user's drive history
+      operationId: getDriveHistory
+      tags:
+        - Drives
+      parameters:
+        - name: profileId
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: User profile ID
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+          description: Maximum number of drives to return
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 0
+          description: Number of drives to skip
+      responses:
+        '200':
+          description: Drive history retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  drives:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/DriveSession'
+                  totalCount:
+                    type: integer
+                  hasMore:
+                    type: boolean
+        '400':
+          description: Invalid request parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  schemas:
+    # Core Entities
+    UserProfile:
+      type: object
+      required:
+        - profileId
+        - assistantVoiceId
+        - narratorVoiceId
+        - narrationPersonaId
+        - narrationAccentId
+        - interestTags
+        - alertMinutes
+        - detourPreference
+        - createdAt
+        - updatedAt
+      properties:
+        profileId:
+          type: string
+          format: uuid
+          description: Unique user profile identifier
+        assistantVoiceId:
+          type: string
+          description: Voice ID for conversational interaction
+        narratorVoiceId:
+          type: string
+          description: Voice ID for POI narration
+        narrationPersonaId:
+          type: string
+          description: Persona ID for storytelling
+        narrationAccentId:
+          type: string
+          description: Accent ID for narration
+        interestTags:
+          type: array
+          items:
+            type: string
+          description: User interests for POI filtering
+        alertMinutes:
+          type: integer
+          minimum: 1
+          maximum: 25
+          description: POI alert timing in minutes
+        detourPreference:
+          type: string
+          enum: [none, short, medium, long]
+          description: Willingness to detour for POIs
+        backgroundMusic:
+          type: boolean
+          description: Background music preference
+        newDiscoveryAlerts:
+          type: boolean
+          description: New discovery notifications
+        approachingPoiAlerts:
+          type: boolean
+          description: Approaching POI notifications
+        metadata:
+          type: object
+          description: Additional user preferences
+        createdAt:
+          type: string
+          format: date-time
+          description: Profile creation timestamp
+        updatedAt:
+          type: string
+          format: date-time
+          description: Last update timestamp
+
+    UserProfileUpdate:
+      type: object
+      properties:
+        assistantVoiceId:
+          type: string
+        narratorVoiceId:
+          type: string
+        narrationPersonaId:
+          type: string
+        narrationAccentId:
+          type: string
+        interestTags:
+          type: array
+          items:
+            type: string
+        alertMinutes:
+          type: integer
+          minimum: 1
+          maximum: 25
+        detourPreference:
+          type: string
+          enum: [none, short, medium, long]
+        backgroundMusic:
+          type: boolean
+        newDiscoveryAlerts:
+          type: boolean
+        approachingPoiAlerts:
+          type: boolean
+        metadata:
+          type: object
+
+    DriveSession:
+      type: object
+      required:
+        - driveId
+        - profileId
+        - startTime
+        - status
+        - createdAt
+        - updatedAt
+      properties:
+        driveId:
+          type: string
+          format: uuid
+          description: Unique drive session identifier
+        profileId:
+          type: string
+          format: uuid
+          description: Associated user profile ID
+        startTime:
+          type: string
+          format: date-time
+          description: Drive start timestamp
+        endTime:
+          type: string
+          format: date-time
+          description: Drive end timestamp
+        status:
+          type: string
+          enum: [active, paused, completed, archived, cancelled]
+          description: Current drive status
+        origin:
+          $ref: '#/components/schemas/Location'
+        destination:
+          $ref: '#/components/schemas/Location'
+        totalDistance:
+          type: number
+          format: double
+          description: Total distance traveled in miles
+        totalDuration:
+          type: integer
+          description: Total duration in minutes
+        settings:
+          type: object
+          description: Drive-specific settings
+        statistics:
+          type: object
+          description: Drive statistics
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    DriveStartRequest:
+      type: object
+      required:
+        - profileId
+      properties:
+        profileId:
+          type: string
+          format: uuid
+        origin:
+          $ref: '#/components/schemas/Location'
+        destination:
+          $ref: '#/components/schemas/Location'
+        settings:
+          type: object
+
+    DriveUpdateRequest:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [active, paused, completed, archived, cancelled]
+        endTime:
+          type: string
+          format: date-time
+        totalDistance:
+          type: number
+          format: double
+        totalDuration:
+          type: integer
+        settings:
+          type: object
+
+    Location:
+      type: object
+      required:
+        - latitude
+        - longitude
+        - timestamp
+      properties:
+        latitude:
+          type: number
+          format: double
+          description: Latitude coordinate
+        longitude:
+          type: number
+          format: double
+          description: Longitude coordinate
+        address:
+          type: string
+          description: Human-readable address
+        city:
+          type: string
+        state:
+          type: string
+        country:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+
+    # Voice System
+    VoiceDefinition:
+      type: object
+      required:
+        - voiceId
+        - name
+        - provider
+        - locale
+      properties:
+        voiceId:
+          type: string
+          description: Unique voice identifier
+        name:
+          type: string
+          description: Display name
+        provider:
+          type: string
+          description: Voice provider
+        locale:
+          type: string
+          description: Voice locale
+        styleTags:
+          type: array
+          items:
+            type: string
+          description: Voice style tags
+        sampleUrl:
+          type: string
+          format: uri
+          description: Sample audio URL
+
+    PersonaDefinition:
+      type: object
+      required:
+        - personaId
+        - name
+        - description
+      properties:
+        personaId:
+          type: string
+          description: Unique persona identifier
+        name:
+          type: string
+          description: Display name
+        description:
+          type: string
+          description: Persona description
+        instructions:
+          type: string
+          description: AI instructions for persona
+        icon:
+          type: string
+          description: Persona icon/emoji
+
+    AccentDefinition:
+      type: object
+      required:
+        - accentId
+        - name
+        - prompt
+      properties:
+        accentId:
+          type: string
+          description: Unique accent identifier
+        name:
+          type: string
+          description: Display name
+        prompt:
+          type: string
+          description: Accent prompt for AI
+        emoji:
+          type: string
+          description: Accent emoji
+
+    VoicePreviewRequest:
+      type: object
+      required:
+        - voiceId
+        - input
+        - instructions
+      properties:
+        voiceId:
+          type: string
+          enum: [alloy, echo, shimmer]
+        input:
+          type: string
+          description: Text to be spoken
+        instructions:
+          type: string
+          description: Voice instructions
+        speed:
+          type: number
+          format: double
+          minimum: 0.25
+          maximum: 4.0
+          description: Speech speed
+
+    # Conversation
+    ConversationRequest:
+      type: object
+      required:
+        - profileId
+        - message
+      properties:
+        profileId:
+          type: string
+          format: uuid
+        message:
+          type: string
+          description: User's voice input text
+        driveId:
+          type: string
+          format: uuid
+          description: Associated drive session
+        location:
+          $ref: '#/components/schemas/Location'
+        context:
+          type: object
+          description: Conversation context
+
+    ConversationResponse:
+      type: object
+      required:
+        - turnId
+        - role
+        - text
+        - timestamp
+      properties:
+        turnId:
+          type: string
+          format: uuid
+        role:
+          type: string
+          enum: [traveler, assistant, narrator]
+        text:
+          type: string
+          description: Response text
+        audioUrl:
+          type: string
+          format: uri
+          description: Generated audio URL
+        audioDuration:
+          type: number
+          description: Audio duration in seconds
+        timestamp:
+          type: string
+          format: date-time
+        synopsis:
+          type: string
+          description: Brief summary
+        metadata:
+          type: object
+
+    # POI System
+    PointOfInterest:
+      type: object
+      required:
+        - poiId
+        - name
+        - category
+        - latitude
+        - longitude
+        - relevance
+      properties:
+        poiId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+        categories:
+          type: array
+          items:
+            type: string
+        latitude:
+          type: number
+          format: double
+        longitude:
+          type: number
+          format: double
+        relevance:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 1
+        summary:
+          type: string
+        narrationPreview:
+          type: string
+        attribution:
+          type: object
+        images:
+          type: array
+          items:
+            $ref: '#/components/schemas/PoiImage'
+        metadata:
+          type: object
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    PoiImage:
+      type: object
+      required:
+        - imageId
+        - url
+      properties:
+        imageId:
+          type: string
+          format: uuid
+        url:
+          type: string
+          format: uri
+        thumbnailUrl:
+          type: string
+          format: uri
+        altText:
+          type: string
+        caption:
+          type: string
+        source:
+          type: string
+        attribution:
+          type: string
+        width:
+          type: integer
+        height:
+          type: integer
+
+    PoiAlert:
+      type: object
+      required:
+        - alertId
+        - driveId
+        - poiId
+        - triggerTime
+        - alertMinutes
+        - distance
+        - eta
+        - status
+        - createdAt
+        - updatedAt
+      properties:
+        alertId:
+          type: string
+          format: uuid
+        driveId:
+          type: string
+          format: uuid
+        poiId:
+          type: string
+          format: uuid
+        triggerTime:
+          type: string
+          format: date-time
+        alertMinutes:
+          type: integer
+          minimum: 1
+          maximum: 25
+        distance:
+          type: number
+          format: double
+          description: Distance to POI in miles
+        eta:
+          type: integer
+          description: Estimated time to arrival in minutes
+        storyContent:
+          type: object
+          description: Generated story content
+        voiceSettings:
+          type: object
+          description: Voice configuration used
+        userResponse:
+          type: object
+          description: User's response to alert
+        status:
+          type: string
+          enum: [triggered, delivered, acknowledged, skipped, favorited, expired]
+        metadata:
+          type: object
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    PoiAlertUpdate:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [triggered, delivered, acknowledged, skipped, favorited, expired]
+        userResponse:
+          type: object
+        metadata:
+          type: object
+
+    # Error Handling
+    Error:
+      type: object
+      required:
+        - error
+        - message
+        - timestamp
+      properties:
+        error:
+          type: string
+          description: Error code
+        message:
+          type: string
+          description: Error message
+        timestamp:
+          type: string
+          format: date-time
+        details:
+          type: object
+          description: Additional error details
+        requestId:
+          type: string
+          description: Request identifier for debugging
+
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: API key for authentication
+
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token for authentication
+
+security:
+  - ApiKeyAuth: []
+  - BearerAuth: []
+
+tags:
+  - name: Users
+    description: User profile management
+  - name: Voice
+    description: Voice system and settings
+  - name: Drives
+    description: Drive session management
+  - name: Conversation
+    description: Voice conversation processing
+  - name: POIs
+    description: Point of interest management
+  - name: Alerts
+    description: POI alert management

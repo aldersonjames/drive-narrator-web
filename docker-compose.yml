@@ -12,7 +12,7 @@ services:
       - '3000:3000'
     volumes:
       - api-data:/app/backend/.data
-    command: npm run dev --workspace @trip-narrator/backend
+    command: npm run dev --workspace @drive-narrator/backend
     restart: unless-stopped
 
 volumes:

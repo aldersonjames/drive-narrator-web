@@ -32,7 +32,7 @@ export default defineConfig(({ mode }) => {
               urlPattern: ({ request }) => request.destination === 'image',
               handler: 'CacheFirst',
               options: {
-                cacheName: 'trip-narrator-images',
+                cacheName: 'drive-narrator-images',
                 expiration: {
                   maxEntries: 60,
                   maxAgeSeconds: 60 * 60 * 24 * 30,
@@ -43,7 +43,7 @@ export default defineConfig(({ mode }) => {
               urlPattern: ({ request }) => request.destination === 'audio',
               handler: 'CacheFirst',
               options: {
-                cacheName: 'trip-narrator-audio',
+                cacheName: 'drive-narrator-audio',
                 expiration: {
                   maxEntries: 20,
                   maxAgeSeconds: 60 * 60 * 24 * 7,
@@ -57,7 +57,7 @@ export default defineConfig(({ mode }) => {
                 request.destination === 'font',
               handler: 'StaleWhileRevalidate',
               options: {
-                cacheName: 'trip-narrator-static',
+                cacheName: 'drive-narrator-static',
               },
             },
           ],

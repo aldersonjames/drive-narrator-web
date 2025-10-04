@@ -16,4 +16,4 @@ COPY . .
 
 EXPOSE 3000
 
-CMD ["npm", "run", "dev", "--workspace", "@trip-narrator/backend"]
+CMD ["npm", "run", "dev", "--workspace", "@drive-narrator/backend"]

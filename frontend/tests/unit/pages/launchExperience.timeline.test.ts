@@ -45,7 +45,7 @@ const sampleRoute: RouteSummary = {
       narrationPreview: 'Local storytellers pour heirloom cider beside the grove.',
     }),
   ],
-  attribution: { source: 'Trip Narrator' },
+  attribution: { source: 'Drive Narrator' },
 };
 
 describe('buildStoryTimeline', () => {

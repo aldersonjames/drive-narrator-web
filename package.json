@@ -1,5 +1,5 @@
 {
-  "name": "trip-narrator-web",
+  "name": "drive-narrator-web",
   "version": "0.1.0",
   "private": true,
   "workspaces": [
@@ -14,16 +14,22 @@
     "format": "prettier --write .",
     "prepare": "husky",
     "dev": "npm run dev:start",
-    "dev:start": "npm run kill-ports && concurrently --success=all --kill-others-on-fail \"npm run dev:backend\" \"npm run dev:frontend\" \"npm run open:frontend\"",
+    "dev:start": "npm run dev:backend & sleep 3 && npm run dev:frontend",
     "kill-ports": "kill-port 41234 5173 4173 || true",
     "open:frontend": "wait-on http://localhost:5173 && open http://localhost:5173",
     "dev:stop": "kill-port 41234 5173 4173 || true",
     "dev:reset": "rimraf frontend/dev-dist frontend/dist frontend/.vite dist backend/dist .turbo",
     "dev:safe": "npm run kill-ports && concurrently --raw --success=all --kill-others-on-fail \"npm run dev:backend\" \"npm run dev:frontend:safe\"",
-    "dev:backend": "npm run dev --workspace @trip-narrator/backend",
-    "dev:frontend": "wait-on http://localhost:41234/api/voices && npm run dev --workspace @trip-narrator/frontend",
-    "dev:frontend:safe": "npm run dev --workspace @trip-narrator/frontend",
-    "dev:stop:force": "node scripts/kill-dev.mjs"
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev:frontend:safe": "cd frontend && npm run dev",
+    "dev:stop:force": "node scripts/kill-dev.mjs",
+    "cmd": "node run-command.js",
+    "plan": "node run-command.js @plan",
+    "act": "node run-command.js @act",
+    "status": "node run-command.js @status",
+    "test": "node run-command.js @test",
+    "deploy": "node run-command.js @deploy"
   },
   "devDependencies": {
     "@playwright/test": "^1.55.1",

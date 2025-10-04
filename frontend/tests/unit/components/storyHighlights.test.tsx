@@ -36,7 +36,7 @@ const buildRoute = (overrides: Partial<RouteSummary> = {}): RouteSummary => ({
       images: [],
     },
   ],
-  attribution: { source: 'Trip Narrator' },
+  attribution: { source: 'Drive Narrator' },
   ...overrides,
 });
 

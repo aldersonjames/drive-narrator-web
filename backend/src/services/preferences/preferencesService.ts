@@ -9,6 +9,7 @@ import type {
   PreferencesMetadata,
   PreferencesUpdatePayload,
 } from '../../../../shared/types/tripNarrator';
+import { DEFAULT_PERSONA_ID } from '../../../../shared/data/narratorPersonas';
 
 const parseMetadata = (raw: string | null): PreferencesMetadata => {
   if (!raw) {
@@ -37,6 +38,7 @@ export interface PreferencesDto {
   profileId: string;
   assistantVoiceId: string;
   narrationVoiceId: string;
+  narrationPersonaId: string;
   interestTags: string[];
   transcriptOptIn: boolean;
   retentionDays: number;
@@ -60,10 +62,14 @@ export class PreferencesService {
     const metadata = parseMetadata(record.metadata);
     const poiProvider: PoiProviderId = metadata.poiProvider === 'foursquare' ? 'foursquare' : 'ops';
 
+    const narrationPersonaId =
+      typeof metadata.narrationPersonaId === 'string' ? metadata.narrationPersonaId : DEFAULT_PERSONA_ID;
+
     return {
       profileId: record.profile_id,
       assistantVoiceId: record.assistant_voice_id,
       narrationVoiceId: record.narration_voice_id,
+      narrationPersonaId,
       interestTags: JSON.parse(record.interest_tags ?? '[]'),
       transcriptOptIn: Boolean(record.transcript_opt_in),
       retentionDays: record.retention_days,
@@ -94,7 +100,8 @@ export class PreferencesService {
       updatedAt: now,
     };
 
-    const shouldUpdateMetadata = update.metadata !== undefined || update.poiProvider !== undefined;
+    const shouldUpdateMetadata =
+      update.metadata !== undefined || update.poiProvider !== undefined || update.narrationPersonaId !== undefined;
     if (shouldUpdateMetadata) {
       let nextMetadata: PreferencesMetadata = { ...metadata };
 
@@ -111,6 +118,13 @@ export class PreferencesService {
         nextMetadata = {
           ...nextMetadata,
           poiProvider: update.poiProvider,
+        };
+      }
+
+      if (update.narrationPersonaId) {
+        nextMetadata = {
+          ...nextMetadata,
+          narrationPersonaId: update.narrationPersonaId,
         };
       }
 

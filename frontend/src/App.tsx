@@ -3,10 +3,10 @@ import { BrowserRouter, Navigate, Route, Routes, Outlet } from 'react-router-dom
 
 import WelcomeScreen from './stitch/WelcomeScreen';
 import VoiceConversationScreen from './stitch/VoiceConversationScreen';
-import DiscoveryScreen from './stitch/DiscoveryScreen';
 import NowPlayingScreen from './stitch/NowPlayingScreen';
-import TripsScreen from './stitch/TripsScreen';
+import DrivesScreen from './stitch/DrivesScreen';
 import SettingsScreen from './stitch/SettingsScreen';
+import VoiceSettingsPage from './pages/VoiceSettingsPage';
 
 const AppLayout: React.FC = () => {
   return (
@@ -33,10 +33,10 @@ export const App: React.FC = () => {
         <Route path="/" element={<WelcomeScreen />} />
         <Route element={<AppLayout />}>
           <Route path="/voice" element={<VoiceConversationScreen />} />
-          <Route path="/discoveries" element={<DiscoveryScreen />} />
           <Route path="/now-playing" element={<NowPlayingScreen />} />
-          <Route path="/trips" element={<TripsScreen />} />
+          <Route path="/drives" element={<DrivesScreen />} />
           <Route path="/settings" element={<SettingsScreen />} />
+          <Route path="/voice-settings" element={<VoiceSettingsPage />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

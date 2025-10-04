@@ -1,22 +1,24 @@
 import crypto from 'node:crypto';
 
 import express from 'express';
-import type { Request, Response } from 'express';
+import type { Request, Response, NextFunction } from 'express';
 import bodyParser from 'body-parser';
+import OpenAI from 'openai';
 
 import { createRoutesController } from './routes/routesController';
 import { createCategoriesController } from './routes/categoriesController';
 import { createPoisController } from './routes/poisController';
-import { createTripsRouter } from './routes/tripsController';
+import { createDrivesRouter } from './routes/drivesController';
 import { createPreferencesController } from './routes/preferencesController';
 import { createVoicesController } from './routes/voicesController';
+import { createVoicePreviewController } from './routes/voicePreviewController';
 import { createPrivacyMiddleware } from './middleware/privacyMiddleware';
 import { createNarrationsController } from './routes/narrationsController';
 import { createConversationController } from './routes/conversationController';
 import { createVoiceSessionController } from './routes/voiceSessionController';
 import {
   InMemoryTravelerProfilesRepository,
-  InMemoryTripsRepository,
+  InMemoryDrivesRepository,
   InMemoryRouteOptionsRepository,
   InMemoryPointsOfInterestRepository,
   InMemoryNarrationSessionsRepository,
@@ -31,12 +33,13 @@ import { PreferencesService } from '../services/preferences/preferencesService';
 import { ConversationService } from '../services/voice/conversationService';
 import { ValidationError } from '../utils/validation';
 import { logger, requestLogger } from '../utils/logger';
+import { createOpenAIClient } from '../utils/openaiClient';
 import { createSecurityMiddleware } from './middleware/securityMiddleware';
 import { DeletionService } from '../services/privacy/deletionService';
 import { InMemoryVoiceTokenStore } from '../services/voice/tokenStore';
 import { VoicePipelineService } from '../services/voice/voicePipelineService';
 import type { VoiceAdapterConfig, VoiceRateLimitConfig } from '../types/voice';
-import type { VoiceProviderId } from '../../../shared/types/tripNarrator';
+import type { VoiceProviderId } from '../../../shared/types/driveNarrator';
 
 const app = express();
 app.use(bodyParser.json());
@@ -59,7 +62,7 @@ app.use(security.cors);
 app.use(security.rateLimiter);
 
 const travelerProfilesRepo = new InMemoryTravelerProfilesRepository();
-const tripsRepo = new InMemoryTripsRepository();
+const drivesRepo = new InMemoryDrivesRepository();
 const routeOptionsRepo = new InMemoryRouteOptionsRepository();
 const poiRepo = new InMemoryPointsOfInterestRepository();
 const narrationSessionsRepo = new InMemoryNarrationSessionsRepository();
@@ -71,10 +74,10 @@ const poiFilter = new PoiFilteringService();
 const categoryCatalog = new CategoryCatalogService(poiClient);
 const routeScoring = new RouteScoringService();
 const preferencesService = new PreferencesService(travelerProfilesRepo);
-const conversationService = new ConversationService();
+const conversationService = new ConversationService({ profilesRepo: travelerProfilesRepo });
 const deletionService = new DeletionService({
   profilesRepo: travelerProfilesRepo,
-  tripsRepo,
+  drivesRepo,
   routeOptionsRepo,
   poiRepo,
   narrationRepo: narrationSessionsRepo,
@@ -82,30 +85,42 @@ const deletionService = new DeletionService({
   logger,
 });
 
+// Initialize OpenAI for voice preview
+// Create OpenAI client with proper validation
+const openai = createOpenAIClient();
+
 void travelerProfilesRepo.create({
   profileId: 'traveler-001',
   displayName: 'Sample Traveler',
   interestTags: ['historical', 'scenic'],
-  assistantVoiceId: 'assistant-default',
-  narrationVoiceId: 'narrator-default',
+  assistantVoiceId: 'nova',
+  narrationVoiceId: 'nova',
   transcriptOptIn: true,
   consentVersion: '1.0.0',
   consentAcceptedAt: new Date().toISOString(),
+  metadata: {
+    narrationPersonaId: 'aurora-companion',
+    poiProvider: 'ops',
+  },
 });
 
 void travelerProfilesRepo.create({
   profileId: 'traveler-voice',
   displayName: 'Voice Persona Traveler',
   interestTags: ['historical'],
-  assistantVoiceId: 'assistant-default',
-  narrationVoiceId: 'narrator-default',
+  assistantVoiceId: 'nova',
+  narrationVoiceId: 'nova',
   transcriptOptIn: false,
   consentVersion: '1.0.0',
   consentAcceptedAt: new Date().toISOString(),
+  metadata: {
+    narrationPersonaId: 'aurora-companion',
+    poiProvider: 'ops',
+  },
 });
 
-void tripsRepo.create({
-  tripId: 'trip-abc',
+void drivesRepo.create({
+  driveId: 'drive-abc',
   profileId: 'traveler-001',
   originRaw: 'Raleigh, NC',
   originHash: crypto.createHash('sha1').update('Raleigh, NC').digest('hex'),
@@ -153,7 +168,7 @@ const voiceAdapterConfig: VoiceAdapterConfig = {
     ? {
         apiKey: process.env.OPENAI_API_KEY,
         model: process.env.VOICE_MODEL_OPENAI ?? 'gpt-4o-realtime-preview',
-        voice: process.env.VOICE_VOICE_OPENAI ?? 'alloy',
+        voice: process.env.VOICE_VOICE_OPENAI ?? 'nova',
       }
     : undefined,
   elevenLabs: process.env.ELEVENLABS_API_KEY
@@ -215,10 +230,10 @@ app.get(
 );
 
 app.use(
-  '/api/trips',
+  '/api/drives',
   privacyMiddleware,
-  createTripsRouter({
-    tripsRepo,
+  createDrivesRouter({
+    drivesRepo,
     routeOptionsRepo,
     poiRepo,
     narrationRepo: narrationSessionsRepo,
@@ -232,13 +247,22 @@ app.patch('/api/preferences', privacyMiddleware, preferencesController.patch);
 
 app.get('/api/voices', createVoicesController());
 
+if (openai) {
+  logger.info('✅ Voice preview enabled with validated API key');
+  const voicePreviewController = createVoicePreviewController({ openai });
+  app.post('/api/voices/preview', voicePreviewController.preview);
+} else {
+  logger.warn('⚠️ Voice preview disabled - OpenAI not properly configured');
+}
+
 app.post('/api/narrations', privacyMiddleware, createNarrationsController({ preferencesService }));
 
-app.post(
-  '/api/conversation',
-  privacyMiddleware,
-  createConversationController({ conversationService }),
-);
+if (openai) {
+  const conversationController = createConversationController({ openai });
+  app.post('/api/conversation', privacyMiddleware, conversationController.processConversation);
+} else {
+  logger.warn('⚠️ Conversation disabled - OpenAI not properly configured');
+}
 
 if (voicePipelineService) {
   app.post(
@@ -247,7 +271,7 @@ if (voicePipelineService) {
   );
 }
 
-app.use((err: Error, req: Request, res: Response) => {
+app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
   if (err instanceof ValidationError) {
     logger.warn('Validation error', {
       path: req.originalUrl,

@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<title>Stitch Design</title>
+<link href="data:image/x-icon;base64," rel="icon" type="image/x-icon"/>
+<link crossorigin="" href="https://fonts.gstatic.com/" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?display=swap&amp;family=Space+Grotesk:wght@400;500;700" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=container-queries"></script>
+<script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "primary": "#18a2aa",
+            "background-light": "#f6f8f8",
+            "background-dark": "#112021",
+          },
+          fontFamily: {
+            "display": ["Space Grotesk"]
+          },
+          borderRadius: {
+            "DEFAULT": "0.5rem",
+            "lg": "1rem",
+            "xl": "1.5rem",
+            "full": "9999px"
+          },
+        },
+      },
+    }
+  </script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings:
+        'FILL' 1,
+        'wght' 400,
+        'GRAD' 0,
+        'opsz' 24
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark font-display text-zinc-900 dark:text-zinc-100">
+<div class="flex flex-col min-h-screen">
+<div class="flex-1">
+<div class="relative h-80 bg-cover bg-center" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuDxlBHfAZZVjZnhHm_a_xBJDVfQpeftmN_bNNfKycfYrmscfOylV08utuikiHe3sJ6Z0XBGlYUTzS_LJts2sJ0DlKcK-97iMhGKeBf2bVvZywog5KglRZHogVOPEwEa4meokv37AeMysdrTX4LKYkr-JiOdPrQCqfGQ26BEoC9s9s7TmO59c9wCK3iyWI-1W30RGKBGD70KPHJ5q1rJqgMhf9hCkQld667vpz0Y9d3AR91Id2QoJEIwbFzuOHAcHV3h2fJq3VxpoXk");'>
+<div class="absolute inset-0 bg-black/40"></div>
+<div class="absolute bottom-0 left-0 right-0 p-4">
+<div class="flex items-center gap-3">
+<div class="flex-1 h-2 bg-white/20 rounded-full">
+<div class="h-2 rounded-full bg-white" style="width: 75%;"></div>
+</div>
+<p class="text-xs text-white">8 min left</p>
+</div>
+</div>
+</div>
+<div class="p-6 space-y-4">
+<h1 class="text-2xl font-bold text-zinc-900 dark:text-zinc-50">The Whispering Pines Trail</h1>
+<p class="text-zinc-600 dark:text-zinc-400 leading-relaxed text-zinc-800 dark:text-zinc-200">
+          Embark on a journey through the Whispering Pines Trail, where ancient trees stand as silent witnesses to centuries of history. Feel the crisp mountain air as you traverse this path...
+        </p>
+</div>
+<div class="px-6 py-8">
+<div class="h-16 w-full bg-center bg-no-repeat bg-contain" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuDlLE2zz71Hbl2LHGTQ-NoTJAs45yqkZzeY4T_W4-v9o8H4TMMM9B9QenMjUe5Gs2zgUvoIE6gkm7vYokd7y4Z1_5Pq9qpt2XJ9wYk7EivMc3Y-o0l7Iwux3Wjjw1_KtHBaJ5z7XpTWzwy2bZa1TH1PUCbc2XL2uTsFQwDpLdaWB667bEXHM8sgJQ-CyfRmVTPg9E0kpXdi7E0c9kp-59qWd9BLu_FGz5oBvMgPOeIU3g5Dp-Ox2ifuFN8LSooVwmTdZ7gI40kTIsU");'></div>
+</div>
+<div class="flex items-center justify-center gap-4 px-6 pb-6">
+<button class="p-3 text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200">
+<span class="material-symbols-outlined text-4xl">replay_10</span>
+</button>
+<button class="p-3 text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200">
+<span class="material-symbols-outlined text-4xl">skip_previous</span>
+</button>
+<button class="p-5 rounded-full bg-primary text-white shadow-lg">
+<span class="material-symbols-outlined text-5xl">pause</span>
+</button>
+<button class="p-3 text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200">
+<span class="material-symbols-outlined text-4xl">skip_next</span>
+</button>
+<button class="p-3 text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200">
+<span class="material-symbols-outlined text-4xl">forward_30</span>
+</button>
+</div>
+</div>
+<div class="sticky bottom-0 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-sm border-t border-zinc-200 dark:border-zinc-800">
+<div class="flex justify-around items-center h-20 px-2 pb-safe">
+<a class="flex flex-col items-center justify-center gap-1 text-primary" href="#">
+<span class="material-symbols-outlined">explore</span>
+<span class="text-xs font-medium">Discover</span>
+</a>
+<a class="flex flex-col items-center justify-center gap-1 text-zinc-500 dark:text-zinc-400 hover:text-primary dark:hover:text-primary" href="#">
+<span class="material-symbols-outlined">route</span>
+<span class="text-xs font-medium">Route</span>
+</a>
+<a class="flex flex-col items-center justify-center gap-1 text-zinc-500 dark:text-zinc-400 hover:text-primary dark:hover:text-primary" href="#">
+<span class="material-symbols-outlined">bookmark</span>
+<span class="text-xs font-medium">Memories</span>
+</a>
+<a class="flex flex-col items-center justify-center gap-1 text-zinc-500 dark:text-zinc-400 hover:text-primary dark:hover:text-primary" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="text-xs font-medium">Settings</span>
+</a>
+</div>
+</div>
+</div>
+
+</body></html>

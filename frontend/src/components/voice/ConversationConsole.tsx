@@ -34,7 +34,7 @@ export const ConversationConsole: React.FC<ConversationConsoleProps> = ({
       <header className="conversation-console__header">
         <div className="conversation-console__title">
           <span className="conversation-console__badge">Voice assistant</span>
-          <h2>Trip Narrator</h2>
+          <h2>Drive Narrator</h2>
           <small>Ask for highlights, safety tips, or narration previews.</small>
           {route ? (
             <span className="conversation-console__route-meta" aria-live="polite">

@@ -5,7 +5,7 @@ import { registerSW } from 'virtual:pwa-register';
 
 import App from './App';
 import { ErrorBoundary } from './components/system/ErrorBoundary';
-import { TripPlannerProvider } from './context/TripPlannerContext';
+import { DrivePlannerProvider } from './context/DrivePlannerContext';
 import './styles/global.css';
 import './styles/launch.css';
 
@@ -16,9 +16,9 @@ if (mount) {
   root.render(
     <React.StrictMode>
       <ErrorBoundary>
-        <TripPlannerProvider>
+        <DrivePlannerProvider>
           <App />
-        </TripPlannerProvider>
+        </DrivePlannerProvider>
       </ErrorBoundary>
     </React.StrictMode>,
   );
@@ -28,7 +28,7 @@ if ('serviceWorker' in navigator && import.meta.env.PROD) {
   registerSW({
     immediate: true,
     onOfflineReady: () => {
-      console.info('Trip Narrator is ready to work offline.');
+    console.info('Drive Narrator is ready to work offline.');
     },
   });
 } else if ('serviceWorker' in navigator) {

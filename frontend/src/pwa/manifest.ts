@@ -1,8 +1,8 @@
 import type { ManifestOptions } from 'vite-plugin-pwa';
 
 export const manifest: Partial<ManifestOptions> = {
-  name: 'Trip Narrator',
-  short_name: 'TripNarrator',
+  name: 'Drive Narrator',
+  short_name: 'DriveNarrator',
   description:
     'Plan rich road trips, explore curated points of interest, and hear narrated stories even when offline.',
   theme_color: '#0f172a',

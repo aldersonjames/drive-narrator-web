@@ -3,8 +3,9 @@ import path from 'node:path';
 
 import { loadEnv } from '../utils/loadEnv';
 
-loadEnv(path.resolve(__dirname, '../../.env'));
+// Load .env from backend directory first, then from project root
 loadEnv('.env');
+loadEnv(path.resolve(__dirname, '../../.env'));
 
 const loadApp = async () => {
   const module = await import('./app');

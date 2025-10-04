@@ -9,7 +9,7 @@ const tutorialSteps = [
   {
     title: 'Map your escape',
     description:
-      'Choose a starting point and destination or simply pick a theme. Trip Narrator weaves multiple scenic routes instantly.',
+      'Choose a starting point and destination or simply pick a theme. Drive Narrator weaves multiple scenic routes instantly.',
   },
   {
     title: 'Curate your vibe',
@@ -33,7 +33,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStartJourney, onSkip
             Plan, narrate, and delight on <span className="gradient-text">every mile</span>
           </h1>
           <p className="landing-description">
-            Let the Trip Narrator scout multiple routes, surface curated points of interest, and
+            Let Drive Narrator scout multiple routes, surface curated points of interest, and
             converse with you like a co-pilot who knows your tastes. Built for scenic detours,
             family adventures, and legendary playlists.
           </p>
@@ -50,7 +50,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStartJourney, onSkip
           <div className="landing-preview-card">
             <span className="landing-preview-title">Tutorial Preview</span>
             <p className="landing-preview-copy">
-              Learn how Trip Narrator orchestrates routing, narration, and safety cues in under two
+              Learn how Drive Narrator orchestrates routing, narration, and safety cues in under two
               minutes.
             </p>
             <div className="landing-preview-orb">Breath, ask, discover.</div>

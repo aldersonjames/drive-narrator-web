@@ -1,14 +1,15 @@
-# Trip Narrator Web — Voice-First Road Trip Companion
+# Drive Narrator Web — Voice-First Road Trip Companion
 
-Trip Narrator is a Spec Kit–driven voice-first MVP: a cinematic PWA and TypeScript backend that plan scenic road trips, surface curated points of interest, and narrate stories in a conversational, hands-free experience.
+Drive Narrator is a Spec Kit–driven voice-first MVP: a cinematic PWA and TypeScript backend that plan scenic road trips, surface curated points of interest, and narrate stories in a conversational, hands-free experience.
 
 ## Current Status
 
-- **Active branch**: `001-product-overview-the`
-- **Focus**: Story-first trip planning (voice loop + route highlights), launch experience polish, voice pipeline integration, PWA hardening (T047–T055), final QA (T056–T060).
-- **Spec kit**: Constitution, plan, research, contracts, and tasks live under `specs/001-product-overview-the/`.
-- **Latest (2025-10-03)**: Preferences metadata flow is fully typed/merge-safe across shared → backend → Trip Planner; Stitch Discovery now consumes live `/api/pois` data with persisted favorites (follow-up tests tracked in T123–T124).
-- **Latest (2025-10-04)**: Route planning lives in the voice screen with GPS origin defaults, neon MapLibre styling, miles/hr metrics, and ORS preference fallbacks that surface up to three unique routes (tests captured in T128).
+- **Active branch**: `001-drive-narrator-voice-first`
+- **Focus**: Voice-first conversational AI with Realtime API integration, POI alert system, and story generation.
+- **Spec kit**: Complete specification, plan, and tasks live under `specs/001-drive-narrator-voice-first/`.
+- **Latest (2025-10-04)**: Successfully migrated from "Trip Narrator" to "Drive Narrator" with updated terminology, API endpoints, and consistent theming throughout the application.
+- **Latest (2025-10-04)**: Completed Realtime API integration with WebSocket-based voice conversation, unified voice system for settings and conversations, and real-time voice preview functionality.
+- **Latest (2025-10-04)**: Voice conversation system now fully operational with OpenAI Realtime API, featuring voice activity detection, interruption handling, and persona/accent integration.
 
 ## Architecture Overview
 
@@ -16,21 +17,22 @@ Trip Narrator is a Spec Kit–driven voice-first MVP: a cinematic PWA and TypeSc
 
 - React 18 + TypeScript (Vite 7).
 - Launch Experience: MapLibre hero, Framer Motion breathing orb, Embla carousel for alternate routes, transcript ribbon, narration timeline sheet.
-- Trip Planner: conversational console, storyteller map view, and a curated “Story highlights” panel that teases upcoming lore for the selected route.
+- Drive Planner: conversational console, storyteller map view, and a curated "Story highlights" panel that teases upcoming lore for the selected route.
 - Traveler preferences page now returns an in-experience acknowledgement when voices/transcript settings update.
-- Voice adapters prepared for OpenAI Realtime/ElevenLabs; demo hook simulates events while the realtime pipeline lands.
+- Narrator settings offer ten pre-built personalities (mindful guide, late-night muse, foodie co-pilot, etc.) so tone matches the traveler.
+- Voice system fully integrated with OpenAI Realtime API WebSocket for unified voice experience across settings and conversations.
 - Tailwind-style tokens (CSS vars) for glassmorphism, dark/light themes, fully responsive for phone/tablet.
 
 ### Backend
 
 - Node.js 20 + Express 5.
 - Routing via OpenRouteService; POIs via self-hosted OpenPoiService (OPS) or Foursquare.
-- Voice pipeline (`/api/voice/session`) issues OpenAI Realtime session tokens (WebRTC primary, WebSocket fallback) with modular adapter support for ElevenLabs.
+- Voice pipeline integrated with OpenAI Realtime API WebSocket for real-time voice conversation and preview functionality.
 - Conversation endpoint `/api/conversation` plus shared repos/services for routing, scoring, narration scheduling, preferences, and privacy workflows.
 
 ### Shared Workspace
 
-- `shared/` exposes JSON schemas and TypeScript types used across frontend and backend (`shared/types/tripNarrator.ts`).
+- `shared/` exposes JSON schemas and TypeScript types used across frontend and backend (`shared/types/driveNarrator.ts`).
 
 ## Getting Started
 
@@ -74,7 +76,8 @@ cp frontend/.env.example frontend/.env.local
 | `ELEVENLABS_API_KEY` | Optional ElevenLabs voice key. |
 | `VOICE_ASR_PROVIDER` / `VOICE_TTS_PROVIDER` / `VOICE_NARRATION_PROVIDER` | Provider selection (`openai`/`elevenlabs`). |
 | `VOICE_REGION` | Realtime region (default `iad`). |
-| `VOICE_MODEL_OPENAI` / `VOICE_VOICE_OPENAI` | Default OpenAI model + voice. |
+| `VOICE_MODEL_OPENAI` / `VOICE_VOICE_OPENAI` | Default OpenAI model + voice (Drive Narrator defaults to the natural “nova” voice). |
+| `NARRATOR_MODEL` | Optional override for the Chat model that crafts narrator responses (default `gpt-4o-mini`). |
 | `SESSION_TTL_SECONDS` | Voice token TTL (default 300s). |
 | `RATE_LIMIT_PER_DEVICE` | Max `/api/voice/session` calls per device window. |
 | `VOICE_LATENCY_TARGET_MS` / `VOICE_LATENCY_MAX_MS` | Latency hints surfaced to UI. |
@@ -112,12 +115,12 @@ npm run dev                            # kill stale ports, start backend + front
 npm run dev:stop                       # stop dev servers
 npm run dev:reset                      # clear local caches (frontend/dev-dist, dist, .vite, .turbo)
 
-npm run dev --workspace @trip-narrator/backend    # backend API only (http://localhost:41234)
-npm run dev --workspace @trip-narrator/frontend   # frontend PWA only (http://localhost:5173)
-npm run build --workspace @trip-narrator/frontend
-npm run build --workspace @trip-narrator/backend
-npm run typecheck --workspace @trip-narrator/frontend
-npm run typecheck --workspace @trip-narrator/backend
+npm run dev --workspace @drive-narrator/backend    # backend API only (http://localhost:41234)
+npm run dev --workspace @drive-narrator/frontend   # frontend PWA only (http://localhost:5173)
+npm run build --workspace @drive-narrator/frontend
+npm run build --workspace @drive-narrator/backend
+npm run typecheck --workspace @drive-narrator/frontend
+npm run typecheck --workspace @drive-narrator/backend
 ```
 
 ## Key Endpoints
@@ -127,7 +130,7 @@ npm run typecheck --workspace @trip-narrator/backend
 - `GET /api/pois?routeId=` — Filtered POIs for selected route.
 - `POST /api/voice/session` — Issue OpenAI Realtime session token & capabilities.
 - `GET|PATCH /api/preferences` — Traveler preferences.
-- `GET|POST|DELETE /api/trips` — Trip persistence.
+- `GET|POST|DELETE /api/drives` — Drive persistence.
 - `POST /api/conversation` — Conversational replies + narration segments.
 
 ## Project Structure
@@ -172,8 +175,8 @@ MIT/Apache-2.0 links for UI building blocks (orb animations, Embla carousel, Rad
 
 ## Testing Strategy
 
-- **Backend**: contract/integration/unit suites (`npm run test --workspace @trip-narrator/backend`).
-- **Frontend**: unit and integration coverage for launch timeline + story highlights, preferences flow regression (`npm run test --workspace @trip-narrator/frontend`).
+- **Backend**: contract/integration/unit suites (`npm run test --workspace @drive-narrator/backend`).
+- **Frontend**: unit and integration coverage for launch timeline + story highlights, preferences flow regression (`npm run test --workspace @drive-narrator/frontend`).
 - **Type safety**: `npm run typecheck --workspace ...` for both workspaces.
 - **Upcoming**: Framer Motion smoke tests and Playwright E2E for offline/voice fallback.
 
@@ -181,7 +184,7 @@ MIT/Apache-2.0 links for UI building blocks (orb animations, Embla carousel, Rad
 
 - Launch PWA → orb animates, hero map + cards render, suggestion chips respond.
 - Trigger demo voice hook → transcript pill slides in, timeline updates, orb phases animate.
-- Trip Planner → run a plan; confirm the new Story highlights panel teases upcoming stops while the conversation console reflects the selected route.
+- Drive Planner → run a plan; confirm the new Story highlights panel teases upcoming stops while the conversation console reflects the selected route.
 - Toggle OS dark mode → hero & cards adopt dark palette.
 - Backend `/api/voice/session` returns session payload with caps/latency hints.
 - `/api/routes` with mock data → carousel highlights selected route.
@@ -192,4 +195,4 @@ MIT/Apache-2.0 links for UI building blocks (orb animations, Embla carousel, Rad
 2. Finish PWA polish: `vite-plugin-pwa`, offline caching of narration packages, service worker alerts.
 3. Complete backend hardening (request validation, structured logging, Docker/CI) before final QA pass.
 
-Enjoy the new voice-first Launch Experience! Run `npm run dev --workspace @trip-narrator/frontend` to explore the cinematic mock while the realtime voice pipeline is finalized.
+Enjoy the new voice-first Launch Experience! Run `npm run dev --workspace @drive-narrator/frontend` to explore the cinematic mock while the realtime voice pipeline is finalized.

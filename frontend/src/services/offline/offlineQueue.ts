@@ -6,7 +6,7 @@ export interface OfflineJob {
 }
 
 export class OfflineQueue {
-  private readonly storageKey = 'trip-narrator-offline-queue';
+  private readonly storageKey = 'drive-narrator-offline-queue';
 
   constructor(private readonly getNow: () => string = () => new Date().toISOString()) {}
 

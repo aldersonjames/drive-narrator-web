@@ -1,7 +1,7 @@
 import type { Knex } from 'knex';
 
-export interface TripRecord {
-  trip_id: string;
+export interface DriveRecord {
+  drive_id: string;
   profile_id: string;
   origin_raw: string;
   origin_hash: string;
@@ -15,8 +15,8 @@ export interface TripRecord {
   last_accessed_at: string | null;
 }
 
-export interface TripCreate {
-  tripId: string;
+export interface DriveCreate {
+  driveId: string;
   profileId: string;
   originRaw: string;
   originHash: string;
@@ -30,7 +30,7 @@ export interface TripCreate {
   lastAccessedAt?: string | null;
 }
 
-export interface TripUpdate {
+export interface DriveUpdate {
   status?: 'draft' | 'planned' | 'completed' | 'archived' | 'pending_deletion';
   interestTags?: string[];
   departureTime?: string;
@@ -38,45 +38,45 @@ export interface TripUpdate {
   updatedAt: string;
 }
 
-export class TripsRepository {
-  private readonly table = 'trips';
+export class DrivesRepository {
+  private readonly table = 'drives';
 
   constructor(private readonly db: Knex) {}
 
-  async create(trip: TripCreate): Promise<TripRecord> {
+  async create(drive: DriveCreate): Promise<DriveRecord> {
     const now = new Date().toISOString();
-    const record: TripRecord = {
-      trip_id: trip.tripId,
-      profile_id: trip.profileId,
-      origin_raw: trip.originRaw,
-      origin_hash: trip.originHash,
-      destination_raw: trip.destinationRaw,
-      destination_hash: trip.destinationHash,
-      departure_time: trip.departureTime,
-      interest_tags: JSON.stringify(trip.interestTags),
-      status: trip.status ?? 'draft',
-      created_at: trip.createdAt ?? now,
-      updated_at: trip.updatedAt ?? now,
-      last_accessed_at: trip.lastAccessedAt ?? null,
+    const record: DriveRecord = {
+      drive_id: drive.driveId,
+      profile_id: drive.profileId,
+      origin_raw: drive.originRaw,
+      origin_hash: drive.originHash,
+      destination_raw: drive.destinationRaw,
+      destination_hash: drive.destinationHash,
+      departure_time: drive.departureTime,
+      interest_tags: JSON.stringify(drive.interestTags),
+      status: drive.status ?? 'draft',
+      created_at: drive.createdAt ?? now,
+      updated_at: drive.updatedAt ?? now,
+      last_accessed_at: drive.lastAccessedAt ?? null,
     };
 
-    await this.db<TripRecord>(this.table).insert(record);
+    await this.db<DriveRecord>(this.table).insert(record);
     return record;
   }
 
-  async findById(tripId: string): Promise<TripRecord | undefined> {
-    return this.db<TripRecord>(this.table).where({ trip_id: tripId }).first();
+  async findById(driveId: string): Promise<DriveRecord | undefined> {
+    return this.db<DriveRecord>(this.table).where({ drive_id: driveId }).first();
   }
 
-  async findActiveByProfile(profileId: string): Promise<TripRecord[]> {
-    return this.db<TripRecord>(this.table)
+  async findActiveByProfile(profileId: string): Promise<DriveRecord[]> {
+    return this.db<DriveRecord>(this.table)
       .where({ profile_id: profileId })
       .whereNotIn('status', ['archived', 'pending_deletion'])
       .orderBy('updated_at', 'desc');
   }
 
-  async update(tripId: string, changes: TripUpdate): Promise<void> {
-    const updatePayload: Partial<TripRecord> = {
+  async update(driveId: string, changes: DriveUpdate): Promise<void> {
+    const updatePayload: Partial<DriveRecord> = {
       updated_at: changes.updatedAt,
     };
 
@@ -93,6 +93,6 @@ export class TripsRepository {
       updatePayload.last_accessed_at = changes.lastAccessedAt;
     }
 
-    await this.db<TripRecord>(this.table).where({ trip_id: tripId }).update(updatePayload);
+    await this.db<DriveRecord>(this.table).where({ drive_id: driveId }).update(updatePayload);
   }
 }

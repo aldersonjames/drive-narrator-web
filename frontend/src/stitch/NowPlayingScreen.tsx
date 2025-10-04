@@ -1,5 +1,5 @@
 import React from 'react';
-import { NavLink } from 'react-router-dom';
+import AppNavigation from '../components/navigation/AppNavigation';
 
 export const NowPlayingScreen: React.FC = () => {
   return (
@@ -7,6 +7,9 @@ export const NowPlayingScreen: React.FC = () => {
       className="flex min-h-screen flex-col bg-background-light font-display text-zinc-900 dark:bg-background-dark dark:text-zinc-100"
       style={{ minHeight: 'max(884px, 100dvh)' }}
     >
+      {/* Top Navigation */}
+      <AppNavigation position="top" />
+      
       <div className="flex-grow">
         <div
           className="relative h-80 bg-cover bg-center"
@@ -83,53 +86,9 @@ export const NowPlayingScreen: React.FC = () => {
           </button>
         </div>
       </div>
+      {/* Bottom Navigation */}
       <div className="sticky bottom-0 bg-background-light/80 backdrop-blur-sm dark:bg-background-dark/80">
-        <div className="flex items-center justify-around px-2 pb-safe pt-2">
-          <NavLink
-            to="/discoveries"
-            className={({ isActive }) =>
-              `flex flex-col items-center gap-1 transition-colors ${
-                isActive ? 'text-primary' : 'text-zinc-500 dark:text-zinc-400 hover:text-primary'
-              }`
-            }
-          >
-            <span className="material-symbols-outlined">explore</span>
-            <span className="text-xs font-medium">Discover</span>
-          </NavLink>
-          <NavLink
-            to="/voice"
-            className={({ isActive }) =>
-              `flex flex-col items-center gap-1 transition-colors ${
-                isActive ? 'text-primary' : 'text-zinc-500 dark:text-zinc-400 hover:text-primary'
-              }`
-            }
-          >
-            <span className="material-symbols-outlined">route</span>
-            <span className="text-xs font-medium">Route</span>
-          </NavLink>
-          <NavLink
-            to="/trips"
-            className={({ isActive }) =>
-              `flex flex-col items-center gap-1 transition-colors ${
-                isActive ? 'text-primary' : 'text-zinc-500 dark:text-zinc-400 hover:text-primary'
-              }`
-            }
-          >
-            <span className="material-symbols-outlined">bookmark</span>
-            <span className="text-xs font-medium">Trips</span>
-          </NavLink>
-          <NavLink
-            to="/settings"
-            className={({ isActive }) =>
-              `flex flex-col items-center gap-1 transition-colors ${
-                isActive ? 'text-primary' : 'text-zinc-500 dark:text-zinc-400 hover:text-primary'
-              }`
-            }
-          >
-            <span className="material-symbols-outlined">settings</span>
-            <span className="text-xs font-medium">Settings</span>
-          </NavLink>
-        </div>
+        <AppNavigation position="bottom" />
       </div>
     </div>
   );

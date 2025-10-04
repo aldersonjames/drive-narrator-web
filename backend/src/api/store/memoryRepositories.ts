@@ -3,7 +3,7 @@ import type {
   TravelerProfileCreate,
   TravelerProfileUpdate,
 } from '../../db/repositories/travelerProfilesRepository';
-import type { TripRecord, TripCreate, TripUpdate } from '../../db/repositories/tripsRepository';
+import type { DriveRecord, DriveCreate, DriveUpdate } from '../../db/repositories/drivesRepository';
 import type {
   RouteOptionRecord,
   RouteOptionCreate,
@@ -102,45 +102,45 @@ export class InMemoryTravelerProfilesRepository {
   }
 }
 
-export class InMemoryTripsRepository {
-  private trips = new Map<string, TripRecord>();
+export class InMemoryDrivesRepository {
+  private drives = new Map<string, DriveRecord>();
 
-  async create(trip: TripCreate): Promise<TripRecord> {
+  async create(drive: DriveCreate): Promise<DriveRecord> {
     const now = new Date().toISOString();
-    const record: TripRecord = {
-      trip_id: trip.tripId,
-      profile_id: trip.profileId,
-      origin_raw: trip.originRaw,
-      origin_hash: trip.originHash,
-      destination_raw: trip.destinationRaw,
-      destination_hash: trip.destinationHash,
-      departure_time: trip.departureTime,
-      interest_tags: JSON.stringify(trip.interestTags),
-      status: trip.status ?? 'draft',
-      created_at: trip.createdAt ?? now,
-      updated_at: trip.updatedAt ?? now,
-      last_accessed_at: trip.lastAccessedAt ?? null,
+    const record: DriveRecord = {
+      drive_id: drive.driveId,
+      profile_id: drive.profileId,
+      origin_raw: drive.originRaw,
+      origin_hash: drive.originHash,
+      destination_raw: drive.destinationRaw,
+      destination_hash: drive.destinationHash,
+      departure_time: drive.departureTime,
+      interest_tags: JSON.stringify(drive.interestTags),
+      status: drive.status ?? 'draft',
+      created_at: drive.createdAt ?? now,
+      updated_at: drive.updatedAt ?? now,
+      last_accessed_at: drive.lastAccessedAt ?? null,
     };
-    this.trips.set(record.trip_id, record);
+    this.drives.set(record.drive_id, record);
     return record;
   }
 
-  async findById(tripId: string): Promise<TripRecord | undefined> {
-    return this.trips.get(tripId);
+  async findById(driveId: string): Promise<DriveRecord | undefined> {
+    return this.drives.get(driveId);
   }
 
-  async findActiveByProfile(profileId: string): Promise<TripRecord[]> {
-    return Array.from(this.trips.values()).filter(
-      (trip) =>
-        trip.profile_id === profileId && !['archived', 'pending_deletion'].includes(trip.status),
+  async findActiveByProfile(profileId: string): Promise<DriveRecord[]> {
+    return Array.from(this.drives.values()).filter(
+      (drive) =>
+        drive.profile_id === profileId && !['archived', 'pending_deletion'].includes(drive.status),
     );
   }
 
-  async update(tripId: string, changes: TripUpdate): Promise<void> {
-    const existing = this.trips.get(tripId);
+  async update(driveId: string, changes: DriveUpdate): Promise<void> {
+    const existing = this.drives.get(driveId);
     if (!existing) return;
 
-    const updated: TripRecord = {
+    const updated: DriveRecord = {
       ...existing,
       status: changes.status ?? existing.status,
       interest_tags: changes.interestTags
@@ -151,7 +151,7 @@ export class InMemoryTripsRepository {
       updated_at: changes.updatedAt,
     };
 
-    this.trips.set(tripId, updated);
+    this.drives.set(driveId, updated);
   }
 }
 
@@ -160,10 +160,10 @@ export class InMemoryRouteOptionsRepository {
 
   async insertMany(values: RouteOptionCreate[]): Promise<void> {
     values.forEach((value) => {
-      const existing = this.routeOptions.get(value.tripId) ?? [];
+      const existing = this.routeOptions.get(value.driveId) ?? [];
       const record: RouteOptionRecord = {
         route_id: value.routeId,
-        trip_id: value.tripId,
+        drive_id: value.driveId,
         source: value.source,
         polyline: value.polyline,
         duration_minutes: value.durationMinutes,
@@ -173,16 +173,16 @@ export class InMemoryRouteOptionsRepository {
         warnings: JSON.stringify(value.warnings ?? []),
         created_at: value.createdAt ?? new Date().toISOString(),
       };
-      this.routeOptions.set(value.tripId, [...existing, record]);
+      this.routeOptions.set(value.driveId, [...existing, record]);
     });
   }
 
-  async findByTripId(tripId: string): Promise<RouteOptionRecord[]> {
-    return this.routeOptions.get(tripId) ?? [];
+  async findByTripId(driveId: string): Promise<RouteOptionRecord[]> {
+    return this.routeOptions.get(driveId) ?? [];
   }
 
-  async deleteByTripId(tripId: string): Promise<void> {
-    this.routeOptions.delete(tripId);
+  async deleteByTripId(driveId: string): Promise<void> {
+    this.routeOptions.delete(driveId);
   }
 }
 
@@ -228,7 +228,7 @@ export class InMemoryNarrationSessionsRepository {
     const now = new Date().toISOString();
     const record: NarrationSessionRecord = {
       session_id: session.sessionId,
-      trip_id: session.tripId,
+      drive_id: session.driveId,
       profile_id: session.profileId,
       status: session.status ?? 'scheduled',
       started_at: session.startedAt ?? null,
@@ -243,10 +243,10 @@ export class InMemoryNarrationSessionsRepository {
     return record;
   }
 
-  async findActiveByTrip(tripId: string): Promise<NarrationSessionRecord[]> {
+  async findActiveByTrip(driveId: string): Promise<NarrationSessionRecord[]> {
     return Array.from(this.sessions.values()).filter(
       (record) =>
-        record.trip_id === tripId && !['completed', 'pending_deletion'].includes(record.status),
+        record.drive_id === driveId && !['completed', 'pending_deletion'].includes(record.status),
     );
   }
 
@@ -270,9 +270,9 @@ export class InMemoryNarrationSessionsRepository {
     this.sessions.set(sessionId, updated);
   }
 
-  async deleteByTripId(tripId: string): Promise<void> {
+  async deleteByTripId(driveId: string): Promise<void> {
     Array.from(this.sessions.values()).forEach((session) => {
-      if (session.trip_id === tripId) {
+      if (session.drive_id === driveId) {
         session.status = 'pending_deletion';
         session.updated_at = new Date().toISOString();
         this.sessions.set(session.session_id, session);

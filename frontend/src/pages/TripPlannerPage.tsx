@@ -1,13 +1,13 @@
 import React, { useMemo, useState } from 'react';
 
-import { useTripPlanner } from '../context/TripPlannerContext';
+import { useDrivePlanner } from '../context/DrivePlannerContext';
 import { MapRoutes } from '../components/map/MapRoutes';
 import { NarrationTimeline } from '../components/voice/NarrationTimeline';
 import { ConversationConsole } from '../components/voice/ConversationConsole';
 import { StoryHighlights } from '../components/routes/StoryHighlights';
 
 export const TripPlannerPage: React.FC = () => {
-  const { routes, loadRoutes, selectRoute, selectedRouteId, notices, isLoading } = useTripPlanner();
+  const { routes, loadRoutes, selectRoute, selectedRouteId, notices, isLoading } = useDrivePlanner();
   const [origin, setOrigin] = useState('Austin, TX');
   const [destination, setDestination] = useState('Santa Fe, NM');
   const [interests, setInterests] = useState('scenic,cultural');
@@ -42,7 +42,7 @@ export const TripPlannerPage: React.FC = () => {
         <header className="planner-header">
           <h1>Plan your route</h1>
           <p>
-            Pick destinations and interests; Trip Narrator will scout scenic alternatives and
+            Pick destinations and interests; Drive Narrator will scout scenic alternatives and
             story-rich stops.
           </p>
         </header>

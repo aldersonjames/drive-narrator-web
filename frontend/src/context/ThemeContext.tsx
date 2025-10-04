@@ -13,7 +13,7 @@ const getPreferredTheme = (): ThemeMode => {
   if (typeof window === 'undefined') {
     return 'light';
   }
-  const stored = window.localStorage.getItem('trip-narrator-theme');
+  const stored = window.localStorage.getItem('drive-narrator-theme');
   if (stored === 'light' || stored === 'dark') {
     return stored;
   }
@@ -29,7 +29,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       document.documentElement.setAttribute('data-theme', theme);
     }
     if (typeof window !== 'undefined') {
-      window.localStorage.setItem('trip-narrator-theme', theme);
+      window.localStorage.setItem('drive-narrator-theme', theme);
     }
   }, [theme]);
 

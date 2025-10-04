@@ -144,6 +144,7 @@ export interface PreferencesPayload {
   profileId: string;
   assistantVoiceId: string;
   narrationVoiceId: string;
+  narrationPersonaId?: string;
   interestTags: string[];
   transcriptOptIn: boolean;
   retentionDays?: number;
@@ -155,11 +156,19 @@ export interface PreferencesPayload {
 export interface PreferencesUpdatePayload {
   assistantVoiceId?: string;
   narrationVoiceId?: string;
+  narrationPersonaId?: string;
   interestTags?: string[];
   transcriptOptIn?: boolean;
   retentionDays?: number;
   metadata?: PreferencesMetadata | null;
   poiProvider?: PoiProviderId;
+}
+
+export interface NarratorPersona {
+  id: string;
+  name: string;
+  description: string;
+  instructions: string;
 }
 
 export interface VoiceDefinition {

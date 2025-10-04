@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta charset="utf-8"/>
+<title>Stitch Design</title>
+<link href="data:image/x-icon;base64," rel="icon" type="image/x-icon"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#18a2aa",
+                        "background-light": "#f0f0f0",
+                        "background-dark": "#112021",
+                        "teal-900": "#0D4D44",
+                        "amber-500": "#F59E0B"
+                    },
+                    fontFamily: {
+                        "display": ["Newsreader"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.5rem",
+                        "lg": "1rem",
+                        "xl": "1.5rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<link crossorigin="" href="https://fonts.gstatic.com/" rel="preconnect"/>
+<link as="style" href="https://fonts.googleapis.com/css2?display=swap&amp;family=Newsreader%3Awght%40400%3B500%3B700%3B800&amp;family=Noto+Sans%3Awght%40400%3B500%3B700%3B900" onload="this.rel='stylesheet'" rel="stylesheet"/>
+<style>
+        body {
+            min-height: max(884px, 100dvh);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark font-sans text-gray-800 dark:text-gray-200">
+<div class="relative flex h-auto min-h-screen w-full flex-col justify-between overflow-x-hidden">
+<div class="flex-grow">
+<header class="sticky top-0 z-10 flex items-center bg-background-light/80 p-4 pb-2 backdrop-blur-sm dark:bg-background-dark/80">
+<button class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-gray-600 dark:text-gray-300">
+<svg fill="currentColor" height="24px" viewBox="0 0 256 256" width="24px" xmlns="http://www.w3.org/2000/svg">
+<path d="M224,128a8,8,0,0,1-8,8H59.31l58.35,58.34a8,8,0,0,1-11.32,11.32l-72-72a8,8,0,0,1,0-11.32l72-72a8,8,0,0,1,11.32,11.32L59.31,120H216A8,8,0,0,1,224,128Z"></path>
+</svg>
+</button>
+<h1 class="flex-1 text-center text-xl font-bold tracking-tight text-gray-900 dark:text-white pr-10">Settings</h1>
+</header>
+<main class="divide-y divide-gray-200/5 dark:divide-gray-800/10">
+<section class="px-4 py-6">
+<h2 class="px-4 text-sm font-semibold text-gray-500 dark:text-gray-400">ACCOUNT</h2>
+<div class="mt-2 rounded-xl bg-white/5 dark:bg-zinc-800">
+<a class="flex items-center justify-between gap-4 px-4 py-3" href="#">
+<div class="flex flex-col">
+<span class="font-medium text-gray-900 dark:text-white">Email</span>
+<span class="text-sm text-gray-500 dark:text-gray-400">sophia.clark@email.com</span>
+</div>
+<svg class="h-5 w-5 text-gray-400 dark:text-gray-500" fill="currentColor" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+<path d="M181.66,133.66l-80,80a8,8,0,0,1-11.32-11.32L164.69,128,90.34,53.66a8,8,0,0,1,11.32-11.32l80,80A8,8,0,0,1,181.66,133.66Z"></path>
+</svg>
+</a>
+<hr class="border-t border-gray-200/10 dark:border-gray-700 ml-4"/>
+<a class="flex items-center justify-between gap-4 px-4 py-3" href="#">
+<span class="font-medium text-gray-900 dark:text-white">Change Password</span>
+<svg class="h-5 w-5 text-gray-400 dark:text-gray-500" fill="currentColor" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+<path d="M181.66,133.66l-80,80a8,8,0,0,1-11.32-11.32L164.69,128,90.34,53.66a8,8,0,0,1,11.32-11.32l80,80A8,8,0,0,1,181.66,133.66Z"></path>
+</svg>
+</a>
+<hr class="border-t border-gray-200/10 dark:border-gray-700 ml-4"/>
+<a class="flex items-center justify-between gap-4 px-4 py-3" href="#">
+<span class="font-medium text-gray-900 dark:text-white">Profile Picture</span>
+<svg class="h-5 w-5 text-gray-400 dark:text-gray-500" fill="currentColor" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+<path d="M181.66,133.66l-80,80a8,8,0,0,1-11.32-11.32L164.69,128,90.34,53.66a8,8,0,0,1,11.32-11.32l80,80A8,8,0,0,1,181.66,133.66Z"></path>
+</svg>
+</a>
+</div>
+</section>
+<section class="px-4 py-6">
+<h2 class="px-4 text-sm font-semibold text-gray-500 dark:text-gray-400">NOTIFICATIONS</h2>
+<div class="mt-2 rounded-xl bg-white/5 dark:bg-zinc-800">
+<div class="flex items-center justify-between gap-4 px-4 py-3">
+<span class="font-medium text-gray-900 dark:text-white">New Discovery Alerts</span>
+<label class="relative inline-flex cursor-pointer items-center">
+<input checked="" class="peer sr-only" type="checkbox" value=""/>
+<div class="peer h-6 w-11 rounded-full bg-gray-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-amber-500 peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none dark:border-gray-600 dark:bg-gray-700"></div>
+</label>
+</div>
+<hr class="border-t border-gray-200/10 dark:border-gray-700 ml-4"/>
+<div class="flex items-center justify-between gap-4 px-4 py-3">
+<span class="font-medium text-gray-900 dark:text-white">Approaching POI Alerts</span>
+<label class="relative inline-flex cursor-pointer items-center">
+<input checked="" class="peer sr-only" type="checkbox" value=""/>
+<div class="peer h-6 w-11 rounded-full bg-gray-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-amber-500 peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none dark:border-gray-600 dark:bg-gray-700"></div>
+</label>
+</div>
+</div>
+</section>
+<section class="px-4 py-6">
+<h2 class="px-4 text-sm font-semibold text-gray-500 dark:text-gray-400">DETOUR PREFERENCES</h2>
+<div class="mt-2 rounded-xl bg-white/5 dark:bg-zinc-800 p-4">
+<div class="flex flex-col gap-2">
+<label class="font-medium text-gray-900 dark:text-white" for="detour-range">Max Detour Distance</label>
+<input class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-amber-500" id="detour-range" max="3" min="0" type="range" value="1"/>
+<div class="flex justify-between text-xs text-gray-500 dark:text-gray-400">
+<span>None</span>
+<span>Short</span>
+<span>Medium</span>
+<span>Long</span>
+</div>
+</div>
+</div>
+</section>
+<section class="px-4 py-6">
+<h2 class="px-4 text-sm font-semibold text-gray-500 dark:text-gray-400">AUDIO</h2>
+<div class="mt-2 rounded-xl bg-white/5 dark:bg-zinc-800">
+<div class="flex items-center justify-between gap-4 px-4 py-3">
+<span class="font-medium text-gray-900 dark:text-white">Narration Speed</span>
+<span class="font-medium text-gray-500 dark:text-gray-400">1.0x</span>
+</div>
+<hr class="border-t border-gray-200/10 dark:border-gray-700 ml-4"/>
+<div class="flex items-center justify-between gap-4 px-4 py-3">
+<span class="font-medium text-gray-900 dark:text-white">Volume Control</span>
+<span class="font-medium text-gray-500 dark:text-gray-400">75%</span>
+</div>
+<hr class="border-t border-gray-200/10 dark:border-gray-700 ml-4"/>
+<div class="flex items-center justify-between gap-4 px-4 py-3">
+<span class="font-medium text-gray-900 dark:text-white">Background Music</span>
+<label class="relative inline-flex cursor-pointer items-center">
+<input class="peer sr-only" type="checkbox" value=""/>
+<div class="peer h-6 w-11 rounded-full bg-gray-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-amber-500 peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none dark:border-gray-600 dark:bg-gray-700"></div>
+</label>
+</div>
+</div>
+</section>
+<section class="px-4 py-6 pb-24">
+<h2 class="px-4 text-sm font-semibold text-gray-500 dark:text-gray-400">PRIVACY &amp; INFO</h2>
+<div class="mt-2 rounded-xl bg-white/5 dark:bg-zinc-800">
+<a class="flex items-center justify-between gap-4 px-4 py-3" href="#">
+<span class="font-medium text-gray-900 dark:text-white">Data Usage</span>
+<svg class="h-5 w-5 text-gray-400 dark:text-gray-500" fill="currentColor" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+<path d="M181.66,133.66l-80,80a8,8,0,0,1-11.32-11.32L164.69,128,90.34,53.66a8,8,0,0,1,11.32-11.32l80,80A8,8,0,0,1,181.66,133.66Z"></path>
+</svg>
+</a>
+<hr class="border-t border-gray-200/10 dark:border-gray-700 ml-4"/>
+<a class="flex items-center justify-between gap-4 px-4 py-3" href="#">
+<span class="font-medium text-gray-900 dark:text-white">Location Permissions</span>
+<svg class="h-5 w-5 text-gray-400 dark:text-gray-500" fill="currentColor" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+<path d="M181.66,133.66l-80,80a8,8,0,0,1-11.32-11.32L164.69,128,90.34,53.66a8,8,0,0,1,11.32-11.32l80,80A8,8,0,0,1,181.66,133.66Z"></path>
+</svg>
+</a>
+<hr class="border-t border-gray-200/10 dark:border-gray-700 ml-4"/>
+<a class="flex items-center justify-between gap-4 px-4 py-3" href="#">
+<span class="font-medium text-gray-900 dark:text-white">Delete History</span>
+<svg class="h-5 w-5 text-gray-400 dark:text-gray-500" fill="currentColor" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+<path d="M181.66,133.66l-80,80a8,8,0,0,1-11.32-11.32L164.69,128,90.34,53.66a8,8,0,0,1,11.32-11.32l80,80A8,8,0,0,1,181.66,133.66Z"></path>
+</svg>
+</a>
+<hr class="border-t border-gray-200/10 dark:border-gray-700 ml-4"/>
+<div class="flex items-center justify-between gap-4 px-4 py-3">
+<span class="font-medium text-gray-900 dark:text-white">Version</span>
+<span class="font-medium text-gray-500 dark:text-gray-400">1.2.3</span>
+</div>
+</div>
+</section>
+</main>
+</div>
+<footer class="fixed bottom-0 left-0 right-0 border-t border-gray-200/10 bg-background-light/90 pb-safe-bottom backdrop-blur-lg dark:border-gray-800/20 dark:bg-background-dark/90">
+<nav class="flex items-center justify-around px-2 pt-2">
+<a class="flex flex-1 flex-col items-center justify-center gap-1 py-1 text-gray-500 dark:text-gray-400" href="#">
+<svg class="h-6 w-6" fill="currentColor" height="24px" viewBox="0 0 256 256" width="24px" xmlns="http://www.w3.org/2000/svg">
+<path d="M218.83,103.77l-80-75.48a1.14,1.14,0,0,1-.11-.11,16,16,0,0,0-21.53,0l-.11.11L37.17,103.77A16,16,0,0,0,32,115.55V208a16,16,0,0,0,16,16H96a16,16,0,0,0,16-16V160h32v48a16,16,0,0,0,16,16h48a16,16,0,0,0,16-16V115.55A16,16,0,0,0,218.83,103.77ZM208,208H160V160a16,16,0,0,0-16-16H112a16,16,0,0,0-16,16v48H48V115.55l.11-.1L128,40l79.9,75.43.11.1Z"></path>
+</svg>
+<span class="text-xs font-medium">Home</span>
+</a>
+<a class="flex flex-1 flex-col items-center justify-center gap-1 py-1 text-gray-500 dark:text-gray-400" href="#">
+<svg class="h-6 w-6" fill="currentColor" height="24px" viewBox="0 0 256 256" width="24px" xmlns="http://www.w3.org/2000/svg">
+<path d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm0,192a88,88,0,1,1,88-88A88.1,88.1,0,0,1,128,216ZM172.42,72.84l-64,32a8.05,8.05,0,0,0-3.58,3.58l-32,64A8,8,0,0,0,80,184a8.1,8.1,0,0,0,3.58-.84l64-32a8.05,8.05,0,0,0,3.58-3.58l32-64a8,8,0,0,0-10.74-10.74ZM138,138,97.89,158.11,118,118l40.15-20.07Z"></path>
+</svg>
+<span class="text-xs font-medium">Discoveries</span>
+</a>
+<a class="flex flex-1 flex-col items-center justify-center gap-1 py-1 text-gray-500 dark:text-gray-400" href="#">
+<svg class="h-6 w-6" fill="currentColor" height="24px" viewBox="0 0 256 256" width="24px" xmlns="http://www.w3.org/2000/svg">
+<path d="M184,32H72A16,16,0,0,0,56,48V224a8,8,0,0,0,12.24,6.78L128,193.43l59.77,37.35A8,8,0,0,0,200,224V48A16,16,0,0,0,184,32Zm0,16V161.57l-51.77-32.35a8,8,0,0,0-8.48,0L72,161.56V48ZM132.23,177.22a8,8,0,0,0-8.48,0L72,209.57V180.43l56-35,56,35v29.14Z"></path>
+</svg>
+<span class="text-xs font-medium">Memories</span>
+</a>
+<a class="flex flex-1 flex-col items-center justify-center gap-1 rounded-full bg-amber-500/10 py-1 text-amber-500" href="#">
+<svg class="h-6 w-6" fill="currentColor" height="24px" viewBox="0 0 256 256" width="24px" xmlns="http://www.w3.org/2000/svg">
+<path d="M216,130.16q.06-2.16,0-4.32l14.92-18.64a8,8,0,0,0,1.48-7.06,107.6,107.6,0,0,0-10.88-26.25,8,8,0,0,0-6-3.93l-23.72-2.64q-1.48-1.56-3-3L186,40.54a8,8,0,0,0-3.94-6,107.29,107.29,0,0,0-26.25-10.86,8,8,0,0,0-7.06,1.48L130.16,40Q128,40,125.84,40L107.2,25.11a8,8,0,0,0-7.06-1.48A107.6,107.6,0,0,0,73.89,34.51a8,8,0,0,0-3.93,6L67.32,64.27q-1.56,1.49-3,3L40.54,70a8,8,0,0,0-6,3.94,107.71,107.71,0,0,0-10.87,26.25,8,8,0,0,0,1.49,7.06L40,125.84Q40,128,40,130.16L25.11,148.8a8,8,0,0,0-1.48,7.06,107.6,107.6,0,0,0,10.88,26.25,8,8,0,0,0,6,3.93l23.72,2.64q1.49,1.56,3,3L70,215.46a8,8,0,0,0,3.94,6,107.71,107.71,0,0,0,26.25,10.87,8,8,0,0,0,7.06-1.49L125.84,216q2.16.06,4.32,0l18.64,14.92a8,8,0,0,0,7.06,1.48,107.21,107.21,0,0,0,26.25-10.88,8,8,0,0,0,3.93-6l2.64-23.72q1.56-1.48,3-3L215.46,186a8,8,0,0,0,6-3.94,107.71,107.71,0,0,0,10.87-26.25,8,8,0,0,0-1.49-7.06ZM128,168a40,40,0,1,1,40-40A40,40,0,0,1,128,168Z"></path>
+</svg>
+<span class="text-xs font-medium">Settings</span>
+</a>
+</nav>
+</footer>
+</div>
+
+</body></html>

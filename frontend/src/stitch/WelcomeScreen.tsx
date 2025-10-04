@@ -1,74 +1,81 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 
+const SteeringWheelIcon: React.FC = () => (
+  <svg
+    className="mb-4 h-24 w-24 text-primary"
+    fill="none"
+    viewBox="0 0 64 64"
+    xmlns="http://www.w3.org/2000/svg"
+    role="img"
+    aria-hidden="true"
+  >
+    <circle cx="32" cy="32" r="28" stroke="currentColor" strokeWidth="4" opacity="0.4" />
+    <circle cx="32" cy="32" r="7" stroke="currentColor" strokeWidth="4" />
+    <path
+      d="M10 33.5c6.3-4.4 13.6-6.7 22-6.7s15.7 2.3 22 6.7"
+      stroke="currentColor"
+      strokeWidth="4"
+      strokeLinecap="round"
+      opacity="0.7"
+    />
+    <path
+      d="M26.7 38.5 19 53m18.3-14.5L45 53"
+      stroke="currentColor"
+      strokeWidth="4"
+      strokeLinecap="round"
+      opacity="0.65"
+    />
+  </svg>
+);
+
 export const WelcomeScreen: React.FC = () => {
   const navigate = useNavigate();
 
   return (
     <div
-      className="relative flex h-screen flex-col items-center justify-between overflow-hidden bg-background-dark py-16 px-6 font-display text-white"
-      style={{
-        backgroundImage: 'radial-gradient(circle at 50% 50%, rgba(17, 32, 33, 0) 0%, #112021 70%)',
-        minHeight: 'max(884px, 100dvh)',
-      }}
+      className="relative flex h-screen flex-col items-center justify-between overflow-hidden bg-gradient-to-b from-[#081316] via-[#0c1d21] to-[#081316] py-16 px-6 font-display text-white"
+      style={{ minHeight: 'max(884px, 100dvh)' }}
     >
-      <div className="flex w-full flex-grow flex-col items-center justify-center text-center">
-        <div className="mb-6 flex flex-col items-center">
-          <svg
-            className="mb-4 h-24 w-24 text-amber"
-            fill="none"
-            viewBox="0 0 24 24"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
-              fill="currentColor"
-              opacity="0.3"
-            />
-            <path
-              d="M3.75 8.25L12 16.5l8.25-8.25"
-              stroke="currentColor"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="1.5"
-            />
-            <path
-              d="M12 3v13.5"
-              stroke="#18a2aa"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="1.5"
-            />
-          </svg>
-          <h1 className="text-4xl font-bold text-white">Trip Narrator</h1>
+      <div className="pointer-events-none absolute inset-0 opacity-60">
+        <div className="absolute left-1/2 top-[-20%] h-80 w-80 -translate-x-1/2 rounded-full bg-primary/30 blur-3xl" />
+        <div className="absolute right-[-10%] top-1/3 h-72 w-72 rounded-full bg-amber-500/20 blur-3xl" />
+      </div>
+
+      <div className="relative flex w-full flex-grow flex-col items-center justify-center text-center">
+        <SteeringWheelIcon />
+        <div className="mb-6 flex flex-col items-center gap-2">
+          <h1 className="text-4xl font-bold tracking-wide text-white">Drive Narrator</h1>
+          <p className="max-w-md text-lg text-white/70">
+            Curate the stories you want to hear before you roll out, then let Drive Narrator guide the ride.
+          </p>
         </div>
-        <p className="mb-12 text-lg text-white/70">Uncover stories, one mile at a time.</p>
         <div className="w-full max-w-xs space-y-4">
           <button
             type="button"
             onClick={() => navigate('/voice')}
-            className="w-full rounded-lg bg-primary py-4 px-4 text-lg font-bold text-white transition-colors duration-300 hover:bg-primary/90"
+            className="w-full rounded-xl bg-primary py-4 px-4 text-lg font-semibold text-white shadow-lg shadow-primary/30 transition-colors duration-300 hover:bg-primary/90"
           >
-            Plan a New Trip
+            Narrate My Drive
           </button>
           <button
             type="button"
             onClick={() => navigate('/trips')}
-            className="w-full rounded-lg bg-white/10 py-4 px-4 text-lg font-bold text-white transition-colors duration-300 hover:bg-white/20"
+            className="w-full rounded-xl bg-white/10 py-4 px-4 text-lg font-semibold text-white transition-colors duration-300 hover:bg-white/20"
           >
             Open a Saved Trip
           </button>
           <button
             type="button"
             onClick={() => navigate('/discoveries')}
-            className="w-full rounded-lg bg-white/10 py-4 px-4 text-lg font-bold text-white transition-colors duration-300 hover:bg-white/20"
+            className="w-full rounded-xl bg-white/10 py-4 px-4 text-lg font-semibold text-white transition-colors duration-300 hover:bg-white/20"
           >
             Tutorial
           </button>
         </div>
       </div>
-      <footer className="w-full text-center">
-        <p className="text-xs text-white/40">Your personal storyteller for the road.</p>
+      <footer className="relative w-full text-center text-xs text-white/40">
+        Tailored narration for every mile.
       </footer>
     </div>
   );

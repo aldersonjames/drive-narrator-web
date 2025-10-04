@@ -8,6 +8,7 @@ import type {
 import type { PrivacyContext } from '../middleware/privacyMiddleware';
 import { DEFAULT_VOICES } from './voicesController';
 import type { PoiProviderId, ProviderCapabilityMap } from '../../../../shared/types/tripNarrator';
+import { DEFAULT_PERSONA_ID, NARRATOR_PERSONAS } from '../../../../shared/data/narratorPersonas';
 import { validate } from '../../utils/validation';
 import type { DeletionService } from '../../services/privacy/deletionService';
 
@@ -39,6 +40,7 @@ const preferencesPatchSchema = z
     profileId: z.string().optional(),
     assistantVoiceId: z.string().optional(),
     narrationVoiceId: z.string().optional(),
+    narrationPersonaId: z.string().optional(),
     interestTags: z.union([z.array(z.string()), z.string()]).optional(),
     transcriptOptIn: z.boolean().optional(),
     retentionDays: z.number().int().positive().max(365).optional(),
@@ -50,6 +52,7 @@ const preferencesPatchSchema = z
 
 export const createPreferencesController = (deps: Dependencies) => {
   const validVoiceIds = new Set(DEFAULT_VOICES.map((voice) => voice.voiceId));
+  const validPersonaIds = new Set(NARRATOR_PERSONAS.map((persona) => persona.id));
 
   const buildProviderCapabilities = (): ProviderCapabilityMap => {
     const foursquareAvailable = deps.poiProvider.isFoursquareEnabled();
@@ -146,6 +149,14 @@ export const createPreferencesController = (deps: Dependencies) => {
             .json({ code: 'INVALID_VOICE_SELECTION', message: 'Unknown narration voice.' });
         }
         update.narrationVoiceId = payload.narrationVoiceId;
+      }
+      if (typeof payload.narrationPersonaId === 'string') {
+        if (!validPersonaIds.has(payload.narrationPersonaId)) {
+          return res
+            .status(400)
+            .json({ code: 'INVALID_PERSONA_SELECTION', message: 'Unknown narrator personality.' });
+        }
+        update.narrationPersonaId = payload.narrationPersonaId || DEFAULT_PERSONA_ID;
       }
       const interests = normalizeArray(payload?.interestTags);
       if (interests) {
