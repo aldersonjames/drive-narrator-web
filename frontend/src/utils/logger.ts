@@ -1,30 +1,30 @@
 export interface LogEntry {
   level: 'debug' | 'info' | 'warn' | 'error';
   message: string;
-  data?: any;
+  data?: unknown;
   timestamp: string;
 }
 
 class Logger {
-  private isDevelopment = process.env.NODE_ENV === 'development';
+  private isDevelopment = import.meta.env.DEV || import.meta.env.MODE === 'development';
 
-  debug(message: string, data?: any): void {
+  debug(message: string, data?: unknown): void {
     this.log('debug', message, data);
   }
 
-  info(message: string, data?: any): void {
+  info(message: string, data?: unknown): void {
     this.log('info', message, data);
   }
 
-  warn(message: string, data?: any): void {
+  warn(message: string, data?: unknown): void {
     this.log('warn', message, data);
   }
 
-  error(message: string, data?: any): void {
+  error(message: string, data?: unknown): void {
     this.log('error', message, data);
   }
 
-  private log(level: 'debug' | 'info' | 'warn' | 'error', message: string, data?: any): void {
+  private log(level: 'debug' | 'info' | 'warn' | 'error', message: string, data?: unknown): void {
     const entry: LogEntry = {
       level,
       message,
@@ -40,7 +40,7 @@ class Logger {
     // this.sendToLogService(entry);
   }
 
-  private sendToLogService(entry: LogEntry): void {
+  private sendToLogService(_entry: LogEntry): void {
     // Implement log service integration here
     // e.g., send to Sentry, LogRocket, or custom logging service
   }

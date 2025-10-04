@@ -1,4 +1,4 @@
-import { logger } from '../../../utils/logger';
+import { logger } from '../../utils/logger';
 
 export interface RealtimeVoiceConfig {
   voiceId: 'alloy' | 'echo' | 'shimmer';
@@ -25,6 +25,7 @@ export class RealtimeVoiceService {
   private reconnectAttempts = 0;
   private maxReconnectAttempts = 5;
   private reconnectDelay = 1000;
+  private sessionData: any = null;
 
   constructor() {
     this.handleVisibilityChange = this.handleVisibilityChange.bind(this);
@@ -45,11 +46,12 @@ export class RealtimeVoiceService {
       // Get OpenAI API key from environment or user settings
       const apiKey = await this.getApiKey();
       if (!apiKey) {
-        throw new Error('OpenAI API key not found');
+        throw new Error('OpenAI API key not available in browser environment. Please configure voice settings.');
       }
 
-      // Create WebSocket connection to OpenAI Realtime API
-      const wsUrl = `wss://api.openai.com/v1/realtime?model=gpt-realtime&api_key=${apiKey}`;
+      // Create WebSocket connection to OpenAI Realtime API using session data
+      const model = this.sessionData?.session?.model || 'gpt-realtime';
+      const wsUrl = `wss://api.openai.com/v1/realtime?model=${model}&api_key=${apiKey}`;
       this.ws = new WebSocket(wsUrl);
 
       this.ws.onopen = this.handleOpen.bind(this);
@@ -67,9 +69,44 @@ export class RealtimeVoiceService {
   }
 
   private async getApiKey(): Promise<string | null> {
-    // Try to get API key from environment or user settings
-    // This should be implemented based on your app's configuration
-    return process.env.OPENAI_API_KEY || null;
+    try {
+      // Get voice session from backend instead of direct API key
+      const response = await fetch('/api/voice/session', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-device-id': this.getDeviceId(),
+        },
+        body: JSON.stringify({
+          transport: 'websocket'
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Voice session request failed: ${response.statusText}`);
+      }
+
+      const sessionData = await response.json();
+      
+      // Store session data for later use
+      this.sessionData = sessionData;
+      
+      // Return the ephemeral token for WebSocket connection
+      return sessionData.session.ephemeralToken;
+    } catch (error) {
+      logger.error('RealtimeVoiceService: Failed to get voice session', { error });
+      return null;
+    }
+  }
+
+  private getDeviceId(): string {
+    // Generate or retrieve device ID
+    let deviceId = localStorage.getItem('drive-narrator-device-id');
+    if (!deviceId) {
+      deviceId = 'device-' + Math.random().toString(36).substr(2, 9);
+      localStorage.setItem('drive-narrator-device-id', deviceId);
+    }
+    return deviceId;
   }
 
   private handleOpen(): void {
@@ -157,14 +194,15 @@ export class RealtimeVoiceService {
   }
 
   private sendConfiguration(): void {
-    if (!this.ws || !this.config) return;
+    if (!this.ws || !this.config || !this.sessionData) return;
 
+    const session = this.sessionData.session;
     const config = {
       type: 'session.update',
       session: {
         modalities: ['text', 'audio'],
         instructions: this.buildInstructions(),
-        voice: this.config.voiceId,
+        voice: session.voice.id,
         input_audio_format: 'pcm16',
         output_audio_format: 'pcm16',
         input_audio_transcription: {

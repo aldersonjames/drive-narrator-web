@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 
 import AppNavigation from '../components/navigation/AppNavigation';
 import { useDrivePlanner } from '../context/DrivePlannerContext';
-import type { VoiceDefinition } from '../../../shared/types/driveNarrator';
+import type { VoiceDefinition } from '../../../shared/types/tripNarrator';
 import { DEFAULT_PERSONA_ID, NARRATOR_PERSONAS } from '../../../shared/data/narratorPersonas';
 
 const detourLabels = ['None', 'Short', 'Medium', 'Long'] as const;

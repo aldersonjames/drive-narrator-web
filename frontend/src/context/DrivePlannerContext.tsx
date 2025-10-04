@@ -5,7 +5,7 @@ import type {
   PreferencesUpdatePayload,
   RouteSummary,
   DriveSummary,
-} from '../../../shared/types/driveNarrator';
+} from '../../../shared/types/tripNarrator';
 
 declare global {
   interface ImportMetaEnv {

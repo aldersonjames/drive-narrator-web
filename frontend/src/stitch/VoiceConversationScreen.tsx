@@ -1,13 +1,12 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { NavLink, useLocation, useNavigate } from 'react-router-dom';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { NavLink, useLocation } from 'react-router-dom';
 
-import FollowDriveMap from '../components/map/FollowDriveMap';
 import AppNavigation from '../components/navigation/AppNavigation';
 import RealtimeVoiceInterface from '../components/voice/RealtimeVoiceInterface';
 import { useDrivePlanner } from '../context/DrivePlannerContext';
 
-const MIN_ALERT_MINUTES = 1;
-const MAX_ALERT_MINUTES = 25;
+// const MIN_ALERT_MINUTES = 1;
+// const MAX_ALERT_MINUTES = 25;
 const MIN_VALID_SPEED_MPH = 5;
 const MPH_FROM_MPS = 2.236936;
 
@@ -17,19 +16,19 @@ interface CoordinateSample {
 }
 
 const VoiceConversationScreen: React.FC = () => {
-  const navigate = useNavigate();
+  // const navigate = useNavigate();
   const location = useLocation();
-  const { preferences, loadPreferences, updatePreferences } = useDrivePlanner();
+  const { /* preferences, loadPreferences, updatePreferences */ } = useDrivePlanner();
 
-  const [alertMinutes, setAlertMinutes] = useState<number>(5);
+  // const [alertMinutes, setAlertMinutes] = useState<number>(5);
   const [locationLabel, setLocationLabel] = useState('Locating…');
-  const [position, setPosition] = useState<{ lat: number; lng: number }>();
+  // const [position, setPosition] = useState<{ lat: number; lng: number }>();
   const [heading, setHeading] = useState<number>();
   const [avgSpeedMph, setAvgSpeedMph] = useState<number>(0);
   const speedSamplesRef = useRef<number[]>([]);
   const prevSampleRef = useRef<CoordinateSample | null>(null);
 
-  const profileId = 'traveler-001';
+  // const profileId = 'traveler-001';
   const isFollowMode = location.search.includes('mode=follow');
 
   const updateAverageSpeed = useCallback((mph: number) => {
@@ -69,7 +68,7 @@ const VoiceConversationScreen: React.FC = () => {
     const handlePosition = (pos: GeolocationPosition) => {
       if (cancelled) return;
       const coords: [number, number] = [pos.coords.longitude, pos.coords.latitude];
-      setPosition({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+      // setPosition({ lat: pos.coords.latitude, lng: pos.coords.longitude });
 
       const literalLocation = `${pos.coords.latitude.toFixed(4)}, ${pos.coords.longitude.toFixed(4)}`;
       setLocationLabel(literalLocation);
@@ -126,8 +125,8 @@ const VoiceConversationScreen: React.FC = () => {
   }, [computeSpeedFromSamples, updateAverageSpeed]);
 
   const hasValidSpeed = avgSpeedMph >= MIN_VALID_SPEED_MPH;
-  const effectiveRadiusMiles = hasValidSpeed ? toMiles(alertMinutes, avgSpeedMph) : undefined;
-  const effectiveHeading = heading ?? 0;
+  // const effectiveRadiusMiles = hasValidSpeed ? toMiles(alertMinutes, avgSpeedMph) : undefined;
+  // const effectiveHeading = heading ?? 0;
 
   const toMiles = (minutes: number, mph: number): number => {
     const hours = minutes / 60;

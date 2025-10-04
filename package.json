@@ -28,7 +28,7 @@
     "plan": "node run-command.js @plan",
     "act": "node run-command.js @act",
     "status": "node run-command.js @status",
-    "test": "node run-command.js @test",
+    "test-cmd": "node run-command.js @test",
     "deploy": "node run-command.js @deploy"
   },
   "devDependencies": {

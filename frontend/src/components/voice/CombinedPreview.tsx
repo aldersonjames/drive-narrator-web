@@ -19,29 +19,29 @@ export const CombinedPreview: React.FC<CombinedPreviewProps> = ({
 }) => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
-  const audioRef = useRef<HTMLAudioElement>(null);
+  // const audioRef = useRef<HTMLAudioElement>(null);
 
-  // Use Realtime Voice hook for preview
-  const {
-    isConnected,
-    isSpeaking,
-    connect,
-    disconnect,
-    sendText,
-    startSpeaking,
-    stopSpeaking,
-    error
-  } = useRealtimeVoice({
-    voiceId: selectedVoiceId as 'alloy' | 'echo' | 'shimmer',
-    personaId: selectedPersonaId,
-    accentId: selectedAccentId,
-    autoConnect: false
-  });
+  // Note: Preview now uses backend API instead of RealtimeVoiceService
+  // const {
+  //   isConnected,
+  //   isSpeaking,
+  //   connect,
+  //   // disconnect,
+  //   sendText,
+  //   startSpeaking,
+  //   stopSpeaking,
+  //   error
+  // } = useRealtimeVoice({
+  //   voiceId: selectedVoiceId as 'alloy' | 'echo' | 'shimmer',
+  //   personaId: selectedPersonaId,
+  //   accentId: selectedAccentId,
+  //   autoConnect: false
+  // });
 
   const selectedVoice = OPENAI_VOICES.find(voice => voice.id === selectedVoiceId);
   const selectedPersona = PERSONALITY_PRESETS.find(persona => persona.id === selectedPersonaId);
   const selectedAccent = ACCENT_OPTIONS.find(accent => accent.id === selectedAccentId);
-  const voiceCharacteristics = VOICE_CHARACTERISTICS[selectedVoiceId];
+  // const voiceCharacteristics = VOICE_CHARACTERISTICS[selectedVoiceId];
 
   const handlePreview = async () => {
     if (!selectedVoice || !selectedPersona || !selectedAccent) return;
@@ -50,19 +50,38 @@ export const CombinedPreview: React.FC<CombinedPreviewProps> = ({
     setIsPlaying(false);
 
     try {
-      // Connect to Realtime API if not already connected
-      if (!isConnected) {
-        await connect();
-      }
-
       // Get the persona-specific sample text
       const personaSampleText = PERSONA_SAMPLE_TEXTS[selectedPersonaId] || PERSONA_SAMPLE_TEXTS['custom'];
       
-      // Send text and start speaking
-      sendText(personaSampleText);
-      startSpeaking();
+      // Use backend API for voice preview instead of direct Realtime API
+      const response = await fetch('http://localhost:41234/api/voices/preview', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          voiceId: selectedVoiceId,
+          input: personaSampleText,
+          instructions: `You are a ${selectedPersona.name} with a ${selectedAccent.name} accent. ${selectedPersona.voiceSettings.prompt} ${selectedAccent.prompt}`,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Voice preview failed: ${response.statusText}`);
+      }
+
+      const audioBlob = await response.blob();
+      const audioUrl = URL.createObjectURL(audioBlob);
+      const audio = new Audio(audioUrl);
       
-      setIsPlaying(true);
+      audio.onplay = () => setIsPlaying(true);
+      audio.onended = () => {
+        setIsPlaying(false);
+        URL.revokeObjectURL(audioUrl);
+      };
+      
+      await audio.play();
+      
     } catch (error) {
       console.error('Preview generation failed:', error);
     } finally {
@@ -70,24 +89,24 @@ export const CombinedPreview: React.FC<CombinedPreviewProps> = ({
     }
   };
 
-  // Handle speaking state changes
-  useEffect(() => {
-    if (isSpeaking) {
-      setIsPlaying(true);
-    } else {
-      setIsPlaying(false);
-    }
-  }, [isSpeaking]);
+  // Note: Speaking state is now handled by audio events in handlePreview
+  // useEffect(() => {
+  //   if (isSpeaking) {
+  //     setIsPlaying(true);
+  //   } else {
+  //     setIsPlaying(false);
+  //   }
+  // }, [isSpeaking]);
 
-  const handlePlayPause = () => {
-    if (isSpeaking) {
-      stopSpeaking();
-      setIsPlaying(false);
-    } else {
-      startSpeaking();
-      setIsPlaying(true);
-    }
-  };
+  // const handlePlayPause = () => {
+  //   if (isSpeaking) {
+  //     stopSpeaking();
+  //     setIsPlaying(false);
+  //   } else {
+  //     startSpeaking();
+  //     setIsPlaying(true);
+  //   }
+  // };
 
   const canPreview = selectedVoice && selectedPersona && selectedAccent;
   const canSave = canPreview && !isGenerating && !isSaving;
@@ -111,19 +130,14 @@ export const CombinedPreview: React.FC<CombinedPreviewProps> = ({
           {isGenerating ? (
             <div className="flex items-center justify-center gap-2">
               <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              {isConnected ? 'Playing Preview...' : 'Connecting...'}
+              {isPlaying ? 'Playing Preview...' : 'Generating...'}
             </div>
           ) : (
             '🎵 Preview Voice'
           )}
         </button>
 
-        {/* Error Display */}
-        {error && (
-          <div className="p-3 bg-red-100 dark:bg-red-900/30 border border-red-300 dark:border-red-700 rounded-lg">
-            <p className="text-red-700 dark:text-red-300 text-sm">{error}</p>
-          </div>
-        )}
+        {/* Error Display - Removed since we're using backend API for preview */}
 
         {/* Save Button */}
         <button

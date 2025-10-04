@@ -1,0 +1,30 @@
+[
+  {
+    "timestamp": "2025-10-04T21:17:42.031Z",
+    "command": "/plan",
+    "mode": "PLANNING",
+    "success": true,
+    "previousMode": "NEUTRAL"
+  },
+  {
+    "timestamp": "2025-10-04T21:17:44.284Z",
+    "command": "/act",
+    "mode": "ACTING",
+    "success": true,
+    "previousMode": "PLANNING"
+  },
+  {
+    "timestamp": "2025-10-04T21:33:28.862Z",
+    "command": "/plan",
+    "mode": "PLANNING",
+    "success": true,
+    "previousMode": "ACTING"
+  },
+  {
+    "timestamp": "2025-10-04T21:36:30.303Z",
+    "command": "/act",
+    "mode": "ACTING",
+    "success": true,
+    "previousMode": "PLANNING"
+  }
+]

@@ -1,9 +1,9 @@
 import crypto from 'node:crypto';
 
 import express from 'express';
-import type { Request, Response, NextFunction } from 'express';
+import type { Request, Response } from 'express';
 import bodyParser from 'body-parser';
-import OpenAI from 'openai';
+// import OpenAI from 'openai';
 
 import { createRoutesController } from './routes/routesController';
 import { createCategoriesController } from './routes/categoriesController';
@@ -30,7 +30,7 @@ import { PoiFilteringService } from '../services/poi/poiFilteringService';
 import { CategoryCatalogService } from '../services/poi/categoryCatalogService';
 import { RouteScoringService } from '../services/scoring/routeScoringService';
 import { PreferencesService } from '../services/preferences/preferencesService';
-import { ConversationService } from '../services/voice/conversationService';
+// import { ConversationService } from '../services/voice/conversationService';
 import { ValidationError } from '../utils/validation';
 import { logger, requestLogger } from '../utils/logger';
 import { createOpenAIClient } from '../utils/openaiClient';
@@ -74,7 +74,7 @@ const poiFilter = new PoiFilteringService();
 const categoryCatalog = new CategoryCatalogService(poiClient);
 const routeScoring = new RouteScoringService();
 const preferencesService = new PreferencesService(travelerProfilesRepo);
-const conversationService = new ConversationService({ profilesRepo: travelerProfilesRepo });
+// const conversationService = new ConversationService({ profilesRepo: travelerProfilesRepo });
 const deletionService = new DeletionService({
   profilesRepo: travelerProfilesRepo,
   drivesRepo,
@@ -199,8 +199,19 @@ try {
     } satisfies VoiceRateLimitConfig,
     tokenStore: voiceTokenStore,
   });
+  logger.info('✅ Voice pipeline service initialized successfully');
 } catch (error) {
-  logger.warn('voice-service-disabled', { error: (error as Error).message });
+  logger.error('❌ Voice pipeline service failed to initialize', { 
+    error: (error as Error).message,
+    stack: (error as Error).stack,
+    adapterConfig: {
+      region: voiceAdapterConfig.region,
+      asrProvider: voiceAdapterConfig.asrProvider,
+      ttsProvider: voiceAdapterConfig.ttsProvider,
+      hasOpenAi: !!voiceAdapterConfig.openAi,
+      hasElevenLabs: !!voiceAdapterConfig.elevenLabs
+    }
+  });
 }
 
 app.post(
@@ -269,9 +280,21 @@ if (voicePipelineService) {
     '/api/voice/session',
     createVoiceSessionController({ voiceService: voicePipelineService, logger }),
   );
+  logger.info('✅ Voice session endpoint registered');
+} else {
+  logger.warn('⚠️ Voice session endpoint not registered - voice pipeline service unavailable');
+  
+  // Add a fallback endpoint to show status
+  app.post('/api/voice/session', (req, res) => {
+    res.status(503).json({
+      code: 'VOICE_SERVICE_UNAVAILABLE',
+      message: 'Voice service is not available. Check backend logs for details.',
+      status: 'voice-pipeline-service-failed'
+    });
+  });
 }
 
-app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
+app.use((err: Error, req: Request, res: Response) => {
   if (err instanceof ValidationError) {
     logger.warn('Validation error', {
       path: req.originalUrl,

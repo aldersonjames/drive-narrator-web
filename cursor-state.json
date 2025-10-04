@@ -1,0 +1,128 @@
+{
+  "currentMode": "ACTING",
+  "modeHistory": [
+    {
+      "mode": "PLANNING",
+      "timestamp": "2025-10-04T21:17:10.361Z",
+      "previousMode": "NEUTRAL"
+    },
+    {
+      "mode": "STATUS",
+      "timestamp": "2025-10-04T21:17:10.362Z",
+      "previousMode": "PLANNING"
+    },
+    {
+      "mode": "ACTING",
+      "timestamp": "2025-10-04T21:17:10.362Z",
+      "previousMode": "STATUS"
+    },
+    {
+      "mode": "PLANNING",
+      "timestamp": "2025-10-04T21:17:10.362Z",
+      "previousMode": "NEUTRAL"
+    },
+    {
+      "mode": "PLANNING",
+      "timestamp": "2025-10-04T21:17:42.030Z",
+      "previousMode": "NEUTRAL"
+    },
+    {
+      "mode": "ACTING",
+      "timestamp": "2025-10-04T21:17:44.283Z",
+      "previousMode": "PLANNING"
+    },
+    {
+      "mode": "PLANNING",
+      "timestamp": "2025-10-04T21:33:28.861Z",
+      "previousMode": "ACTING"
+    },
+    {
+      "mode": "ACTING",
+      "timestamp": "2025-10-04T21:36:30.302Z",
+      "previousMode": "PLANNING"
+    }
+  ],
+  "lastCommand": "/plan",
+  "permissions": {
+    "canExecuteCode": true,
+    "canModifyFiles": true,
+    "canRunTerminal": true,
+    "canReadFiles": true,
+    "canAnalyze": true,
+    "canPlan": true,
+    "canTest": false,
+    "canDeploy": true
+  },
+  "restrictions": {
+    "planningMode": {
+      "allowed": [
+        "read",
+        "analyze",
+        "plan",
+        "document"
+      ],
+      "forbidden": [
+        "execute",
+        "modify",
+        "terminal",
+        "deploy"
+      ]
+    },
+    "actingMode": {
+      "allowed": [
+        "read",
+        "analyze",
+        "plan",
+        "document",
+        "execute",
+        "modify",
+        "terminal",
+        "deploy"
+      ],
+      "forbidden": [],
+      "requiresPermission": true
+    },
+    "statusMode": {
+      "allowed": [
+        "read",
+        "analyze",
+        "report"
+      ],
+      "forbidden": [
+        "execute",
+        "modify",
+        "terminal",
+        "deploy"
+      ]
+    },
+    "testingMode": {
+      "allowed": [
+        "read",
+        "analyze",
+        "test",
+        "report"
+      ],
+      "forbidden": [
+        "modify",
+        "deploy"
+      ]
+    },
+    "deploymentMode": {
+      "allowed": [
+        "read",
+        "analyze",
+        "deploy",
+        "monitor"
+      ],
+      "forbidden": [
+        "modify",
+        "test"
+      ]
+    }
+  },
+  "session": {
+    "startTime": null,
+    "commandCount": 10,
+    "lastAction": null
+  }
+}

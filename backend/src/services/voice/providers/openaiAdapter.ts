@@ -47,10 +47,6 @@ export class OpenAiVoiceAdapter implements VoiceAdapter {
       body: JSON.stringify({
         model: openAi.model,
         modalities: ['text', 'audio'],
-        audio: {
-          voice: openAi.voice,
-          format: 'pcm16',
-        },
       }),
     });
 
