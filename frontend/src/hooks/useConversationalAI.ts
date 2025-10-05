@@ -98,6 +98,9 @@ export const useConversationalAI = (options: ConversationalAIOptions = {}) => {
         // Create abort controller for this request
         abortControllerRef.current = new AbortController();
 
+        // Include the new turn explicitly to avoid async state issues
+        const history = [...conversationHistory.slice(-9), userTurn];
+
         const response = await fetch('/api/conversation', {
           method: 'POST',
           headers: {
@@ -107,7 +110,7 @@ export const useConversationalAI = (options: ConversationalAIOptions = {}) => {
             message: command.originalText,
             command: command,
             context: context,
-            conversationHistory: conversationHistory.slice(-10), // Last 10 turns
+            conversationHistory: history, // Last 10 turns including the new one
             voiceSettings: voiceSettings,
           }),
           signal: abortControllerRef.current.signal,
@@ -165,6 +168,9 @@ export const useConversationalAI = (options: ConversationalAIOptions = {}) => {
         // Create abort controller for this request
         abortControllerRef.current = new AbortController();
 
+        // Include the new turn explicitly to avoid async state issues
+        const history = [...conversationHistory.slice(-9), userTurn];
+
         const response = await fetch('/api/conversation', {
           method: 'POST',
           headers: {
@@ -173,7 +179,7 @@ export const useConversationalAI = (options: ConversationalAIOptions = {}) => {
           body: JSON.stringify({
             message,
             context: context,
-            conversationHistory: conversationHistory.slice(-10), // Last 10 turns
+            conversationHistory: history, // Last 10 turns including the new one
             voiceSettings: voiceSettings,
           }),
           signal: abortControllerRef.current.signal,
