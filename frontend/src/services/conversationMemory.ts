@@ -48,6 +48,7 @@ const MAX_TURNS_PER_SESSION = 100; // Limit turns per session
 
 class ConversationMemoryService {
   private currentSession: ConversationSession | null = null;
+  private isClient = typeof window !== 'undefined';
 
   /**
    * Start a new conversation session
@@ -305,6 +306,8 @@ class ConversationMemoryService {
    * Clear all conversation data (for privacy)
    */
   clearAll(): void {
+    if (!this.isClient) return;
+
     localStorage.removeItem(STORAGE_KEYS.SESSIONS);
     localStorage.removeItem(STORAGE_KEYS.CURRENT_SESSION);
     localStorage.removeItem(STORAGE_KEYS.USER_PREFERENCES);
@@ -326,6 +329,8 @@ class ConversationMemoryService {
   }
 
   private saveToStorage(key: string, value: unknown): void {
+    if (!this.isClient) return;
+
     try {
       localStorage.setItem(key, JSON.stringify(value));
     } catch (error) {
@@ -334,6 +339,8 @@ class ConversationMemoryService {
   }
 
   private getFromStorage<T>(key: string): T | null {
+    if (!this.isClient) return null;
+
     try {
       const item = localStorage.getItem(key);
       return item ? (JSON.parse(item) as T) : null;
