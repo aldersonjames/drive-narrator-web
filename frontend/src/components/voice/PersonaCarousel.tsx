@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { PERSONALITY_PRESETS, type PersonalityPreset } from '../../data/voicePresets';
+import { NARRATOR_PERSONAS, type NarratorPersona } from '../../../../shared/data/narratorPersonas';
 
 interface PersonaCarouselProps {
   selectedPersonaId: string;
@@ -16,7 +16,7 @@ export const PersonaCarousel: React.FC<PersonaCarouselProps> = ({
 
   // Find the index of the selected persona
   useEffect(() => {
-    const selectedIndex = PERSONALITY_PRESETS.findIndex(persona => persona.id === selectedPersonaId);
+    const selectedIndex = NARRATOR_PERSONAS.findIndex(persona => persona.id === selectedPersonaId);
     if (selectedIndex !== -1) {
       setCurrentIndex(selectedIndex);
       scrollToIndex(selectedIndex);
@@ -38,40 +38,12 @@ export const PersonaCarousel: React.FC<PersonaCarouselProps> = ({
     }
   };
 
-  const handlePersonaSelect = (persona: PersonalityPreset, index: number) => {
+  const handlePersonaSelect = (persona: NarratorPersona, index: number) => {
     onPersonaSelect(persona.id);
     setCurrentIndex(index);
     scrollToIndex(index);
   };
 
-  const getPersonaIcon = (icon: string) => {
-    // Map icon strings to emojis
-    const iconMap: { [key: string]: string } = {
-      'explore': '🏔️',
-      'person_pin_circle': '🏘️',
-      'auto_stories': '📚',
-      'radio_button_checked': '🎯',
-      'monster': '👹',
-      'security': '🦇',
-      'sailing': '🏴‍☠️',
-      'smart_toy': '🤖',
-      'auto_awesome': '🧙‍♂️',
-      'cowboy': '🤠',
-      'tune': '⚙️',
-    };
-    return iconMap[icon] || '🎭';
-  };
-
-  const getPersonaColor = (id: string) => {
-    const colorMap: { [key: string]: string } = {
-      'adventure-seeker': 'from-orange-400 to-red-500',
-      'local-expert': 'from-green-400 to-blue-500',
-      'storyteller': 'from-purple-400 to-pink-500',
-      'minimalist': 'from-gray-400 to-gray-600',
-      'custom': 'from-indigo-400 to-purple-500',
-    };
-    return colorMap[id] || 'from-gray-400 to-gray-600';
-  };
 
   return (
     <div className="w-full">
@@ -90,46 +62,67 @@ export const PersonaCarousel: React.FC<PersonaCarouselProps> = ({
         className="flex overflow-x-auto scrollbar-hide snap-x snap-mandatory gap-4 pb-4"
         style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
       >
-        {PERSONALITY_PRESETS.map((persona, index) => (
+        {NARRATOR_PERSONAS.map((persona, index) => (
           <div
             key={persona.id}
             ref={el => cardRefs.current[index] = el}
             className={`
-              flex-shrink-0 w-48 snap-center cursor-pointer transition-all duration-300
+              flex-shrink-0 w-64 snap-center cursor-pointer transition-all duration-300
               ${selectedPersonaId === persona.id 
                 ? 'scale-105 shadow-lg ring-2 ring-blue-500' 
                 : 'scale-100 hover:scale-102'
               }
             `}
             onClick={() => handlePersonaSelect(persona, index)}
-          >
-            <div className={`
-              bg-white dark:bg-gray-800 rounded-xl p-4 shadow-md border-2 transition-all duration-300 relative
-              ${selectedPersonaId === persona.id 
-                ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' 
-                : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                handlePersonaSelect(persona, index);
               }
-            `}>
-              {/* Persona Icon and Name */}
-              <div className="text-center mb-3">
-                <div className="text-2xl mb-2">
-                  {getPersonaIcon(persona.icon)}
-                </div>
+            }}
+          >
+            <div 
+              className={`
+                bg-white dark:bg-gray-800 rounded-xl p-4 shadow-md border-2 transition-all duration-300 relative
+                ${selectedPersonaId === persona.id 
+                  ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' 
+                  : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                }
+              `}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  handlePersonaSelect(persona, index);
+                }
+              }}
+            >
+              {/* Persona Header */}
+              <div className="flex items-center justify-between mb-3">
                 <h4 className="text-lg font-bold text-gray-900 dark:text-white">
                   {persona.name}
                 </h4>
+                <span className={`text-xs px-2 py-1 rounded-full ${
+                  persona.category === 'quirky' 
+                    ? 'bg-purple-500/20 text-purple-300' 
+                    : 'bg-blue-500/20 text-blue-300'
+                }`}>
+                  {persona.label}
+                </span>
               </div>
 
               {/* Persona Description */}
-              <div className="text-center">
+              <div className="mb-3">
                 <p className="text-xs text-gray-600 dark:text-gray-400 mb-2">
                   {persona.description}
                 </p>
                 
-                {/* Voice Settings Preview */}
-                <div className="flex justify-center gap-3 text-xs text-gray-500 dark:text-gray-400">
-                  <span>Speed: {persona.voiceSettings.speed}x</span>
-                  <span>Pitch: {persona.voiceSettings.pitch}%</span>
+                {/* Preview Sentence */}
+                <div className="text-xs italic text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-700 rounded-lg p-2">
+                  &ldquo;{persona.previewSentence}&rdquo;
                 </div>
               </div>
 
@@ -148,7 +141,7 @@ export const PersonaCarousel: React.FC<PersonaCarouselProps> = ({
 
       {/* Dots Indicator */}
       <div className="flex justify-center gap-2 mt-4">
-        {PERSONALITY_PRESETS.map((_, index) => (
+        {NARRATOR_PERSONAS.map((_, index) => (
           <button
             key={index}
             className={`

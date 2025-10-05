@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { useDrivePlanner } from '../context/DrivePlannerContext';
 import { VoiceCarousel } from '../components/voice/VoiceCarousel';
 import { PersonaCarousel } from '../components/voice/PersonaCarousel';
-import { AccentCarousel } from '../components/voice/AccentCarousel';
 import { CombinedPreview } from '../components/voice/CombinedPreview';
 
 const DEFAULT_PROFILE_ID = 'traveler-001';
@@ -14,7 +13,6 @@ export const VoiceSettingsPage: React.FC = () => {
   
   const [selectedVoiceId, setSelectedVoiceId] = useState<string>('nova');
   const [selectedPersonaId, setSelectedPersonaId] = useState<string>('local-expert');
-  const [selectedAccentId, setSelectedAccentId] = useState<string>('american');
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
@@ -50,11 +48,6 @@ export const VoiceSettingsPage: React.FC = () => {
         setSelectedPersonaId(savedPersonaId);
       }
 
-      // Load saved accent
-      const savedAccentId = preferences.metadata?.narrationAccentId;
-      if (savedAccentId) {
-        setSelectedAccentId(savedAccentId);
-      }
     }
   }, [preferences]);
 
@@ -69,7 +62,6 @@ export const VoiceSettingsPage: React.FC = () => {
         metadata: {
           ...preferences?.metadata,
           narrationPersonaId: selectedPersonaId,
-          narrationAccentId: selectedAccentId,
         },
       });
       
@@ -112,7 +104,7 @@ export const VoiceSettingsPage: React.FC = () => {
             </button>
             <div>
               <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Voice Settings</h1>
-              <p className="text-gray-600 dark:text-gray-400">Choose your drive narrator's voice and personality</p>
+              <p className="text-gray-600 dark:text-gray-400">Choose your drive narrator&apos;s voice and personality</p>
             </div>
           </div>
         </div>
@@ -131,17 +123,11 @@ export const VoiceSettingsPage: React.FC = () => {
           onPersonaSelect={setSelectedPersonaId}
         />
 
-        {/* Accent Selection Carousel */}
-        <AccentCarousel
-          selectedAccentId={selectedAccentId}
-          onAccentSelect={setSelectedAccentId}
-        />
 
         {/* Combined Preview & Save */}
         <CombinedPreview
           selectedVoiceId={selectedVoiceId}
           selectedPersonaId={selectedPersonaId}
-          selectedAccentId={selectedAccentId}
           onSave={handleSave}
           isSaving={isSaving}
         />

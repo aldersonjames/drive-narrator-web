@@ -622,7 +622,7 @@ export const SettingsScreen: React.FC = () => {
                         return (
                           <label
                             key={persona.id}
-                            className={`flex cursor-pointer flex-col gap-2 rounded-2xl border px-3 py-3 text-left transition ${
+                            className={`flex cursor-pointer flex-col gap-3 rounded-2xl border px-4 py-4 text-left transition ${
                               isActive
                                 ? 'border-primary bg-primary/10 text-white'
                                 : 'border-white/10 bg-white/5 text-white/80 hover:border-primary/40 hover:bg-white/10'
@@ -636,10 +636,22 @@ export const SettingsScreen: React.FC = () => {
                               onChange={handlePersonaChange}
                               className="sr-only"
                             />
-                            <span className="text-sm font-semibold text-white">{persona.name}</span>
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm font-semibold text-white">{persona.name}</span>
+                              <span className={`text-xs px-2 py-1 rounded-full ${
+                                persona.category === 'quirky' 
+                                  ? 'bg-purple-500/20 text-purple-300' 
+                                  : 'bg-blue-500/20 text-blue-300'
+                              }`}>
+                                {persona.label}
+                              </span>
+                            </div>
                             <span className="text-xs leading-relaxed text-white/70">
                               {persona.description}
                             </span>
+                 <div className="text-xs italic text-white/60 bg-white/5 rounded-lg p-2">
+                   &ldquo;{persona.previewSentence}&rdquo;
+                 </div>
                           </label>
                         );
                       })}

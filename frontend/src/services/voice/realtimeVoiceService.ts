@@ -89,7 +89,6 @@ export class RealtimeVoiceService {
           transport: 'websocket',
           voiceId: this.config?.voiceId,
           personaId: this.config?.personaId,
-          accentId: this.config?.accentId,
         }),
       });
 

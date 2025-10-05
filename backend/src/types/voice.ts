@@ -59,7 +59,6 @@ export interface VoiceAdapterSessionContext {
   voicePreferences?: {
     voiceId?: string;
     personaId?: string;
-    accentId?: string;
   };
 }
 
@@ -128,6 +127,5 @@ export interface CreateSessionOptions {
   voicePreferences?: {
     voiceId?: string;
     personaId?: string;
-    accentId?: string;
   };
 }

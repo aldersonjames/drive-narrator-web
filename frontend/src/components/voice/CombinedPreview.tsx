@@ -1,11 +1,10 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { OPENAI_VOICES, PERSONALITY_PRESETS, ACCENT_OPTIONS, VOICE_CHARACTERISTICS, PERSONA_SAMPLE_TEXTS } from '../../data/voicePresets';
-import useRealtimeVoice from '../../hooks/useRealtimeVoice';
+import React, { useState } from 'react';
+import { OPENAI_VOICES } from '../../data/voicePresets';
+import { NARRATOR_PERSONAS } from '../../../../shared/data/narratorPersonas';
 
 interface CombinedPreviewProps {
   selectedVoiceId: string;
   selectedPersonaId: string;
-  selectedAccentId: string;
   onSave: () => void;
   isSaving?: boolean;
 }
@@ -13,7 +12,6 @@ interface CombinedPreviewProps {
 export const CombinedPreview: React.FC<CombinedPreviewProps> = ({
   selectedVoiceId,
   selectedPersonaId,
-  selectedAccentId,
   onSave,
   isSaving = false,
 }) => {
@@ -39,19 +37,17 @@ export const CombinedPreview: React.FC<CombinedPreviewProps> = ({
   // });
 
   const selectedVoice = OPENAI_VOICES.find(voice => voice.id === selectedVoiceId);
-  const selectedPersona = PERSONALITY_PRESETS.find(persona => persona.id === selectedPersonaId);
-  const selectedAccent = ACCENT_OPTIONS.find(accent => accent.id === selectedAccentId);
-  // const voiceCharacteristics = VOICE_CHARACTERISTICS[selectedVoiceId];
+  const selectedPersona = NARRATOR_PERSONAS.find(persona => persona.id === selectedPersonaId);
 
   const handlePreview = async () => {
-    if (!selectedVoice || !selectedPersona || !selectedAccent) return;
+    if (!selectedVoice || !selectedPersona) return;
 
     setIsGenerating(true);
     setIsPlaying(false);
 
     try {
-      // Get the persona-specific sample text
-      const personaSampleText = PERSONA_SAMPLE_TEXTS[selectedPersonaId] || PERSONA_SAMPLE_TEXTS['custom'];
+      // Use the persona's preview sentence
+      const personaSampleText = selectedPersona.previewSentence;
       
       // Use backend API for voice preview instead of direct Realtime API
       const response = await fetch('http://localhost:41234/api/voices/preview', {
@@ -62,7 +58,7 @@ export const CombinedPreview: React.FC<CombinedPreviewProps> = ({
         body: JSON.stringify({
           voiceId: selectedVoiceId,
           input: personaSampleText,
-          instructions: `You are a ${selectedPersona.name} with a ${selectedAccent.name} accent. ${selectedPersona.voiceSettings.prompt} ${selectedAccent.prompt}`,
+          instructions: selectedPersona.conversationInstructions,
         }),
       });
 
@@ -108,7 +104,7 @@ export const CombinedPreview: React.FC<CombinedPreviewProps> = ({
   //   }
   // };
 
-  const canPreview = selectedVoice && selectedPersona && selectedAccent;
+  const canPreview = selectedVoice && selectedPersona;
   const canSave = canPreview && !isGenerating && !isSaving;
 
   return (
