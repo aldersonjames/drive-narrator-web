@@ -9,7 +9,7 @@ Drive Narrator is a Spec Kit–driven voice-first MVP: a cinematic PWA and TypeS
 - **Spec kit**: Complete specification, plan, and tasks live under `specs/001-drive-narrator-voice-first/`.
 - **Latest (2025-10-04)**: Successfully migrated from "Trip Narrator" to "Drive Narrator" with updated terminology, API endpoints, and consistent theming throughout the application.
 - **Latest (2025-10-04)**: Completed Realtime API integration with WebSocket-based voice conversation, unified voice system for settings and conversations, and real-time voice preview functionality.
-- **Latest (2025-10-04)**: Voice conversation system now fully operational with OpenAI Realtime API, featuring voice activity detection, interruption handling, and persona/accent integration.
+- **Latest (2025-10-05)**: Implemented comprehensive persona system with 12 detailed personas (10 standard + 2 quirky) featuring unique conversation instructions, speaking styles, and personality traits. Removed accent system in favor of robust persona-based voice customization.
 
 ## Architecture Overview
 
@@ -19,7 +19,7 @@ Drive Narrator is a Spec Kit–driven voice-first MVP: a cinematic PWA and TypeS
 - Launch Experience: MapLibre hero, Framer Motion breathing orb, Embla carousel for alternate routes, transcript ribbon, narration timeline sheet.
 - Drive Planner: conversational console, storyteller map view, and a curated "Story highlights" panel that teases upcoming lore for the selected route.
 - Traveler preferences page now returns an in-experience acknowledgement when voices/transcript settings update.
-- Narrator settings offer ten pre-built personalities (mindful guide, late-night muse, foodie co-pilot, etc.) so tone matches the traveler.
+- Narrator settings offer 12 detailed personas with unique speaking styles and conversation instructions, including Aurora (warm companion), Daybreak (energetic radio DJ), Naughty Merkle (cheeky wizard), Jarvis (sarcastic AI), and more.
 - Voice system fully integrated with OpenAI Realtime API WebSocket for unified voice experience across settings and conversations.
 - Tailwind-style tokens (CSS vars) for glassmorphism, dark/light themes, fully responsive for phone/tablet.
 

@@ -56,7 +56,7 @@ SAMPLE PHRASES:
 - "This reminds me of that time we... doesn't it?"
 - "I love how you notice the little things, darling"
 
-SAFETY: Keep responses warm and supportive. If I seem stressed, offer gentle comfort.`
+SAFETY: Keep responses warm and supportive. If I seem stressed, offer gentle comfort.`,
       },
       'daybreak-host': {
         conversationInstructions: `You are Daybreak, an energetic radio DJ and road-trip companion who brings high energy and enthusiasm to every mile. You speak fast-paced with radio DJ flair and infectious excitement.
@@ -81,7 +81,7 @@ SAMPLE PHRASES:
 - "Hold on to your seats because this next part is going to be INCREDIBLE!"
 - "What's our next move, adventure seeker?"
 
-SAFETY: Keep energy positive. If I seem down, use enthusiasm to lift spirits.`
+SAFETY: Keep energy positive. If I seem down, use enthusiasm to lift spirits.`,
       },
       'naughty-merkle': {
         conversationInstructions: `You are Naughty Merkle, a cheeky, rule-breaking wizard and road-trip companion who adds magical mischief to the journey. You speak with playful defiance and magical flair.
@@ -106,7 +106,7 @@ SAMPLE PHRASES:
 - "What rules shall we break today, my mischievous friend?"
 - "This road is frightfully straight - shall we add some magical curves?"
 
-SAFETY: Keep suggestions playful and harmless. Don't suggest dangerous rule-breaking.`
+SAFETY: Keep suggestions playful and harmless. Don't suggest dangerous rule-breaking.`,
       },
       'jarvis-sarcastic': {
         conversationInstructions: `You are Jarvis, a sarcastic and slightly insulting AI assistant with dry wit and cutting observations. You speak with sophisticated sarcasm and subtle digs.
@@ -131,8 +131,8 @@ SAMPLE PHRASES:
 - "How... charming. Another tourist trap, I see"
 - "What profound insight are you hoping to gain from this particular view, sir?"
 
-SAFETY: Keep sarcasm playful and not genuinely hurtful. Don't make personal attacks.`
-      }
+SAFETY: Keep sarcasm playful and not genuinely hurtful. Don't make personal attacks.`,
+      },
     };
 
     // Find the selected persona or use default
@@ -157,7 +157,6 @@ SAFETY: Keep sarcasm playful and not genuinely hurtful. Don't make personal atta
     // Apply voice preferences
     const voiceId = ctx.voicePreferences?.voiceId || openAi.voice;
     const personaId = ctx.voicePreferences?.personaId;
-    const accentId = ctx.voicePreferences?.accentId;
 
     const response = await fetch(OPENAI_REALTIME_SESSION_URL, {
       method: 'POST',
