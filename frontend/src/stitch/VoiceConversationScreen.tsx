@@ -7,7 +7,7 @@ import { useDrivePlanner } from '../context/DrivePlannerContext';
 
 // const MIN_ALERT_MINUTES = 1;
 // const MAX_ALERT_MINUTES = 25;
-const MIN_VALID_SPEED_MPH = 5;
+// const MIN_VALID_SPEED_MPH = 5;
 const MPH_FROM_MPS = 2.236936;
 
 interface CoordinateSample {
@@ -18,18 +18,37 @@ interface CoordinateSample {
 const VoiceConversationScreen: React.FC = () => {
   // const navigate = useNavigate();
   const location = useLocation();
-  const { /* preferences, loadPreferences, updatePreferences */ } = useDrivePlanner();
+  useDrivePlanner();
 
   // const [alertMinutes, setAlertMinutes] = useState<number>(5);
   const [locationLabel, setLocationLabel] = useState('Locating…');
   // const [position, setPosition] = useState<{ lat: number; lng: number }>();
-  const [heading, setHeading] = useState<number>();
+  const [, setHeading] = useState<number>();
   const [avgSpeedMph, setAvgSpeedMph] = useState<number>(0);
   const speedSamplesRef = useRef<number[]>([]);
   const prevSampleRef = useRef<CoordinateSample | null>(null);
 
   // const profileId = 'traveler-001';
   const isFollowMode = location.search.includes('mode=follow');
+
+  const toRadians = (degrees: number): number => (degrees * Math.PI) / 180;
+  const toDegrees = (radians: number): number => (radians * 180) / Math.PI;
+
+  const haversineDistanceMeters = useCallback(
+    (a: [number, number], b: [number, number]): number => {
+      const lat1 = toRadians(a[1]);
+      const lat2 = toRadians(b[1]);
+      const dLat = toRadians(b[1] - a[1]);
+      const dLng = toRadians(b[0] - a[0]);
+
+      const sinLat = Math.sin(dLat / 2);
+      const sinLng = Math.sin(dLng / 2);
+
+      const h = sinLat * sinLat + Math.cos(lat1) * Math.cos(lat2) * sinLng * sinLng;
+      return 2 * 6_371_000 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h));
+    },
+    [],
+  );
 
   const updateAverageSpeed = useCallback((mph: number) => {
     const samples = speedSamplesRef.current;
@@ -54,7 +73,7 @@ const VoiceConversationScreen: React.FC = () => {
       if (timeSeconds <= 0) return undefined;
       return distanceMeters / timeSeconds;
     },
-    [],
+    [haversineDistanceMeters],
   );
 
   useEffect(() => {
@@ -80,10 +99,12 @@ const VoiceConversationScreen: React.FC = () => {
         // Fallback for heading if not directly available from GPS
         if (prevSampleRef.current) {
           const [prevLng, prevLat] = prevSampleRef.current.coords;
-          const y = Math.sin(toRadians(coords[0] - prevLng)) * Math.cos(toRadians(pos.coords.latitude));
+          const y =
+            Math.sin(toRadians(coords[0] - prevLng)) * Math.cos(toRadians(pos.coords.latitude));
           const x =
             Math.cos(toRadians(prevLat)) * Math.sin(toRadians(pos.coords.latitude)) -
-            Math.sin(toRadians(prevLat)) * Math.cos(toRadians(pos.coords.latitude)) *
+            Math.sin(toRadians(prevLat)) *
+              Math.cos(toRadians(pos.coords.latitude)) *
               Math.cos(toRadians(coords[0] - prevLng));
           const bearing = (toDegrees(Math.atan2(y, x)) + 360) % 360;
           return bearing;
@@ -122,32 +143,16 @@ const VoiceConversationScreen: React.FC = () => {
         navigator.geolocation.clearWatch(watchId);
       }
     };
-  }, [computeSpeedFromSamples, updateAverageSpeed]);
+  }, [computeSpeedFromSamples, updateAverageSpeed, haversineDistanceMeters]);
 
-  const hasValidSpeed = avgSpeedMph >= MIN_VALID_SPEED_MPH;
+  // const hasValidSpeed = avgSpeedMph >= MIN_VALID_SPEED_MPH;
   // const effectiveRadiusMiles = hasValidSpeed ? toMiles(alertMinutes, avgSpeedMph) : undefined;
   // const effectiveHeading = heading ?? 0;
 
-  const toMiles = (minutes: number, mph: number): number => {
-    const hours = minutes / 60;
-    return mph * hours;
-  };
-
-  const toRadians = (degrees: number): number => (degrees * Math.PI) / 180;
-  const toDegrees = (radians: number): number => (radians * 180) / Math.PI;
-
-  const haversineDistanceMeters = (a: [number, number], b: [number, number]): number => {
-    const lat1 = toRadians(a[1]);
-    const lat2 = toRadians(b[1]);
-    const dLat = toRadians(b[1] - a[1]);
-    const dLng = toRadians(b[0] - a[0]);
-
-    const sinLat = Math.sin(dLat / 2);
-    const sinLng = Math.sin(dLng / 2);
-
-    const h = sinLat * sinLat + Math.cos(lat1) * Math.cos(lat2) * sinLng * sinLng;
-    return 2 * 6_371_000 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h));
-  };
+  // const toMiles = (minutes: number, mph: number): number => {
+  //   const hours = minutes / 60;
+  //   return mph * hours;
+  // };
 
   return (
     <div className="flex min-h-screen flex-col bg-background-light dark:bg-background-dark">
@@ -165,7 +170,7 @@ const VoiceConversationScreen: React.FC = () => {
           </div>
           <div className="text-center">
             <h1 className="text-lg font-semibold text-gray-900 dark:text-white">
-              {isFollowMode ? 'Follow Drive' : 'Voice Conversation'}
+              {isFollowMode ? 'Explore Drive' : 'Voice Conversation'}
             </h1>
             <p className="text-xs text-gray-600 dark:text-gray-400">{locationLabel}</p>
           </div>
