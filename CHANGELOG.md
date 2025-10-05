@@ -2,6 +2,40 @@
 
 All notable changes to the Drive Narrator project will be documented in this file.
 
+## [2025-10-05] - Persona Integration & Code Review Fixes
+
+### Enhanced
+
+- **Conversational AI with Persona Presets**
+  - Backend now uses rich persona definitions from `shared/data/narratorPersonas.ts`
+  - System prompts include full persona personality: name, description, conversation instructions
+  - All 15 personas (10 standard + 5 quirky) fully functional in conversations
+  - Each persona has unique speaking style, tone, and conversation rules
+  - Removed accent concept (speaking style is built into each persona)
+
+### Fixed
+
+- **Code Review Feedback**
+  - Fixed async state bug in `useConversationalAI` where newest turn was omitted
+  - Deleted obsolete `openaiWebSocketService.ts` (used unsupported browser headers)
+  - Added SSR/test safety guards to `conversationMemory` localStorage usage
+  - Service gracefully degrades to in-memory only when localStorage unavailable
+
+### Changed
+
+- Voice settings now read/write `preferences.metadata.narrationPersonaId`
+- Backend `conversationController` builds rich system prompts with persona instructions
+- Frontend components properly read persona from metadata
+- Fixed default voice to 'alloy' (was 'nova' which doesn't exist in 3-voice setup)
+
+### Technical Notes
+
+- Voice list intentionally limited to 3 voices (alloy, echo, shimmer) for OpenAI Realtime API compatibility
+- This constraint was explicitly requested and is documented in memory
+- All previously reported critical issues from earlier today have been verified as fixed
+
+---
+
 ## [2025-10-05] - Phase 3 Completion: Voice Conversation System
 
 ### Completed
