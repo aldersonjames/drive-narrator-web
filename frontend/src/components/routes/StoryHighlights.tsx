@@ -9,7 +9,10 @@ export interface StoryHighlightsProps {
 }
 
 export const StoryHighlights: React.FC<StoryHighlightsProps> = ({ route, isLoading }) => {
-  const stories = useMemo(() => buildStoryTimeline(route).slice(0, 3), [route]);
+  const stories = useMemo<ReturnType<typeof buildStoryTimeline>>(
+    () => buildStoryTimeline(route).slice(0, 3),
+    [route],
+  );
 
   if (isLoading) {
     return (

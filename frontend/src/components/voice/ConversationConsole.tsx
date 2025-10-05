@@ -1,8 +1,9 @@
 import React, { useMemo, useState } from 'react';
 
 import type { RouteSummary } from '../../../../shared/types/tripNarrator';
-import { BreathingOrb } from './BreathingOrb';
+import { BreathingOrb, type OrbPhase } from './BreathingOrb';
 import { useVoiceConversation } from '../../hooks/useVoiceConversation';
+import type { ConversationContext } from '../../hooks/useConversationalAI';
 
 export interface ConversationConsoleProps {
   route?: RouteSummary;
@@ -18,14 +19,33 @@ export const ConversationConsole: React.FC<ConversationConsoleProps> = ({
   className,
 }) => {
   const orderedInterests = useMemo(() => interestTags ?? [], [interestTags]);
-  const conversation = useVoiceConversation({ route, interestTags: orderedInterests, profileId });
+
+  const conversationContext = useMemo<ConversationContext | undefined>(() => {
+    if (!route && !orderedInterests.length && !profileId) {
+      return undefined;
+    }
+    return {
+      driveId: profileId,
+      interests: orderedInterests.length ? orderedInterests : undefined,
+    } satisfies ConversationContext;
+  }, [profileId, orderedInterests, route]);
+
+  const conversation = useVoiceConversation({ context: conversationContext });
   const [textInput, setTextInput] = useState('');
+
+  const orbPhase: OrbPhase = conversation.error
+    ? 'error'
+    : conversation.isSpeaking
+      ? 'speaking'
+      : conversation.isListening
+        ? 'listening'
+        : 'idle';
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const trimmed = textInput.trim();
     if (!trimmed) return;
-    void conversation.sendText(trimmed);
+    void conversation.sendMessage(trimmed);
     setTextInput('');
   };
 
@@ -43,10 +63,10 @@ export const ConversationConsole: React.FC<ConversationConsoleProps> = ({
           ) : null}
         </div>
         <BreathingOrb
-          phase={conversation.orbState}
+          phase={orbPhase}
           disabled={conversation.isProcessing}
-          onStartListening={conversation.startVoice}
-          onStop={conversation.stopVoice}
+          onStartListening={conversation.startConversation}
+          onStop={conversation.stopConversation}
           messages={{
             idle: conversation.error ? 'Ready when you are' : 'Ready to listen',
             listening: 'Listening…',
@@ -70,37 +90,20 @@ export const ConversationConsole: React.FC<ConversationConsoleProps> = ({
 
       <div className="conversation-console__log">
         <ul className="conversation-log" aria-live="polite">
-          {conversation.conversation.map((turn) => (
+          {conversation.conversationHistory.map((turn) => (
             <li key={turn.id} data-role={turn.role}>
               <small>
-                {turn.role === 'traveler' ? 'You' : 'Assistant'} ·{' '}
-                {new Date(turn.createdAt).toLocaleTimeString([], {
+                {turn.role === 'user' ? 'You' : 'Assistant'} ·{' '}
+                {new Date(turn.timestamp).toLocaleTimeString([], {
                   hour: '2-digit',
                   minute: '2-digit',
                 })}
               </small>
-              <span>{turn.text}</span>
+              <span>{turn.content}</span>
             </li>
           ))}
         </ul>
       </div>
-
-      {conversation.suggestions.length > 0 && (
-        <div className="conversation-console__suggestions">
-          <p className="conversation-suggestions-title">Suggested prompts</p>
-          <div className="conversation-suggestions">
-            {conversation.suggestions.map((suggestion) => (
-              <button
-                key={suggestion}
-                type="button"
-                onClick={() => void conversation.sendText(suggestion)}
-              >
-                {suggestion}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
 
       <form className="conversation-input conversation-console__footer" onSubmit={handleSubmit}>
         <input

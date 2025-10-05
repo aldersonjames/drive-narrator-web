@@ -51,7 +51,6 @@ const conversationRequestSchema = z.object({
     .object({
       voiceId: z.string(),
       personaId: z.string(),
-      accentId: z.string(),
     })
     .optional(),
 });
@@ -190,7 +189,7 @@ CURRENT CONTEXT:`;
   prompt += `\n\nRESPONSE GUIDELINES:
 - Keep responses conversational and engaging
 - Be concise but informative (2-3 sentences max)
-- Use the specified persona and accent naturally
+- Stay in the specified persona naturally
 - Ask follow-up questions to learn more about user interests
 - Provide specific, actionable information when possible
 - Be enthusiastic about local discoveries

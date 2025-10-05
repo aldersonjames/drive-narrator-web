@@ -38,7 +38,6 @@ interface ConversationalAIOptions {
   voiceSettings?: {
     voiceId: string;
     personaId: string;
-    accentId: string;
   };
 }
 

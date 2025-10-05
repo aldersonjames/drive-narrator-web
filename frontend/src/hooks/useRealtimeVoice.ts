@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import RealtimeVoiceService, { RealtimeVoiceConfig, RealtimeVoiceCallbacks } from '../services/voice/realtimeVoiceService';
+import RealtimeVoiceService, {
+  RealtimeVoiceConfig,
+  RealtimeVoiceCallbacks,
+} from '../services/voice/realtimeVoiceService';
 
 export interface UseRealtimeVoiceOptions {
   voiceId: 'alloy' | 'echo' | 'shimmer';
   personaId: string;
-  accentId: string;
   instructions?: string;
   autoConnect?: boolean;
 }
@@ -14,15 +16,15 @@ export interface UseRealtimeVoiceReturn {
   isConnected: boolean;
   isSpeaking: boolean;
   isConnecting: boolean;
-  
+
   // Audio state
   isRecording: boolean;
   audioLevel: number;
-  
+
   // Transcripts
   userTranscript: string;
   assistantTranscript: string;
-  
+
   // Actions
   connect: () => Promise<void>;
   disconnect: () => void;
@@ -31,20 +33,14 @@ export interface UseRealtimeVoiceReturn {
   sendText: (text: string) => void;
   startSpeaking: () => void;
   stopSpeaking: () => void;
-  
+
   // Error handling
   error: string | null;
   clearError: () => void;
 }
 
 export const useRealtimeVoice = (options: UseRealtimeVoiceOptions): UseRealtimeVoiceReturn => {
-  const {
-    voiceId,
-    personaId,
-    accentId,
-    instructions,
-    autoConnect = false
-  } = options;
+  const { voiceId, personaId, instructions, autoConnect = false } = options;
 
   const serviceRef = useRef<RealtimeVoiceService | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -76,21 +72,23 @@ export const useRealtimeVoice = (options: UseRealtimeVoiceOptions): UseRealtimeV
     };
   }, []);
 
-  // Auto-connect if enabled
-  useEffect(() => {
-    if (autoConnect && serviceRef.current && !isConnected && !isConnecting) {
-      connect();
+  const playAudioChunk = useCallback((audioChunk: ArrayBuffer) => {
+    if (!audioContextRef.current) {
+      audioContextRef.current = new AudioContext();
     }
-  }, [autoConnect, isConnected, isConnecting]);
 
-  // Update service configuration when options change
-  useEffect(() => {
-    if (serviceRef.current && isConnected) {
-      // Reconnect with new configuration
-      disconnect();
-      setTimeout(() => connect(), 100);
-    }
-  }, [voiceId, personaId, accentId, instructions]);
+    audioContextRef.current
+      .decodeAudioData(audioChunk.slice(0))
+      .then((audioBuffer) => {
+        const source = audioContextRef.current!.createBufferSource();
+        source.buffer = audioBuffer;
+        source.connect(audioContextRef.current!.destination);
+        source.start();
+      })
+      .catch((err) => {
+        console.error('Failed to play audio chunk:', err);
+      });
+  }, []);
 
   const connect = useCallback(async () => {
     if (!serviceRef.current || isConnected || isConnecting) return;
@@ -102,8 +100,7 @@ export const useRealtimeVoice = (options: UseRealtimeVoiceOptions): UseRealtimeV
       const config: RealtimeVoiceConfig = {
         voiceId,
         personaId,
-        accentId,
-        instructions
+        instructions,
       };
 
       const callbacks: RealtimeVoiceCallbacks = {
@@ -119,10 +116,14 @@ export const useRealtimeVoice = (options: UseRealtimeVoiceOptions): UseRealtimeV
         onSpeaking: (speaking) => {
           setIsSpeaking(speaking);
         },
-        onTranscript: (transcript) => {
-          // Determine if this is user or assistant transcript based on context
-          // For now, we'll assume it's user input
-          setUserTranscript(prev => prev + transcript);
+        onTranscript: (transcript, role) => {
+          if (role === 'assistant') {
+            setAssistantTranscript(transcript);
+            setUserTranscript('');
+          } else {
+            setUserTranscript(transcript);
+            setAssistantTranscript('');
+          }
         },
         onAudioChunk: (audioChunk) => {
           // Handle audio playback
@@ -131,7 +132,7 @@ export const useRealtimeVoice = (options: UseRealtimeVoiceOptions): UseRealtimeV
         onError: (err) => {
           setError(err.message);
           setIsConnecting(false);
-        }
+        },
       };
 
       await serviceRef.current.connect(config, callbacks);
@@ -139,7 +140,7 @@ export const useRealtimeVoice = (options: UseRealtimeVoiceOptions): UseRealtimeV
       setError(err instanceof Error ? err.message : 'Failed to connect');
       setIsConnecting(false);
     }
-  }, [voiceId, personaId, accentId, instructions, isConnected, isConnecting]);
+  }, [voiceId, personaId, instructions, isConnected, isConnecting, playAudioChunk]);
 
   const disconnect = useCallback(() => {
     if (serviceRef.current) {
@@ -155,13 +156,13 @@ export const useRealtimeVoice = (options: UseRealtimeVoiceOptions): UseRealtimeV
     if (!serviceRef.current || !isConnected || isRecording) return;
 
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ 
+      const stream = await navigator.mediaDevices.getUserMedia({
         audio: {
           sampleRate: 16000,
           channelCount: 1,
           echoCancellation: true,
-          noiseSuppression: true
-        } 
+          noiseSuppression: true,
+        },
       });
 
       // Set up audio analysis for level monitoring
@@ -179,17 +180,17 @@ export const useRealtimeVoice = (options: UseRealtimeVoiceOptions): UseRealtimeV
         if (analyserRef.current && isRecording) {
           const dataArray = new Uint8Array(analyserRef.current.frequencyBinCount);
           analyserRef.current.getByteFrequencyData(dataArray);
-          
+
           const average = dataArray.reduce((sum, value) => sum + value, 0) / dataArray.length;
           setAudioLevel(average / 255);
-          
+
           animationFrameRef.current = requestAnimationFrame(monitorLevel);
         }
       };
 
       // Set up MediaRecorder
       mediaRecorderRef.current = new MediaRecorder(stream, {
-        mimeType: 'audio/webm;codecs=opus'
+        mimeType: 'audio/webm;codecs=opus',
       });
 
       audioChunksRef.current = [];
@@ -213,7 +214,6 @@ export const useRealtimeVoice = (options: UseRealtimeVoiceOptions): UseRealtimeV
       mediaRecorderRef.current.start(100); // Collect data every 100ms
       setIsRecording(true);
       monitorLevel();
-
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to start recording');
     }
@@ -223,21 +223,24 @@ export const useRealtimeVoice = (options: UseRealtimeVoiceOptions): UseRealtimeV
     if (mediaRecorderRef.current && isRecording) {
       mediaRecorderRef.current.stop();
       setIsRecording(false);
-      
+
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
         animationFrameRef.current = null;
       }
-      
+
       setAudioLevel(0);
     }
   }, [isRecording]);
 
-  const sendText = useCallback((text: string) => {
-    if (serviceRef.current && isConnected) {
-      serviceRef.current.sendText(text);
-    }
-  }, [isConnected]);
+  const sendText = useCallback(
+    (text: string) => {
+      if (serviceRef.current && isConnected) {
+        serviceRef.current.sendText(text);
+      }
+    },
+    [isConnected],
+  );
 
   const startSpeaking = useCallback(() => {
     if (serviceRef.current && isConnected) {
@@ -250,23 +253,6 @@ export const useRealtimeVoice = (options: UseRealtimeVoiceOptions): UseRealtimeV
       serviceRef.current.stopSpeaking();
     }
   }, [isConnected]);
-
-  const playAudioChunk = useCallback((audioChunk: ArrayBuffer) => {
-    if (!audioContextRef.current) {
-      audioContextRef.current = new AudioContext();
-    }
-
-    audioContextRef.current.decodeAudioData(audioChunk.slice(0))
-      .then(audioBuffer => {
-        const source = audioContextRef.current!.createBufferSource();
-        source.buffer = audioBuffer;
-        source.connect(audioContextRef.current!.destination);
-        source.start();
-      })
-      .catch(err => {
-        console.error('Failed to play audio chunk:', err);
-      });
-  }, []);
 
   const clearError = useCallback(() => {
     setError(null);
@@ -284,6 +270,27 @@ export const useRealtimeVoice = (options: UseRealtimeVoiceOptions): UseRealtimeV
     };
   }, []);
 
+  // Auto-connect if enabled
+  useEffect(() => {
+    if (autoConnect && !isConnected && !isConnecting) {
+      void connect();
+    }
+  }, [autoConnect, connect, isConnected, isConnecting]);
+
+  // Reconnect when options change
+  useEffect(() => {
+    if (!isConnected) {
+      return;
+    }
+    disconnect();
+    const timer = window.setTimeout(() => {
+      void connect();
+    }, 100);
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [voiceId, personaId, instructions, connect, disconnect, isConnected]);
+
   return {
     isConnected,
     isSpeaking,
@@ -300,7 +307,7 @@ export const useRealtimeVoice = (options: UseRealtimeVoiceOptions): UseRealtimeV
     startSpeaking,
     stopSpeaking,
     error,
-    clearError
+    clearError,
   };
 };
 

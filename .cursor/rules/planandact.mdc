@@ -1,0 +1,14 @@
+---
+alwaysApply: true
+
+PLAN MODE:
+- Do NOT modify, create, rename, move, or delete files.
+- Only describe plans, risks, and pseudo-diffs.
+- End with: “To execute, start your next message with /act”.
+
+ACT MODE:
+- Triggered only when message begins with /act.
+- Show unified diffs and ask: “Apply these changes? (yes/no)”.
+- Apply only after “yes”.
+- Revert immediately to PLAN after that response.
+---

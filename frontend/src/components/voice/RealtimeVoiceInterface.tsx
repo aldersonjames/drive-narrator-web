@@ -26,8 +26,8 @@ export const RealtimeVoiceInterface: React.FC<RealtimeVoiceInterfaceProps> = ({
   const conversationEndRef = useRef<HTMLDivElement>(null);
   const textInputRef = useRef<HTMLInputElement>(null);
 
-  // Get voice settings from preferences
-  const voiceId = preferences?.assistantVoiceId || 'alloy';
+  // Conversation uses the assistant voice/persona selected in settings
+  const assistantVoiceId = preferences?.assistantVoiceId || 'alloy';
   const personaId = preferences?.metadata?.narrationPersonaId || DEFAULT_PERSONA_ID;
 
   const {
@@ -44,7 +44,7 @@ export const RealtimeVoiceInterface: React.FC<RealtimeVoiceInterfaceProps> = ({
     error,
     clearError,
   } = useRealtimeVoice({
-    voiceId: voiceId as 'alloy' | 'echo' | 'shimmer',
+    voiceId: assistantVoiceId as 'alloy' | 'echo' | 'shimmer',
     personaId,
     autoConnect: true,
   });

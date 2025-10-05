@@ -10,7 +10,6 @@ export interface VoiceConversationOptions {
   voiceSettings?: {
     voiceId: string;
     personaId: string;
-    accentId: string;
   };
   onCommand?: (command: VoiceCommand) => void;
   onResponse?: (response: string) => void;
@@ -22,7 +21,7 @@ export interface VoiceConversationOptions {
 export const useVoiceConversation = (options: VoiceConversationOptions = {}) => {
   const {
     context,
-    voiceSettings = { voiceId: 'alloy', personaId: DEFAULT_PERSONA_ID, accentId: 'american' },
+    voiceSettings = { voiceId: 'alloy', personaId: DEFAULT_PERSONA_ID },
     onCommand,
     onResponse,
     onError,

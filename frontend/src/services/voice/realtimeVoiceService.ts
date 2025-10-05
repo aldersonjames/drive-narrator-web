@@ -4,12 +4,11 @@ import { DEFAULT_PERSONA_ID, NARRATOR_PERSONAS } from '../../../../shared/data/n
 export interface RealtimeVoiceConfig {
   voiceId: 'alloy' | 'echo' | 'shimmer';
   personaId: string;
-  accentId: string;
   instructions?: string;
 }
 
 export interface RealtimeVoiceCallbacks {
-  onTranscript?: (transcript: string) => void;
+  onTranscript?: (transcript: string, role: 'user' | 'assistant') => void;
   onAudioChunk?: (audioChunk: ArrayBuffer) => void;
   onError?: (error: Error) => void;
   onConnected?: () => void;
@@ -152,10 +151,10 @@ export class RealtimeVoiceService {
         this.handleAudioComplete();
         break;
       case 'conversation.item.input.transcript':
-        this.handleTranscript(data.transcript);
+        this.handleTranscript(String(data.transcript ?? ''), 'user');
         break;
       case 'conversation.item.output.transcript':
-        this.handleTranscript(data.transcript);
+        this.handleTranscript(String(data.transcript ?? ''), 'assistant');
         break;
       case 'conversation.item.output.audio':
         this.handleAudioChunk(data.audio);
@@ -187,8 +186,8 @@ export class RealtimeVoiceService {
     this.callbacks.onSpeaking?.(false);
   }
 
-  private handleTranscript(transcript: string): void {
-    this.callbacks.onTranscript?.(transcript);
+  private handleTranscript(transcript: string, role: 'user' | 'assistant'): void {
+    this.callbacks.onTranscript?.(transcript, role);
   }
 
   private handleClose(event: CloseEvent): void {
@@ -298,17 +297,12 @@ export class RealtimeVoiceService {
   private buildInstructions(): string {
     if (!this.config) return '';
 
-    const { personaId, accentId, instructions } = this.config;
+    const { personaId, instructions } = this.config;
 
-    // Get persona and accent details from voice presets
+    // Get persona details from voice presets
     const persona = this.getPersonaDetails(personaId);
-    const accent = this.getAccentDetails(accentId);
 
     let instructionText = `You are a drive narrator companion. ${persona.description}`;
-
-    if (accent.description) {
-      instructionText += ` ${accent.description}`;
-    }
 
     if (instructions) {
       instructionText += ` ${instructions}`;
@@ -334,19 +328,6 @@ export class RealtimeVoiceService {
     };
 
     return personas[personaId] || personas[DEFAULT_PERSONA_ID] || personas['aurora-companion'];
-  }
-
-  private getAccentDetails(accentId: string): { description: string } {
-    // This should be imported from your voice presets
-    const accents: Record<string, { description: string }> = {
-      american: { description: 'Speak with a clear American accent.' },
-      british: { description: 'Speak with a refined British accent.' },
-      australian: { description: 'Speak with a friendly Australian accent.' },
-      southern: { description: 'Speak with a warm Southern American accent.' },
-      'new-york': { description: 'Speak with a distinctive New York accent.' },
-    };
-
-    return accents[accentId] || accents['american'];
   }
 
   sendAudio(audioData: ArrayBuffer): void {
