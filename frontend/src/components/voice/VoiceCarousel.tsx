@@ -83,7 +83,7 @@ export const VoiceCarousel: React.FC<VoiceCarouselProps> = ({ selectedVoiceId, o
       {/* Carousel Container */}
       <div
         ref={scrollContainerRef}
-        className="flex overflow-x-auto scrollbar-hide snap-x snap-mandatory gap-4 pb-4"
+        className="flex overflow-x-auto scrollbar-hide snap-x snap-mandatory gap-4 pb-4 pt-2 px-2"
         style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
       >
         {OPENAI_VOICES.map((voice, index) => (
@@ -92,11 +92,7 @@ export const VoiceCarousel: React.FC<VoiceCarouselProps> = ({ selectedVoiceId, o
             ref={(el) => (cardRefs.current[index] = el)}
             className={`
               flex-shrink-0 w-56 min-h-[220px] snap-center cursor-pointer transition-all duration-300
-              ${
-                selectedVoiceId === voice.id
-                  ? 'scale-105 shadow-lg ring-2 ring-blue-500'
-                  : 'scale-100 hover:scale-102'
-              }
+              ${selectedVoiceId === voice.id ? 'scale-105' : 'scale-100 hover:scale-102'}
             `}
             onClick={() => handleVoiceSelect(voice, index)}
             onKeyDown={(e) => {
@@ -111,11 +107,11 @@ export const VoiceCarousel: React.FC<VoiceCarouselProps> = ({ selectedVoiceId, o
           >
             <div
               className={`
-              bg-white dark:bg-gray-800 rounded-xl p-4 shadow-md border-2 transition-all duration-300 relative
+              bg-white dark:bg-gray-800 rounded-xl p-4 border-2 transition-all duration-300 relative
               ${
                 selectedVoiceId === voice.id
-                  ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-                  : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                  ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 shadow-[0_0_20px_rgba(59,130,246,0.5)] dark:shadow-[0_0_25px_rgba(96,165,250,0.6)]'
+                  : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 shadow-md'
               }
             `}
             >
@@ -152,19 +148,6 @@ export const VoiceCarousel: React.FC<VoiceCarouselProps> = ({ selectedVoiceId, o
                   {capitalizeFirst(voice.style)}
                 </div>
               </div>
-
-              {/* Selection Indicator */}
-              {selectedVoiceId === voice.id && (
-                <div className="absolute top-2 right-2 w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
-                  <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                    <path
-                      fillRule="evenodd"
-                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                </div>
-              )}
             </div>
           </div>
         ))}
