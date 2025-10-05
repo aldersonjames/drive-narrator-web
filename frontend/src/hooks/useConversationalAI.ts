@@ -1,5 +1,6 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { VoiceCommand } from './useVoiceCommands';
+import { conversationMemory } from '../services/conversationMemory';
 
 export interface ConversationTurn {
   id: string;
@@ -42,158 +43,175 @@ interface ConversationalAIOptions {
 }
 
 export const useConversationalAI = (options: ConversationalAIOptions = {}) => {
-  const {
-    onResponse,
-    onError,
-    context,
-    voiceSettings,
-  } = options;
+  const { onResponse, onError, context, voiceSettings } = options;
 
   const [isProcessing, setIsProcessing] = useState(false);
   const [conversationHistory, setConversationHistory] = useState<ConversationTurn[]>([]);
   const [lastResponse, setLastResponse] = useState<string>('');
   const abortControllerRef = useRef<AbortController | null>(null);
+  const sessionStartedRef = useRef(false);
 
-  const processCommand = useCallback(async (command: VoiceCommand) => {
-    if (isProcessing) return;
+  // Start conversation session on mount
+  useEffect(() => {
+    if (!sessionStartedRef.current) {
+      const session = conversationMemory.getCurrentSession();
+      if (!session) {
+        conversationMemory.startSession(context);
+      }
+      // Load existing turns from current session
+      const turns = conversationMemory.getRecentTurns(20);
+      if (turns.length > 0) {
+        setConversationHistory(turns);
+      }
+      sessionStartedRef.current = true;
+    }
 
-    setIsProcessing(true);
-    
-    // Add user command to conversation history
-    const userTurn: ConversationTurn = {
-      id: `user-${Date.now()}`,
-      role: 'user',
-      content: command.originalText,
-      timestamp: new Date(),
-      metadata: {
-        command,
-        confidence: command.confidence,
-      },
+    // End session on unmount
+    return () => {
+      if (sessionStartedRef.current) {
+        conversationMemory.endSession();
+        sessionStartedRef.current = false;
+      }
     };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-    setConversationHistory(prev => [...prev, userTurn]);
+  const processCommand = useCallback(
+    async (command: VoiceCommand) => {
+      if (isProcessing) return;
 
-    try {
-      // Create abort controller for this request
-      abortControllerRef.current = new AbortController();
+      setIsProcessing(true);
 
-      const response = await fetch('/api/conversation', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+      // Add user command to conversation history and memory
+      const userTurn = conversationMemory.addTurn({
+        role: 'user',
+        content: command.originalText,
+        metadata: {
+          command,
+          confidence: command.confidence,
+          intent: command.intent,
         },
-        body: JSON.stringify({
-          message: command.originalText,
-          command: command,
-          context: context,
-          conversationHistory: conversationHistory.slice(-10), // Last 10 turns
-          voiceSettings: voiceSettings,
-        }),
-        signal: abortControllerRef.current.signal,
       });
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+      setConversationHistory((prev) => [...prev, userTurn]);
+
+      try {
+        // Create abort controller for this request
+        abortControllerRef.current = new AbortController();
+
+        const response = await fetch('/api/conversation', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            message: command.originalText,
+            command: command,
+            context: context,
+            conversationHistory: conversationHistory.slice(-10), // Last 10 turns
+            voiceSettings: voiceSettings,
+          }),
+          signal: abortControllerRef.current.signal,
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        // Add assistant response to conversation history and memory
+        const assistantTurn = conversationMemory.addTurn({
+          role: 'assistant',
+          content: data.text,
+          metadata: {
+            processingTime: data.processingTime,
+          },
+        });
+
+        setConversationHistory((prev) => [...prev, assistantTurn]);
+        setLastResponse(data.text);
+        onResponse?.(data.text);
+      } catch (error) {
+        if (error instanceof Error && error.name === 'AbortError') {
+          // Request was aborted, don't show error
+          return;
+        }
+
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+        onError?.(errorMessage);
+      } finally {
+        setIsProcessing(false);
+        abortControllerRef.current = null;
       }
+    },
+    [isProcessing, context, conversationHistory, voiceSettings, onResponse, onError],
+  );
 
-      const data = await response.json();
-      
-      // Add assistant response to conversation history
-      const assistantTurn: ConversationTurn = {
-        id: `assistant-${Date.now()}`,
-        role: 'assistant',
-        content: data.text,
-        timestamp: new Date(),
-        metadata: {
-          processingTime: data.processingTime,
-        },
-      };
+  const processMessage = useCallback(
+    async (message: string) => {
+      if (isProcessing) return;
 
-      setConversationHistory(prev => [...prev, assistantTurn]);
-      setLastResponse(data.text);
-      onResponse?.(data.text);
+      setIsProcessing(true);
 
-    } catch (error) {
-      if (error instanceof Error && error.name === 'AbortError') {
-        // Request was aborted, don't show error
-        return;
-      }
-
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      onError?.(errorMessage);
-    } finally {
-      setIsProcessing(false);
-      abortControllerRef.current = null;
-    }
-  }, [isProcessing, context, conversationHistory, voiceSettings, onResponse, onError]);
-
-  const processMessage = useCallback(async (message: string) => {
-    if (isProcessing) return;
-
-    setIsProcessing(true);
-
-    // Add user message to conversation history
-    const userTurn: ConversationTurn = {
-      id: `user-${Date.now()}`,
-      role: 'user',
-      content: message,
-      timestamp: new Date(),
-    };
-
-    setConversationHistory(prev => [...prev, userTurn]);
-
-    try {
-      // Create abort controller for this request
-      abortControllerRef.current = new AbortController();
-
-      const response = await fetch('/api/conversation', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          message,
-          context: context,
-          conversationHistory: conversationHistory.slice(-10), // Last 10 turns
-          voiceSettings: voiceSettings,
-        }),
-        signal: abortControllerRef.current.signal,
+      // Add user message to conversation history and memory
+      const userTurn = conversationMemory.addTurn({
+        role: 'user',
+        content: message,
       });
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+      setConversationHistory((prev) => [...prev, userTurn]);
+
+      try {
+        // Create abort controller for this request
+        abortControllerRef.current = new AbortController();
+
+        const response = await fetch('/api/conversation', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            message,
+            context: context,
+            conversationHistory: conversationHistory.slice(-10), // Last 10 turns
+            voiceSettings: voiceSettings,
+          }),
+          signal: abortControllerRef.current.signal,
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        // Add assistant response to conversation history and memory
+        const assistantTurn = conversationMemory.addTurn({
+          role: 'assistant',
+          content: data.text,
+          metadata: {
+            processingTime: data.processingTime,
+          },
+        });
+
+        setConversationHistory((prev) => [...prev, assistantTurn]);
+        setLastResponse(data.text);
+        onResponse?.(data.text);
+      } catch (error) {
+        if (error instanceof Error && error.name === 'AbortError') {
+          // Request was aborted, don't show error
+          return;
+        }
+
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+        onError?.(errorMessage);
+      } finally {
+        setIsProcessing(false);
+        abortControllerRef.current = null;
       }
-
-      const data = await response.json();
-      
-      // Add assistant response to conversation history
-      const assistantTurn: ConversationTurn = {
-        id: `assistant-${Date.now()}`,
-        role: 'assistant',
-        content: data.text,
-        timestamp: new Date(),
-        metadata: {
-          processingTime: data.processingTime,
-        },
-      };
-
-      setConversationHistory(prev => [...prev, assistantTurn]);
-      setLastResponse(data.text);
-      onResponse?.(data.text);
-
-    } catch (error) {
-      if (error instanceof Error && error.name === 'AbortError') {
-        // Request was aborted, don't show error
-        return;
-      }
-
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      onError?.(errorMessage);
-    } finally {
-      setIsProcessing(false);
-      abortControllerRef.current = null;
-    }
-  }, [isProcessing, context, conversationHistory, voiceSettings, onResponse, onError]);
+    },
+    [isProcessing, context, conversationHistory, voiceSettings, onResponse, onError],
+  );
 
   const abortRequest = useCallback(() => {
     if (abortControllerRef.current) {
@@ -204,16 +222,29 @@ export const useConversationalAI = (options: ConversationalAIOptions = {}) => {
   const clearHistory = useCallback(() => {
     setConversationHistory([]);
     setLastResponse('');
+    conversationMemory.clearAll();
   }, []);
 
   const getConversationSummary = useCallback(() => {
     return {
       totalTurns: conversationHistory.length,
-      userTurns: conversationHistory.filter(turn => turn.role === 'user').length,
-      assistantTurns: conversationHistory.filter(turn => turn.role === 'assistant').length,
+      userTurns: conversationHistory.filter((turn) => turn.role === 'user').length,
+      assistantTurns: conversationHistory.filter((turn) => turn.role === 'assistant').length,
       lastActivity: conversationHistory[conversationHistory.length - 1]?.timestamp,
     };
   }, [conversationHistory]);
+
+  const getUserLearning = useCallback(() => {
+    return conversationMemory.getUserPreferences();
+  }, []);
+
+  const getAdaptedContext = useCallback((baseInstructions: string) => {
+    return conversationMemory.getAdaptedInstructions(baseInstructions);
+  }, []);
+
+  const searchConversationHistory = useCallback((query: string) => {
+    return conversationMemory.searchHistory(query);
+  }, []);
 
   return {
     isProcessing,
@@ -224,5 +255,8 @@ export const useConversationalAI = (options: ConversationalAIOptions = {}) => {
     abortRequest,
     clearHistory,
     getConversationSummary,
+    getUserLearning,
+    getAdaptedContext,
+    searchConversationHistory,
   };
 };

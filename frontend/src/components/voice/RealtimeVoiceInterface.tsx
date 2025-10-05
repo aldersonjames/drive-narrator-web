@@ -20,8 +20,11 @@ export const RealtimeVoiceInterface: React.FC<RealtimeVoiceInterfaceProps> = ({
       timestamp: Date;
     }>
   >([]);
+  const [showFallbackInput, setShowFallbackInput] = useState(false);
+  const [voiceFailureCount, setVoiceFailureCount] = useState(0);
 
   const conversationEndRef = useRef<HTMLDivElement>(null);
+  const textInputRef = useRef<HTMLInputElement>(null);
 
   // Get voice settings from preferences
   const voiceId = preferences?.assistantVoiceId || 'alloy';
@@ -79,6 +82,25 @@ export const RealtimeVoiceInterface: React.FC<RealtimeVoiceInterfaceProps> = ({
     }
   }, [assistantTranscript]);
 
+  // Auto-show fallback input on repeated voice failures
+  useEffect(() => {
+    if (error && voiceFailureCount >= 2) {
+      setShowFallbackInput(true);
+      // Focus the text input for immediate typing
+      setTimeout(() => textInputRef.current?.focus(), 100);
+    }
+  }, [error, voiceFailureCount]);
+
+  // Track voice failures
+  useEffect(() => {
+    if (error) {
+      setVoiceFailureCount((prev) => prev + 1);
+    } else if (isConnected && isRecording) {
+      // Reset failure count on successful voice activity
+      setVoiceFailureCount(0);
+    }
+  }, [error, isConnected, isRecording]);
+
   const handleStartListening = () => {
     if (!isConnected) {
       connect();
@@ -86,12 +108,10 @@ export const RealtimeVoiceInterface: React.FC<RealtimeVoiceInterfaceProps> = ({
     }
 
     startRecording();
-    setIsListening(true);
   };
 
   const handleStopListening = () => {
     stopRecording();
-    setIsListening(false);
   };
 
   const handleSendText = (text: string) => {
@@ -201,10 +221,10 @@ export const RealtimeVoiceInterface: React.FC<RealtimeVoiceInterfaceProps> = ({
         )}
       </div>
 
-      {/* Error Display */}
+      {/* Error Display with Fallback Suggestion */}
       {error && (
         <div className="mx-4 mb-4 p-3 bg-red-100 dark:bg-red-900/30 border border-red-300 dark:border-red-700 rounded-lg">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between mb-2">
             <p className="text-red-700 dark:text-red-300 text-sm">{error}</p>
             <button
               onClick={clearError}
@@ -213,22 +233,43 @@ export const RealtimeVoiceInterface: React.FC<RealtimeVoiceInterfaceProps> = ({
               ✕
             </button>
           </div>
+          {voiceFailureCount >= 2 && (
+            <p className="text-blue-700 dark:text-blue-300 text-xs mt-1">
+              💡 Having trouble with voice? Try typing your message below instead.
+            </p>
+          )}
         </div>
       )}
 
       {/* Text Input Controls */}
-      <div className="p-4 border-t border-gray-200 dark:border-gray-700">
+      <div
+        className={`p-4 border-t border-gray-200 dark:border-gray-700 ${
+          showFallbackInput
+            ? 'bg-blue-50 dark:bg-blue-900/10 border-blue-300 dark:border-blue-700'
+            : ''
+        }`}
+      >
+        {showFallbackInput && (
+          <p className="text-xs text-blue-600 dark:text-blue-400 mb-2">
+            ✍️ Text mode active - Type your message below
+          </p>
+        )}
         <div className="flex gap-2">
           <input
+            ref={textInputRef}
             type="text"
-            placeholder="Or type a message..."
+            placeholder={showFallbackInput ? 'Type your message here...' : 'Or type a message...'}
             onKeyPress={handleKeyPress}
             disabled={!isConnected}
-            className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+            className={`flex-1 px-3 py-2 border rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 disabled:opacity-50 transition-all ${
+              showFallbackInput
+                ? 'border-blue-400 dark:border-blue-500 focus:ring-blue-600'
+                : 'border-gray-300 dark:border-gray-600 focus:ring-blue-500'
+            }`}
           />
           <button
             onClick={() => {
-              const input = document.querySelector('input[type="text"]') as HTMLInputElement;
+              const input = textInputRef.current;
               if (input?.value) {
                 handleSendText(input.value);
                 input.value = '';
@@ -240,6 +281,17 @@ export const RealtimeVoiceInterface: React.FC<RealtimeVoiceInterfaceProps> = ({
             Send
           </button>
         </div>
+        {showFallbackInput && (
+          <button
+            onClick={() => {
+              setShowFallbackInput(false);
+              setVoiceFailureCount(0);
+            }}
+            className="mt-2 text-xs text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 underline"
+          >
+            Switch back to voice mode
+          </button>
+        )}
       </div>
     </div>
   );

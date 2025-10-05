@@ -15,6 +15,9 @@ export const VoiceConversationInterface: React.FC<VoiceConversationInterfaceProp
 }) => {
   const { preferences } = useDrivePlanner();
   const [isInitialized, setIsInitialized] = useState(false);
+  const [showFallbackInput, setShowFallbackInput] = useState(false);
+  const [voiceFailureCount, setVoiceFailureCount] = useState(0);
+  const textInputRef = React.useRef<HTMLInputElement>(null);
 
   const voiceConversation = useVoiceConversation({
     voiceSettings: {
@@ -45,6 +48,25 @@ export const VoiceConversationInterface: React.FC<VoiceConversationInterfaceProp
       voiceConversation.startConversation();
     }
   }, [isInitialized, voiceConversation]);
+
+  // Auto-show fallback input on repeated voice failures
+  useEffect(() => {
+    if (voiceConversation.error && voiceFailureCount >= 2) {
+      setShowFallbackInput(true);
+      // Focus the text input for immediate typing
+      setTimeout(() => textInputRef.current?.focus(), 100);
+    }
+  }, [voiceConversation.error, voiceFailureCount]);
+
+  // Track voice failures
+  useEffect(() => {
+    if (voiceConversation.error) {
+      setVoiceFailureCount((prev) => prev + 1);
+    } else if (voiceConversation.isListening) {
+      // Reset failure count on successful voice activity
+      setVoiceFailureCount(0);
+    }
+  }, [voiceConversation.error, voiceConversation.isListening]);
 
   const handleStartConversation = () => {
     voiceConversation.startConversation();
@@ -107,7 +129,14 @@ export const VoiceConversationInterface: React.FC<VoiceConversationInterfaceProp
           </span>
         </div>
         {voiceConversation.error && (
-          <p className="text-sm text-red-600 dark:text-red-400">{voiceConversation.error}</p>
+          <div className="mt-2 p-3 bg-red-100 dark:bg-red-900/30 border border-red-300 dark:border-red-700 rounded-lg max-w-md mx-auto">
+            <p className="text-sm text-red-600 dark:text-red-400">{voiceConversation.error}</p>
+            {voiceFailureCount >= 2 && (
+              <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                💡 Having trouble with voice? Try typing your message below instead.
+              </p>
+            )}
+          </div>
         )}
       </div>
 
@@ -155,12 +184,28 @@ export const VoiceConversationInterface: React.FC<VoiceConversationInterfaceProp
         )}
 
         {/* Manual Input */}
-        <div className="w-full max-w-md">
+        <div
+          className={`w-full max-w-md p-3 rounded-lg transition-all ${
+            showFallbackInput
+              ? 'bg-blue-50 dark:bg-blue-900/10 border-2 border-blue-300 dark:border-blue-700'
+              : ''
+          }`}
+        >
+          {showFallbackInput && (
+            <p className="text-xs text-blue-600 dark:text-blue-400 mb-2">
+              ✍️ Text mode active - Type your message below
+            </p>
+          )}
           <div className="flex space-x-2">
             <input
+              ref={textInputRef}
               type="text"
-              placeholder="Type a message..."
-              className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white"
+              placeholder={showFallbackInput ? 'Type your message here...' : 'Type a message...'}
+              className={`flex-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 dark:bg-gray-800 dark:text-white transition-all ${
+                showFallbackInput
+                  ? 'border-blue-400 dark:border-blue-500 focus:ring-blue-600'
+                  : 'border-gray-300 dark:border-gray-600 focus:ring-blue-500'
+              }`}
               onKeyPress={(e) => {
                 if (e.key === 'Enter') {
                   handleSendMessage(e.currentTarget.value);
@@ -169,9 +214,9 @@ export const VoiceConversationInterface: React.FC<VoiceConversationInterfaceProp
               }}
             />
             <button
-              onClick={(e) => {
-                const input = e.currentTarget.previousElementSibling as HTMLInputElement;
-                if (input.value) {
+              onClick={() => {
+                const input = textInputRef.current;
+                if (input?.value) {
                   handleSendMessage(input.value);
                   input.value = '';
                 }
@@ -181,6 +226,17 @@ export const VoiceConversationInterface: React.FC<VoiceConversationInterfaceProp
               Send
             </button>
           </div>
+          {showFallbackInput && (
+            <button
+              onClick={() => {
+                setShowFallbackInput(false);
+                setVoiceFailureCount(0);
+              }}
+              className="mt-2 text-xs text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 underline"
+            >
+              Switch back to voice mode
+            </button>
+          )}
         </div>
       </div>
 
