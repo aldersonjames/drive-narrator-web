@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useVoiceConversation } from '../../hooks/useVoiceConversation';
 import { useDrivePlanner } from '../../context/DrivePlannerContext';
+import { DEFAULT_PERSONA_ID } from '../../../../shared/data/narratorPersonas';
 import BreathingOrb from './BreathingOrb';
 
 interface VoiceConversationInterfaceProps {
   className?: string;
-  onCommand?: (command: any) => void;
+  onCommand?: (command: unknown) => void;
 }
 
 export const VoiceConversationInterface: React.FC<VoiceConversationInterfaceProps> = ({
@@ -18,7 +19,7 @@ export const VoiceConversationInterface: React.FC<VoiceConversationInterfaceProp
   const voiceConversation = useVoiceConversation({
     voiceSettings: {
       voiceId: preferences?.assistantVoiceId || 'alloy',
-      personaId: preferences?.narrationPersonaId || 'local-expert',
+      personaId: preferences?.narrationPersonaId || DEFAULT_PERSONA_ID,
       accentId: preferences?.narrationAccentId || 'american',
     },
     context: {
@@ -43,7 +44,7 @@ export const VoiceConversationInterface: React.FC<VoiceConversationInterfaceProp
       // Start conversation automatically
       voiceConversation.startConversation();
     }
-  }, [isInitialized, voiceConversation.isSupported, voiceConversation.startConversation]);
+  }, [isInitialized, voiceConversation]);
 
   const handleStartConversation = () => {
     voiceConversation.startConversation();
@@ -81,7 +82,8 @@ export const VoiceConversationInterface: React.FC<VoiceConversationInterfaceProp
             Voice Not Supported
           </h3>
           <p className="text-gray-600 dark:text-gray-400 mb-4">
-            Your browser doesn't support voice recognition. Please use a modern browser like Chrome or Edge.
+            Your browser doesn&apos;t support voice recognition. Please use a modern browser like
+            Chrome or Edge.
           </p>
           <button
             onClick={handleStartConversation}
@@ -105,9 +107,7 @@ export const VoiceConversationInterface: React.FC<VoiceConversationInterfaceProp
           </span>
         </div>
         {voiceConversation.error && (
-          <p className="text-sm text-red-600 dark:text-red-400">
-            {voiceConversation.error}
-          </p>
+          <p className="text-sm text-red-600 dark:text-red-400">{voiceConversation.error}</p>
         )}
       </div>
 
@@ -187,9 +187,7 @@ export const VoiceConversationInterface: React.FC<VoiceConversationInterfaceProp
       {/* Transcript */}
       {voiceConversation.transcript && (
         <div className="mt-6 w-full max-w-md">
-          <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            You said:
-          </h4>
+          <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">You said:</h4>
           <p className="text-sm text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 p-3 rounded-lg">
             {voiceConversation.transcript}
           </p>

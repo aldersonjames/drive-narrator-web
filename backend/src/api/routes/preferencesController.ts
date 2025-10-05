@@ -6,7 +6,7 @@ import type {
   PreferencesUpdateInput,
 } from '../../services/preferences/preferencesService';
 import type { PrivacyContext } from '../middleware/privacyMiddleware';
-import { DEFAULT_VOICES } from './voicesController';
+import { DEFAULT_VOICES } from '../../../../shared/data/voices';
 import type { PoiProviderId, ProviderCapabilityMap } from '../../../../shared/types/tripNarrator';
 import { DEFAULT_PERSONA_ID, NARRATOR_PERSONAS } from '../../../../shared/data/narratorPersonas';
 import { validate } from '../../utils/validation';

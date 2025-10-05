@@ -2,7 +2,7 @@ import { Router, Response } from 'express';
 import crypto from 'node:crypto';
 import { z } from 'zod';
 
-import type { DrivesRepository } from '../../db/repositories/drivesRepository';
+import type { DrivesRepository } from '../../db/repositories/tripsRepository';
 import type { RouteOptionsRepository } from '../../db/repositories/routeOptionsRepository';
 import type { PointsOfInterestRepository } from '../../db/repositories/pointsOfInterestRepository';
 import type { NarrationSessionsRepository } from '../../db/repositories/narrationSessionsRepository';
@@ -121,7 +121,7 @@ export const createDrivesRouter = (deps: Dependencies): Router => {
   });
 
   router.post('/', async (req, res) => {
-    const payload = validate(createTripSchema, {
+    const payload = validate(createDriveSchema, {
       profileId: req.body?.profileId,
       origin: req.body?.origin,
       destination: req.body?.destination,

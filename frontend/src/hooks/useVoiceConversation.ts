@@ -1,4 +1,5 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect } from 'react';
+import { DEFAULT_PERSONA_ID } from '../../../shared/data/narratorPersonas';
 import { useVoiceRecognition } from './useVoiceRecognition';
 import { useVoiceCommands, VoiceCommand } from './useVoiceCommands';
 import { useConversationalAI, ConversationContext } from './useConversationalAI';
@@ -21,7 +22,7 @@ export interface VoiceConversationOptions {
 export const useVoiceConversation = (options: VoiceConversationOptions = {}) => {
   const {
     context,
-    voiceSettings = { voiceId: 'alloy', personaId: 'local-expert', accentId: 'american' },
+    voiceSettings = { voiceId: 'alloy', personaId: DEFAULT_PERSONA_ID, accentId: 'american' },
     onCommand,
     onResponse,
     onError,
@@ -32,7 +33,6 @@ export const useVoiceConversation = (options: VoiceConversationOptions = {}) => 
   const [isActive, setIsActive] = useState(false);
   const [isAwake, setIsAwake] = useState(false);
   const [lastActivity, setLastActivity] = useState<Date | null>(null);
-  const conversationRef = useRef<HTMLDivElement>(null);
 
   // Voice recognition
   const voiceRecognition = useVoiceRecognition({
@@ -129,12 +129,15 @@ export const useVoiceConversation = (options: VoiceConversationOptions = {}) => 
     }
   }, [isActive, voiceRecognition, voiceResponse]);
 
-  const sendMessage = useCallback((message: string) => {
-    if (!isActive) return;
-    
-    setLastActivity(new Date());
-    conversationalAI.processMessage(message);
-  }, [isActive, conversationalAI]);
+  const sendMessage = useCallback(
+    (message: string) => {
+      if (!isActive) return;
+
+      setLastActivity(new Date());
+      conversationalAI.processMessage(message);
+    },
+    [isActive, conversationalAI],
+  );
 
   const clearHistory = useCallback(() => {
     conversationalAI.clearHistory();
@@ -157,11 +160,10 @@ export const useVoiceConversation = (options: VoiceConversationOptions = {}) => 
     isActive,
     isAwake,
     voiceRecognition.isListening,
-    voiceResponse.isSpeaking,
+    voiceResponse,
     conversationalAI.isProcessing,
-    lastActivity,
     conversationalAI.conversationHistory.length,
-    voiceResponse.getQueueLength,
+    lastActivity,
   ]);
 
   const getConversationSummary = useCallback(() => {

@@ -4,15 +4,16 @@ import { useDrivePlanner } from '../context/DrivePlannerContext';
 import { VoiceCarousel } from '../components/voice/VoiceCarousel';
 import { PersonaCarousel } from '../components/voice/PersonaCarousel';
 import { CombinedPreview } from '../components/voice/CombinedPreview';
+import { DEFAULT_PERSONA_ID } from '../../../shared/data/narratorPersonas';
 
 const DEFAULT_PROFILE_ID = 'traveler-001';
 
 export const VoiceSettingsPage: React.FC = () => {
   const navigate = useNavigate();
   const { preferences, loadPreferences, updatePreferences } = useDrivePlanner();
-  
+
   const [selectedVoiceId, setSelectedVoiceId] = useState<string>('nova');
-  const [selectedPersonaId, setSelectedPersonaId] = useState<string>('local-expert');
+  const [selectedPersonaId, setSelectedPersonaId] = useState<string>(DEFAULT_PERSONA_ID);
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
@@ -47,7 +48,6 @@ export const VoiceSettingsPage: React.FC = () => {
       if (savedPersonaId) {
         setSelectedPersonaId(savedPersonaId);
       }
-
     }
   }, [preferences]);
 
@@ -56,7 +56,7 @@ export const VoiceSettingsPage: React.FC = () => {
     setSaveMessage('');
 
     try {
-      await updatePreferences({
+      await updatePreferences(profileId, {
         assistantVoiceId: selectedVoiceId,
         narrationVoiceId: selectedVoiceId,
         metadata: {
@@ -64,7 +64,7 @@ export const VoiceSettingsPage: React.FC = () => {
           narrationPersonaId: selectedPersonaId,
         },
       });
-      
+
       setSaveMessage('Voice settings saved successfully!');
       setTimeout(() => {
         navigate('/settings');
@@ -98,13 +98,25 @@ export const VoiceSettingsPage: React.FC = () => {
               onClick={() => navigate('/settings')}
               className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
             >
-              <svg className="w-6 h-6 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              <svg
+                className="w-6 h-6 text-gray-600 dark:text-gray-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M15 19l-7-7 7-7"
+                />
               </svg>
             </button>
             <div>
               <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Voice Settings</h1>
-              <p className="text-gray-600 dark:text-gray-400">Choose your drive narrator&apos;s voice and personality</p>
+              <p className="text-gray-600 dark:text-gray-400">
+                Choose your drive narrator&apos;s voice and personality
+              </p>
             </div>
           </div>
         </div>
@@ -112,17 +124,13 @@ export const VoiceSettingsPage: React.FC = () => {
 
       <div className="max-w-6xl mx-auto px-4 py-8 space-y-12">
         {/* Voice Selection Carousel */}
-        <VoiceCarousel
-          selectedVoiceId={selectedVoiceId}
-          onVoiceSelect={setSelectedVoiceId}
-        />
+        <VoiceCarousel selectedVoiceId={selectedVoiceId} onVoiceSelect={setSelectedVoiceId} />
 
         {/* Persona Selection Carousel */}
         <PersonaCarousel
           selectedPersonaId={selectedPersonaId}
           onPersonaSelect={setSelectedPersonaId}
         />
-
 
         {/* Combined Preview & Save */}
         <CombinedPreview
@@ -134,11 +142,13 @@ export const VoiceSettingsPage: React.FC = () => {
 
         {/* Save Message */}
         {saveMessage && (
-          <div className={`text-center text-sm ${
-            saveMessage.includes('success') 
-              ? 'text-green-600 dark:text-green-400' 
-              : 'text-red-600 dark:text-red-400'
-          }`}>
+          <div
+            className={`text-center text-sm ${
+              saveMessage.includes('success')
+                ? 'text-green-600 dark:text-green-400'
+                : 'text-red-600 dark:text-red-400'
+            }`}
+          >
             {saveMessage}
           </div>
         )}

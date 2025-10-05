@@ -2,6 +2,58 @@
 
 All notable changes to the Drive Narrator project will be documented in this file.
 
+## [2025-10-05] - Critical Fixes and Code Quality Improvements
+
+### Fixed
+
+#### Build Errors
+
+- **drivesController.ts**: Fixed incorrect import from nonexistent `drivesRepository` to `tripsRepository`
+- **memoryRepositories.ts**: Fixed incorrect import from nonexistent `drivesRepository` to `tripsRepository`
+- **drivesController.ts**: Fixed schema validation using `createDriveSchema` instead of `createTripSchema`
+
+#### API Integration Issues
+
+- **voicePreviewController.ts**: Removed unsupported `instructions` field from OpenAI TTS API call
+- **CombinedPreview.tsx**: Fixed hardcoded localhost URL, now uses relative path `/api/voices/preview`
+- **realtimeVoiceService.ts**: Fixed WebSocket connection format to match OpenAI Realtime API docs
+  - Updated URL to `wss://api.openai.com/v1/realtime?model=${model}`
+  - Fixed subprotocols array: `['realtime', 'openai-insecure-api-key.${token}', 'openai-beta.realtime-v1']`
+  - Removed api_key query parameter
+- **VoiceSettingsPage.tsx**: Fixed `updatePreferences` call signature (now passes profileId as first argument)
+
+#### Data Consistency
+
+- **openaiAdapter.ts**: Replaced hardcoded persona map with import from `shared/data/narratorPersonas`
+- **realtimeVoiceService.ts**: Updated default persona from stale 'local-expert' to `DEFAULT_PERSONA_ID`
+- **useVoiceConversation.ts**: Updated default persona to use `DEFAULT_PERSONA_ID`
+- **VoiceSettingsPage.tsx**: Updated initial persona selection to use `DEFAULT_PERSONA_ID`
+- **RealtimeVoiceInterface.tsx**: Updated default persona to use `DEFAULT_PERSONA_ID`
+- **VoiceConversationInterface.tsx**: Updated default persona to use `DEFAULT_PERSONA_ID`
+
+#### Pre-existing Issues
+
+- **memoryRepositories.ts**: Fixed 8 linter errors related to `drive_id`/`driveId` vs `trip_id`/`tripId` field naming
+
+### Added
+
+- **shared/data/voices.ts**: Centralized voice catalog as single source of truth for voice options
+  - Contains only 3 voices compatible with OpenAI Realtime API: alloy, echo, shimmer
+  - Exports `DEFAULT_VOICES` and `DEFAULT_VOICE_ID` constants
+
+### Changed
+
+- **voicesController.ts**: Now imports `DEFAULT_VOICES` from shared location instead of defining locally
+- **preferencesController.ts**: Updated to import `DEFAULT_VOICES` from shared location
+- Voice system locked to 3 voices (alloy, echo, shimmer) for OpenAI Realtime API compatibility
+
+### Technical Details
+
+- **Architecture**: Maintained OpenAI Realtime API (WebSocket) for voice conversations
+- **Voice Preview**: Uses TTS API for quick previews, Realtime API for conversations
+- **Testing**: All fixes verified via browser-based smoke testing
+- **Linter**: All TypeScript linter errors resolved
+
 ## [2025-10-05] - Comprehensive Persona System
 
 ### Added

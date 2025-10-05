@@ -3,7 +3,7 @@ import type {
   TravelerProfileCreate,
   TravelerProfileUpdate,
 } from '../../db/repositories/travelerProfilesRepository';
-import type { DriveRecord, DriveCreate, DriveUpdate } from '../../db/repositories/drivesRepository';
+import type { DriveRecord, DriveCreate, DriveUpdate } from '../../db/repositories/tripsRepository';
 import type {
   RouteOptionRecord,
   RouteOptionCreate,
@@ -160,10 +160,10 @@ export class InMemoryRouteOptionsRepository {
 
   async insertMany(values: RouteOptionCreate[]): Promise<void> {
     values.forEach((value) => {
-      const existing = this.routeOptions.get(value.driveId) ?? [];
+      const existing = this.routeOptions.get(value.tripId) ?? [];
       const record: RouteOptionRecord = {
         route_id: value.routeId,
-        drive_id: value.driveId,
+        trip_id: value.tripId,
         source: value.source,
         polyline: value.polyline,
         duration_minutes: value.durationMinutes,
@@ -173,7 +173,7 @@ export class InMemoryRouteOptionsRepository {
         warnings: JSON.stringify(value.warnings ?? []),
         created_at: value.createdAt ?? new Date().toISOString(),
       };
-      this.routeOptions.set(value.driveId, [...existing, record]);
+      this.routeOptions.set(value.tripId, [...existing, record]);
     });
   }
 
@@ -228,7 +228,7 @@ export class InMemoryNarrationSessionsRepository {
     const now = new Date().toISOString();
     const record: NarrationSessionRecord = {
       session_id: session.sessionId,
-      drive_id: session.driveId,
+      trip_id: session.tripId,
       profile_id: session.profileId,
       status: session.status ?? 'scheduled',
       started_at: session.startedAt ?? null,
@@ -246,7 +246,7 @@ export class InMemoryNarrationSessionsRepository {
   async findActiveByTrip(driveId: string): Promise<NarrationSessionRecord[]> {
     return Array.from(this.sessions.values()).filter(
       (record) =>
-        record.drive_id === driveId && !['completed', 'pending_deletion'].includes(record.status),
+        record.trip_id === driveId && !['completed', 'pending_deletion'].includes(record.status),
     );
   }
 
@@ -272,7 +272,7 @@ export class InMemoryNarrationSessionsRepository {
 
   async deleteByTripId(driveId: string): Promise<void> {
     Array.from(this.sessions.values()).forEach((session) => {
-      if (session.drive_id === driveId) {
+      if (session.trip_id === driveId) {
         session.status = 'pending_deletion';
         session.updated_at = new Date().toISOString();
         this.sessions.set(session.session_id, session);

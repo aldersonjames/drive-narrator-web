@@ -1,4 +1,5 @@
 import { logger } from '../../utils/logger';
+import { DEFAULT_PERSONA_ID } from '../../../../shared/data/narratorPersonas';
 
 export interface RealtimeVoiceConfig {
   voiceId: 'alloy' | 'echo' | 'shimmer';
@@ -48,18 +49,21 @@ export class RealtimeVoiceService {
     this.callbacks = callbacks;
 
     try {
-      // Get OpenAI API key from environment or user settings
-      const apiKey = await this.getApiKey();
-      if (!apiKey) {
-        throw new Error(
-          'OpenAI API key not available in browser environment. Please configure voice settings.',
-        );
+      // Get ephemeral token from backend
+      const ephemeralToken = await this.getApiKey();
+      if (!ephemeralToken) {
+        throw new Error('Failed to obtain ephemeral token. Please check voice settings.');
       }
 
-      // Create WebSocket connection to OpenAI Realtime API using session data
-      const model = this.sessionData?.session?.model || 'gpt-realtime';
-      const wsUrl = `wss://api.openai.com/v1/realtime?model=${model}&api_key=${apiKey}`;
-      this.ws = new WebSocket(wsUrl);
+      // Create WebSocket connection to OpenAI Realtime API with proper subprotocols
+      const model = this.sessionData?.model || 'gpt-4o-realtime-preview-2024-10-01';
+      const wsUrl = `wss://api.openai.com/v1/realtime?model=${model}`;
+      const protocols = [
+        'realtime',
+        `openai-insecure-api-key.${ephemeralToken}`,
+        'openai-beta.realtime-v1',
+      ];
+      this.ws = new WebSocket(wsUrl, protocols);
 
       this.ws.onopen = this.handleOpen.bind(this);
       this.ws.onmessage = this.handleMessage.bind(this);
@@ -68,6 +72,7 @@ export class RealtimeVoiceService {
 
       logger.info('RealtimeVoiceService: Connecting to OpenAI Realtime API', {
         voiceId: config.voiceId,
+        model,
       });
     } catch (error) {
       logger.error('RealtimeVoiceService: Failed to connect', { error });
@@ -98,11 +103,11 @@ export class RealtimeVoiceService {
 
       const sessionData = await response.json();
 
-      // Store session data for later use
+      // Store session data directly
       this.sessionData = sessionData;
 
       // Return the ephemeral token for WebSocket connection
-      return sessionData.session.ephemeralToken;
+      return sessionData.ephemeralToken;
     } catch (error) {
       logger.error('RealtimeVoiceService: Failed to get voice session', { error });
       return null;
@@ -296,31 +301,20 @@ export class RealtimeVoiceService {
   }
 
   private getPersonaDetails(personaId: string): { description: string } {
-    // This should be imported from your voice presets
+    // Fallback persona details for backward compatibility
+    // Real personas are now loaded from shared/data/narratorPersonas
     const personas: Record<string, { description: string }> = {
-      'local-expert': {
+      'aurora-companion': {
         description:
-          'You are a knowledgeable local expert who knows the area well and loves sharing interesting stories about local history, culture, and hidden gems.',
+          'You are Aurora, a close friend and road-trip companion who delights in helping notice the beauty of every mile.',
       },
-      'adventure-seeker': {
+      'daybreak-host': {
         description:
-          'You are an enthusiastic adventure seeker who gets excited about outdoor activities, unique experiences, and off-the-beaten-path discoveries.',
-      },
-      'history-buff': {
-        description:
-          'You are a passionate history enthusiast who loves sharing detailed historical stories and context about places and events.',
-      },
-      foodie: {
-        description:
-          'You are a food lover who knows all the best local restaurants, food trucks, and culinary experiences in the area.',
-      },
-      'nature-lover': {
-        description:
-          'You are a nature enthusiast who appreciates the beauty of the outdoors and loves sharing information about local flora, fauna, and natural features.',
+          'You are Daybreak, an energetic radio DJ who brings high energy and enthusiasm to every mile.',
       },
     };
 
-    return personas[personaId] || personas['local-expert'];
+    return personas[personaId] || personas[DEFAULT_PERSONA_ID] || personas['aurora-companion'];
   }
 
   private getAccentDetails(accentId: string): { description: string } {

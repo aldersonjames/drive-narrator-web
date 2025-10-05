@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import useRealtimeVoice from '../../hooks/useRealtimeVoice';
 import { useDrivePlanner } from '../../context/DrivePlannerContext';
+import { DEFAULT_PERSONA_ID } from '../../../../shared/data/narratorPersonas';
 import BreathingOrb from './BreathingOrb';
 
 interface RealtimeVoiceInterfaceProps {
@@ -8,22 +9,23 @@ interface RealtimeVoiceInterfaceProps {
 }
 
 export const RealtimeVoiceInterface: React.FC<RealtimeVoiceInterfaceProps> = ({
-  className = ''
+  className = '',
 }) => {
   const { preferences } = useDrivePlanner();
-  const [isListening, setIsListening] = useState(false);
-  const [conversationHistory, setConversationHistory] = useState<Array<{
-    id: string;
-    type: 'user' | 'assistant';
-    content: string;
-    timestamp: Date;
-  }>>([]);
-  
+  const [conversationHistory, setConversationHistory] = useState<
+    Array<{
+      id: string;
+      type: 'user' | 'assistant';
+      content: string;
+      timestamp: Date;
+    }>
+  >([]);
+
   const conversationEndRef = useRef<HTMLDivElement>(null);
 
   // Get voice settings from preferences
   const voiceId = preferences?.assistantVoiceId || 'alloy';
-  const personaId = preferences?.narrationPersonaId || 'local-expert';
+  const personaId = preferences?.narrationPersonaId || DEFAULT_PERSONA_ID;
   const accentId = preferences?.narrationAccentId || 'american';
 
   const {
@@ -34,19 +36,16 @@ export const RealtimeVoiceInterface: React.FC<RealtimeVoiceInterfaceProps> = ({
     userTranscript,
     assistantTranscript,
     connect,
-    disconnect,
     startRecording,
     stopRecording,
     sendText,
-    startSpeaking,
-    stopSpeaking,
     error,
-    clearError
+    clearError,
   } = useRealtimeVoice({
     voiceId: voiceId as 'alloy' | 'echo' | 'shimmer',
     personaId,
     accentId,
-    autoConnect: true
+    autoConnect: true,
   });
 
   // Auto-scroll to bottom of conversation
@@ -61,9 +60,9 @@ export const RealtimeVoiceInterface: React.FC<RealtimeVoiceInterfaceProps> = ({
         id: `user-${Date.now()}`,
         type: 'user' as const,
         content: userTranscript,
-        timestamp: new Date()
+        timestamp: new Date(),
       };
-      setConversationHistory(prev => [...prev, newMessage]);
+      setConversationHistory((prev) => [...prev, newMessage]);
     }
   }, [userTranscript]);
 
@@ -74,9 +73,9 @@ export const RealtimeVoiceInterface: React.FC<RealtimeVoiceInterfaceProps> = ({
         id: `assistant-${Date.now()}`,
         type: 'assistant' as const,
         content: assistantTranscript,
-        timestamp: new Date()
+        timestamp: new Date(),
       };
-      setConversationHistory(prev => [...prev, newMessage]);
+      setConversationHistory((prev) => [...prev, newMessage]);
     }
   }, [assistantTranscript]);
 
@@ -85,7 +84,7 @@ export const RealtimeVoiceInterface: React.FC<RealtimeVoiceInterfaceProps> = ({
       connect();
       return;
     }
-    
+
     startRecording();
     setIsListening(true);
   };
@@ -140,9 +139,7 @@ export const RealtimeVoiceInterface: React.FC<RealtimeVoiceInterfaceProps> = ({
             Voice Conversation
           </h2>
         </div>
-        <div className={`text-sm font-medium ${getStatusColor()}`}>
-          {getConnectionStatus()}
-        </div>
+        <div className={`text-sm font-medium ${getStatusColor()}`}>{getConnectionStatus()}</div>
       </div>
 
       {/* Main Content Area */}
@@ -171,10 +168,9 @@ export const RealtimeVoiceInterface: React.FC<RealtimeVoiceInterfaceProps> = ({
             {isConnected ? 'Drive Narrator' : 'Connecting...'}
           </p>
           <p className="text-sm text-gray-600 dark:text-gray-400">
-            {isConnected 
+            {isConnected
               ? 'Tap the orb to start talking or type below'
-              : 'Please wait while we connect to the voice service'
-            }
+              : 'Please wait while we connect to the voice service'}
           </p>
         </div>
 

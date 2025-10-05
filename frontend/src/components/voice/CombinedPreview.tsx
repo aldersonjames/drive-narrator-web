@@ -36,8 +36,8 @@ export const CombinedPreview: React.FC<CombinedPreviewProps> = ({
   //   autoConnect: false
   // });
 
-  const selectedVoice = OPENAI_VOICES.find(voice => voice.id === selectedVoiceId);
-  const selectedPersona = NARRATOR_PERSONAS.find(persona => persona.id === selectedPersonaId);
+  const selectedVoice = OPENAI_VOICES.find((voice) => voice.id === selectedVoiceId);
+  const selectedPersona = NARRATOR_PERSONAS.find((persona) => persona.id === selectedPersonaId);
 
   const handlePreview = async () => {
     if (!selectedVoice || !selectedPersona) return;
@@ -48,9 +48,10 @@ export const CombinedPreview: React.FC<CombinedPreviewProps> = ({
     try {
       // Use the persona's preview sentence
       const personaSampleText = selectedPersona.previewSentence;
-      
+
       // Use backend API for voice preview instead of direct Realtime API
-      const response = await fetch('http://localhost:41234/api/voices/preview', {
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? '/api';
+      const response = await fetch(`${apiBaseUrl}/voices/preview`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -58,7 +59,6 @@ export const CombinedPreview: React.FC<CombinedPreviewProps> = ({
         body: JSON.stringify({
           voiceId: selectedVoiceId,
           input: personaSampleText,
-          instructions: selectedPersona.conversationInstructions,
         }),
       });
 
@@ -69,15 +69,14 @@ export const CombinedPreview: React.FC<CombinedPreviewProps> = ({
       const audioBlob = await response.blob();
       const audioUrl = URL.createObjectURL(audioBlob);
       const audio = new Audio(audioUrl);
-      
+
       audio.onplay = () => setIsPlaying(true);
       audio.onended = () => {
         setIsPlaying(false);
         URL.revokeObjectURL(audioUrl);
       };
-      
+
       await audio.play();
-      
     } catch (error) {
       console.error('Preview generation failed:', error);
     } finally {
@@ -117,9 +116,10 @@ export const CombinedPreview: React.FC<CombinedPreviewProps> = ({
           disabled={!canPreview || isGenerating}
           className={`
             w-full py-4 px-6 rounded-xl font-bold text-lg transition-all duration-200
-            ${canPreview && !isGenerating
-              ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg hover:shadow-xl transform hover:scale-105'
-              : 'bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed'
+            ${
+              canPreview && !isGenerating
+                ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg hover:shadow-xl transform hover:scale-105'
+                : 'bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed'
             }
           `}
         >
@@ -141,9 +141,10 @@ export const CombinedPreview: React.FC<CombinedPreviewProps> = ({
           disabled={!canSave}
           className={`
             w-full py-4 px-6 rounded-xl font-bold text-lg transition-all duration-200
-            ${canSave
-              ? 'bg-green-600 hover:bg-green-700 text-white shadow-lg hover:shadow-xl transform hover:scale-105'
-              : 'bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed'
+            ${
+              canSave
+                ? 'bg-green-600 hover:bg-green-700 text-white shadow-lg hover:shadow-xl transform hover:scale-105'
+                : 'bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed'
             }
           `}
         >
