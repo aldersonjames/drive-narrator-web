@@ -1,5 +1,5 @@
 import { logger } from '../../utils/logger';
-import { DEFAULT_PERSONA_ID } from '../../../../shared/data/narratorPersonas';
+import { DEFAULT_PERSONA_ID, NARRATOR_PERSONAS } from '../../../../shared/data/narratorPersonas';
 
 export interface RealtimeVoiceConfig {
   voiceId: 'alloy' | 'echo' | 'shimmer';
@@ -214,6 +214,25 @@ export class RealtimeVoiceService {
   private sendConfiguration(): void {
     if (!this.ws || !this.config || !this.sessionData) return;
 
+    // Get persona-specific VAD profile
+    const persona =
+      NARRATOR_PERSONAS.find((p) => p.id === this.config?.personaId) ||
+      NARRATOR_PERSONAS.find((p) => p.id === DEFAULT_PERSONA_ID);
+
+    const vadProfile = persona?.vadProfile || {
+      threshold: 0.5,
+      prefixPaddingMs: 300,
+      silenceDurationMs: 200,
+    };
+
+    logger.info('RealtimeVoiceService: Applying persona VAD profile', {
+      personaId: this.config?.personaId,
+      personaName: persona?.name,
+      vocalQuality: persona?.emotional?.vocalQuality,
+      energyLevel: persona?.emotional?.energyLevel,
+      vadProfile,
+    });
+
     const session = this.sessionData.session;
     const config = {
       type: 'session.update',
@@ -228,9 +247,9 @@ export class RealtimeVoiceService {
         },
         turn_detection: {
           type: 'server_vad',
-          threshold: 0.5,
-          prefix_padding_ms: 300,
-          silence_duration_ms: 200,
+          threshold: vadProfile.threshold,
+          prefix_padding_ms: vadProfile.prefixPaddingMs,
+          silence_duration_ms: vadProfile.silenceDurationMs,
         },
         tools: [
           {
