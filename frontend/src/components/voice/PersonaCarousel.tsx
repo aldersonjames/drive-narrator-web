@@ -68,7 +68,7 @@ export const PersonaCarousel: React.FC<PersonaCarouselProps> = ({
             key={persona.id}
             ref={(el) => (cardRefs.current[index] = el)}
             className={`
-              flex-shrink-0 w-64 snap-center cursor-pointer transition-all duration-300
+              flex-shrink-0 w-64 h-[140px] snap-center cursor-pointer transition-all duration-300
               ${selectedPersonaId === persona.id ? 'scale-105' : 'scale-100 hover:scale-102'}
             `}
             onClick={() => handlePersonaSelect(persona, index)}
@@ -83,7 +83,7 @@ export const PersonaCarousel: React.FC<PersonaCarouselProps> = ({
           >
             <div
               className={`
-                bg-white dark:bg-gray-800 rounded-xl p-4 border-2 transition-all duration-300 relative
+                bg-white dark:bg-gray-800 rounded-xl p-4 border-2 transition-all duration-300 relative h-full flex flex-col
                 ${
                   selectedPersonaId === persona.id
                     ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 shadow-[0_0_20px_rgba(59,130,246,0.5)] dark:shadow-[0_0_25px_rgba(96,165,250,0.6)]'
@@ -114,8 +114,10 @@ export const PersonaCarousel: React.FC<PersonaCarouselProps> = ({
               </div>
 
               {/* Persona Description */}
-              <div>
-                <p className="text-xs text-gray-600 dark:text-gray-400">{persona.description}</p>
+              <div className="flex-1 overflow-hidden">
+                <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-3">
+                  {persona.description}
+                </p>
               </div>
             </div>
           </div>
