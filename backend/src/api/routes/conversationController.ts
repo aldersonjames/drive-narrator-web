@@ -1,52 +1,67 @@
 import { Request, Response } from 'express';
 import { z } from 'zod';
 import { logger } from '../../utils/logger';
+import { NARRATOR_PERSONAS, DEFAULT_PERSONA_ID } from '../../../../shared/data/narratorPersonas';
 
 const conversationRequestSchema = z.object({
   message: z.string().min(1).max(1000),
-  command: z.object({
-    type: z.string(),
-    action: z.string(),
-    parameters: z.record(z.any()),
-    confidence: z.number(),
-    originalText: z.string(),
-  }).optional(),
-  context: z.object({
-    driveId: z.string().optional(),
-    location: z.object({
-      latitude: z.number(),
-      longitude: z.number(),
-      address: z.string().optional(),
-    }).optional(),
-    interests: z.array(z.string()).optional(),
-    currentPoi: z.object({
-      id: z.string(),
-      name: z.string(),
-      distance: z.number(),
-      eta: z.number(),
-    }).optional(),
-    recentCommands: z.array(z.any()).optional(),
-  }).optional(),
-  conversationHistory: z.array(z.object({
-    id: z.string(),
-    role: z.enum(['user', 'assistant']),
-    content: z.string(),
-    timestamp: z.string(),
-    metadata: z.any().optional(),
-  })).optional(),
-  voiceSettings: z.object({
-    voiceId: z.string(),
-    personaId: z.string(),
-    accentId: z.string(),
-  }).optional(),
+  command: z
+    .object({
+      type: z.string(),
+      action: z.string(),
+      parameters: z.record(z.any()),
+      confidence: z.number(),
+      originalText: z.string(),
+    })
+    .optional(),
+  context: z
+    .object({
+      driveId: z.string().optional(),
+      location: z
+        .object({
+          latitude: z.number(),
+          longitude: z.number(),
+          address: z.string().optional(),
+        })
+        .optional(),
+      interests: z.array(z.string()).optional(),
+      currentPoi: z
+        .object({
+          id: z.string(),
+          name: z.string(),
+          distance: z.number(),
+          eta: z.number(),
+        })
+        .optional(),
+      recentCommands: z.array(z.any()).optional(),
+    })
+    .optional(),
+  conversationHistory: z
+    .array(
+      z.object({
+        id: z.string(),
+        role: z.enum(['user', 'assistant']),
+        content: z.string(),
+        timestamp: z.string(),
+        metadata: z.any().optional(),
+      }),
+    )
+    .optional(),
+  voiceSettings: z
+    .object({
+      voiceId: z.string(),
+      personaId: z.string(),
+      accentId: z.string(),
+    })
+    .optional(),
 });
 
-export const createConversationController = (deps: { openai: any }) => {
+export const createConversationController = (deps: { openai: unknown }) => {
   const { openai } = deps;
 
   const processConversation = async (req: Request, res: Response): Promise<void> => {
     const startTime = Date.now();
-    
+
     try {
       const validated = conversationRequestSchema.parse(req.body);
       const { message, command, context, conversationHistory = [], voiceSettings } = validated;
@@ -72,7 +87,9 @@ export const createConversationController = (deps: { openai: any }) => {
         frequency_penalty: 0.1,
       });
 
-      const response = completion.choices[0]?.message?.content || 'I apologize, but I could not generate a response.';
+      const response =
+        completion.choices[0]?.message?.content ||
+        'I apologize, but I could not generate a response.';
       const processingTime = Date.now() - startTime;
 
       logger.info('Conversation processed', {
@@ -87,10 +104,9 @@ export const createConversationController = (deps: { openai: any }) => {
         model: 'gpt-4o-mini',
         timestamp: new Date().toISOString(),
       });
-
     } catch (error) {
       const processingTime = Date.now() - startTime;
-      
+
       if (error instanceof z.ZodError) {
         logger.error('Conversation validation error', {
           error: error.errors,
@@ -120,14 +136,28 @@ export const createConversationController = (deps: { openai: any }) => {
   };
 };
 
-function buildSystemPrompt(context?: any, voiceSettings?: any): string {
-  const persona = voiceSettings?.personaId || 'local-expert';
-  const accent = voiceSettings?.accentId || 'american';
-  
-  let prompt = `You are Drive Narrator, a voice-first companion for drivers. You help users discover interesting places and stories during their drives.
+function buildSystemPrompt(
+  context?: unknown,
+  voiceSettings?: { personaId?: string; voiceId?: string },
+): string {
+  const personaId = voiceSettings?.personaId || DEFAULT_PERSONA_ID;
 
-PERSONA: ${persona}
-ACCENT: ${accent}
+  // Get the actual persona definition
+  const persona =
+    NARRATOR_PERSONAS.find((p) => p.id === personaId) ||
+    NARRATOR_PERSONAS.find((p) => p.id === DEFAULT_PERSONA_ID)!;
+
+  // Build a rich system prompt using the persona data
+  let prompt = `You are Drive Narrator, a voice-first AI companion for drivers.
+
+IDENTITY & PERSONALITY:
+Name: ${persona.name}
+Role: ${persona.label}
+
+${persona.description}
+
+CONVERSATION INSTRUCTIONS:
+${persona.conversationInstructions}
 
 CORE CAPABILITIES:
 - Provide engaging stories about points of interest
@@ -169,10 +199,12 @@ CURRENT CONTEXT:`;
   return prompt;
 }
 
-function buildConversationMessages(systemPrompt: string, history: any[], currentMessage: string) {
-  const messages = [
-    { role: 'system', content: systemPrompt }
-  ];
+function buildConversationMessages(
+  systemPrompt: string,
+  history: Array<{ role: string; content: string }>,
+  currentMessage: string,
+) {
+  const messages = [{ role: 'system', content: systemPrompt }];
 
   // Add conversation history (last 10 turns)
   const recentHistory = history.slice(-10);

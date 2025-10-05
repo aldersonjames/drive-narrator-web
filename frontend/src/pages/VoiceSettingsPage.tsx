@@ -12,7 +12,7 @@ export const VoiceSettingsPage: React.FC = () => {
   const navigate = useNavigate();
   const { preferences, loadPreferences, updatePreferences } = useDrivePlanner();
 
-  const [selectedVoiceId, setSelectedVoiceId] = useState<string>('nova');
+  const [selectedVoiceId, setSelectedVoiceId] = useState<string>('alloy');
   const [selectedPersonaId, setSelectedPersonaId] = useState<string>(DEFAULT_PERSONA_ID);
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string>('');

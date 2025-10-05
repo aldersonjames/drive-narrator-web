@@ -28,8 +28,7 @@ export const RealtimeVoiceInterface: React.FC<RealtimeVoiceInterfaceProps> = ({
 
   // Get voice settings from preferences
   const voiceId = preferences?.assistantVoiceId || 'alloy';
-  const personaId = preferences?.narrationPersonaId || DEFAULT_PERSONA_ID;
-  const accentId = preferences?.narrationAccentId || 'american';
+  const personaId = preferences?.metadata?.narrationPersonaId || DEFAULT_PERSONA_ID;
 
   const {
     isConnected,
@@ -47,7 +46,6 @@ export const RealtimeVoiceInterface: React.FC<RealtimeVoiceInterfaceProps> = ({
   } = useRealtimeVoice({
     voiceId: voiceId as 'alloy' | 'echo' | 'shimmer',
     personaId,
-    accentId,
     autoConnect: true,
   });
 

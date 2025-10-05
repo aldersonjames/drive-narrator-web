@@ -22,8 +22,7 @@ export const VoiceConversationInterface: React.FC<VoiceConversationInterfaceProp
   const voiceConversation = useVoiceConversation({
     voiceSettings: {
       voiceId: preferences?.assistantVoiceId || 'alloy',
-      personaId: preferences?.narrationPersonaId || DEFAULT_PERSONA_ID,
-      accentId: preferences?.narrationAccentId || 'american',
+      personaId: preferences?.metadata?.narrationPersonaId || DEFAULT_PERSONA_ID,
     },
     context: {
       interests: preferences?.interestTags || [],
